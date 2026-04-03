@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "python3", "make", "gcc"]
+
+[start]
+cmd = "node server/index.js"
