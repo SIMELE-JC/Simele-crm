@@ -6,7 +6,7 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../data/simele.db')
 
 // S'assurer que le dossier data/ existe
 const fs = require('fs');
-const dataDir = path.dirname(DB_PATH);
+const dataDir = path.dirname(DB_PATH)
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(DB_PATH);
@@ -94,7 +94,8 @@ function initDB() {
 
   // Créer le compte admin par défaut si aucun utilisateur
   const userCount = db.prepare('SELECT COUNT(*) as n FROM users').get();
-  if (userCount.n === 0) {
+  db.prepare('DELETE FROM users WHERE email = ?').run(process.env.ADMIN_EMAIL || 'ccs.guadeloupe@outlook.fr');
+    if (true) {
     const hash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'simele2024!', 10);
     db.prepare(`
       INSERT INTO users (email, password, nom, prenom, role)
