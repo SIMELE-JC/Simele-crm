@@ -1358,6 +1358,9 @@ const API = {
 // ÉCRAN DE CONNEXION
 // ===========================
 function showLoginScreen() {
+  const appShell = document.getElementById('app-shell');
+  const loginScreen = document.getElementById('login-screen');
+  // ORIGINAL CODE REPLACED:
   document.getElementById('app-shell').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 }
