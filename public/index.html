@@ -1365,8 +1365,8 @@ function showLoginScreen() {
 }
 
 function showAppShell() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-shell').style.display = 'flex';
+  (function(){var e=document.getElementById('login-screen');if(e)e.style.display='none';})()
+  (function(){var e=document.getElementById('app-shell');if(e)e.style.display='flex';})()
 }
 
 async function handleLogin(e) {
