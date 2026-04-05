@@ -1358,13 +1358,13 @@ const API = {
 // ÉCRAN DE CONNEXION
 // ===========================
 function showLoginScreen() {
-  document.getElementById('app-shell').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
+  var _as2=document.getElementById('app-shell');if(_as2)_as2.style.display='none';
+  var _ls2=document.getElementById('login-screen');if(_ls2)_ls2.style.display='flex';
 }
 
 function showAppShell() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-shell').style.display = 'flex';
+  var _ls=document.getElementById('login-screen');if(_ls)_ls.style.display='none';
+  var _as=document.getElementById('app-shell');if(_as)_as.style.display='flex';
 }
 
 async function handleLogin(e) {
