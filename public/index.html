@@ -1360,11 +1360,8 @@ const API = {
 function showLoginScreen() {
   const _ls = document.getElementById('login-screen');
   const _as = document.getElementById('app-shell');
-    const appShell = document.getElementById('app-shell');
-  const loginScreen = document.getElementById('login-screen');
-  // ORIGINAL CODE REPLACED:
-  document.getElementById('app-shell').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
+  if (_as) _as.style.display = 'none';
+  if (_ls) _ls.style.display = 'flex';
 }
 
 function showAppShell() {
