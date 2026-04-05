@@ -1540,6 +1540,10 @@ async function init() {
 }
 
 init();
+  var _ls = document.getElementById('login-screen');
+  var _as = document.getElementById('app-shell');
+  if (_ls) _ls.style.display = 'flex';
+  if (_as) _as.style.display = 'none';
 </script>
 
 <!-- ===========================
