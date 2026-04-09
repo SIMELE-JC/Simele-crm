@@ -1538,6 +1538,54 @@ async function init() {
 }
 
 init(); setTimeout(function(){ var l=document.getElementById('login-screen'); var a=document.getElementById('app-shell'); if(l)l.style.display='flex'; if(a)a.style.display='none'; }, 200);
+
+// ===== FONCTIONS MANQUANTES CRM =====
+
+// Ouvrir aperçu devis
+function ouvrirDevis(clientId) {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const url = 'https://simele-crm-production.up.railway.app/api/clients/' + clientId + '/devis';
+  // Ouvrir dans un nouvel onglet avec le token en header via une forme POST/GET
+  const win = window.open('', '_blank');
+  win.document.write('<p>Chargement du devis...</p>');
+  fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(r => r.text())
+    .then(html => { win.document.open(); win.document.write(html); win.document.close(); })
+    .catch(e => { win.document.write('<p>Erreur: ' + e.message + '</p>'); });
+}
+
+// Ouvrir aperçu contrat
+function ouvrirContrat(clientId) {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const url = 'https://simele-crm-production.up.railway.app/api/clients/' + clientId + '/contrat';
+  const win = window.open('', '_blank');
+  win.document.write('<p>Chargement du contrat...</p>');
+  fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(r => r.text())
+    .then(html => { win.document.open(); win.document.write(html); win.document.close(); })
+    .catch(e => { win.document.write('<p>Erreur: ' + e.message + '</p>'); });
+}
+
+// Sauvegarder entretien avec fiche complète
+async function sauvegarderEntretienComplet(clientId, data) {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  try {
+    const r = await fetch('https://simele-crm-production.up.railway.app/api/clients/' + clientId + '/entretien', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(data)
+    });
+    const result = await r.json();
+    if (result.success) {
+      console.log('Entretien sauvegardé:', result.client);
+      return result.client;
+    }
+    throw new Error(result.error || 'Erreur inconnue');
+  } catch(e) {
+    console.error('Erreur sauvegarde entretien:', e);
+    throw e;
+  }
+}
 </script>
 
 <!-- ===========================
