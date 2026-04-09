@@ -1567,23 +1567,36 @@ function ouvrirContrat(clientId) {
 }
 
 // Sauvegarder entretien avec fiche complète
-async function sauvegarderEntretienComplet(clientId, data) {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+async async function sauvegarderEntretien() {
+  const clientId = window.currentClientId || document.getElementById('entretien-client-id')?.value;
+  if (!clientId) { alert('Erreur: client non identifié'); return; }
+  
+  const score = parseInt(document.getElementById('entretien-score')?.value || document.getElementById('score-total')?.value || 0);
+  const profil = document.getElementById('entretien-profil')?.value || document.getElementById('profil-select')?.value || 'À qualifier';
+  const notes = document.getElementById('entretien-notes')?.value || document.getElementById('notes-entretien')?.value || '';
+  const situation = document.getElementById('entretien-situation')?.value || '';
+  const projet = document.getElementById('entretien-projet')?.value || '';
+  const besoins = document.getElementById('entretien-besoins')?.value || '';
+  const recommandations = document.getElementById('entretien-recommandations')?.value || '';
+  const prochaine_etape = document.getElementById('entretien-prochaine-etape')?.value || '';
+  
+  const token = localStorage.getItem('simele_token') || '';
   try {
-    const r = await fetch('https://simele-crm-production.up.railway.app/api/clients/' + clientId + '/entretien', {
+    const r = await fetch('https://ccs-gc-logi.up.railway.app/api/clients/' + clientId + '/entretien', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ score, profil, notes, situation, projet, besoins, recommandations, prochaine_etape })
     });
-    const result = await r.json();
-    if (result.success) {
-      console.log('Entretien sauvegardé:', result.client);
-      return result.client;
+    const data = await r.json();
+    if (data.success) {
+      alert('✓ Entretien sauvegardé avec succès !');
+      if (typeof chargerClient === 'function') chargerClient(clientId);
+      if (typeof loadClient === 'function') loadClient(clientId);
+    } else {
+      alert('Erreur: ' + (data.error || 'Inconnue'));
     }
-    throw new Error(result.error || 'Erreur inconnue');
   } catch(e) {
-    console.error('Erreur sauvegarde entretien:', e);
-    throw e;
+    alert('Erreur de connexion: ' + e.message);
   }
 }
 </script>
@@ -1625,5 +1638,27 @@ async function sauvegarderEntretienComplet(clientId, data) {
   </div>
 </div>
 
+<script>
+function afficherFicheEntretien(client) {
+  const container = document.getElementById('fiche-entretien-container') || document.getElementById('entretien-display');
+  if (!container || !client.notes_entretien) return;
+  try {
+    const fiche = JSON.parse(client.notes_entretien);
+    container.innerHTML = `
+      <div style="background:#f0f4f8;border-radius:8px;padding:1.5rem;margin-top:1rem">
+        <h4 style="margin:0 0 1rem;color:#1b2d5b;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px">📋 Fiche d'entretien du ${fiche.date||''}</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;font-size:0.85rem">
+          <div><strong>Score :</strong> ${fiche.score||0}/30</div>
+          <div><strong>Profil :</strong> ${fiche.profil||'—'}</div>
+          ${fiche.situation?'<div style="grid-column:1/-1"><strong>Situation :</strong> '+fiche.situation+'</div>':''}
+          ${fiche.projet?'<div style="grid-column:1/-1"><strong>Projet :</strong> '+fiche.projet+'</div>':''}
+          ${fiche.besoins?'<div style="grid-column:1/-1"><strong>Besoins :</strong> '+fiche.besoins+'</div>':''}
+          ${fiche.recommandations?'<div style="grid-column:1/-1"><strong>Recommandations :</strong> '+fiche.recommandations+'</div>':''}
+          ${fiche.prochaine_etape?'<div style="grid-column:1/-1"><strong>Prochaine étape :</strong> '+fiche.prochaine_etape+'</div>':''}
+          ${fiche.notes?'<div style="grid-column:1/-1"><strong>Notes :</strong> '+fiche.notes+'</div>':''}
+        </div>
+      </div>`;
+  } catch(e) { console.log('Fiche entretien parse error:', e); }
+}</script>
 </body>
 </html>
