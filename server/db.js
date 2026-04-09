@@ -43,6 +43,7 @@ function initDB() {
       prestation  TEXT,
       projet      TEXT,
       notes       TEXT,
+      notes_entretien TEXT,
       score       INTEGER,
       profil      TEXT    DEFAULT 'À qualifier',
       color       TEXT    DEFAULT '#D6EAF8',
