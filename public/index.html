@@ -1063,8 +1063,8 @@ function renderDossier(clientId) {
           <div class="reco-price">${recoPrice}</div>
           <div class="reco-desc">${recoDesc}</div>
           <div class="reco-actions">
-            <button class="btn-ghost-white" onclick="showPage('docs')">Générer contrat</button>
-            <button class="btn-ghost-white" onclick="showPage('docs')">Générer devis</button>
+            <button class="btn-ghost-white" onclick="ouvrirContrat(window.currentClient && window.currentClient.id)">Générer contrat</button>
+            <button class="btn-ghost-white" onclick="ouvrirDevis(window.currentClient && window.currentClient.id)">Générer devis</button>
             <button class="btn-ghost-white" onclick="showPage('programme')">Voir programme</button>
             <button class="btn btn-gold btn-sm" style="margin-left:auto">Valider prestation</button>
           </div>
