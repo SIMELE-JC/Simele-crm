@@ -275,10 +275,10 @@ router.get('/:id/contrat', auth, (req, res) => {
       (c.email ? ' — ' + c.email : '') + (c.tel ? ' — ' + c.tel : '') +
       (c.adresse ? '<br>' + c.adresse : '') + '</p></div>' +
       '<h2>Article 1 — Objet</h2>' +
-      '<p>Le Cabinet de Conseils SIMELE s'engage à fournir : <strong>' + (c.prestation || 'Prestations à définir') + '</strong>' +
+      '<p>Le Cabinet de Conseils SIMELE s\'engage à fournir : <strong>' + (c.prestation || 'Prestations à définir') + '</strong>' +
       (c.projet ? ' dans le cadre du projet : ' + c.projet : '') + '.</p>' +
       '<h2>Article 2 — Modalités</h2>' +
-      '<p>La prestation débute à la date convenue et se déroule selon un planning établi d'un commun accord, en présentiel ou visioconférence.</p>' +
+      '<p>La prestation débute à la date convenue et se déroule selon un planning établi d&#39;un commun accord, en présentiel ou visioconférence.</p>' +
       '<h2>Article 3 — Tarifs et paiement</h2>' +
       '<p>Tarification selon devis joint. Règlement : 50% à la signature, 50% à la livraison. TVA non applicable, art. 293 B du CGI.</p>' +
       '<h2>Article 4 — Obligations du prestataire</h2>' +
@@ -286,7 +286,7 @@ router.get('/:id/contrat', auth, (req, res) => {
       '<h2>Article 5 — Obligations du client</h2>' +
       '<p>Fournir toutes les informations nécessaires, respecter les rendez-vous convenus, régler les honoraires aux échéances prévues.</p>' +
       '<h2>Article 6 — Confidentialité</h2>' +
-      '<p>Les deux parties s'engagent à traiter de façon strictement confidentielle toutes les informations échangées dans le cadre de ce contrat.</p>' +
+      '<p>Les deux parties s&#39;engagent à traiter de façon strictement confidentielle toutes les informations échangées dans le cadre de ce contrat.</p>' +
       '<h2>Article 7 — Droit applicable</h2>' +
       '<p>Droit français. Tout litige sera soumis aux tribunaux compétents de Guadeloupe.</p>' +
       '<div class="sb">' +
