@@ -17,7 +17,7 @@ const rateLimit = require('express-rate-limit');
 const { initDB } = require('./db');
 const authRouter = require('./routes/auth');
 const clientsRouter = require('./routes/clients');
-const portalRouter  = require('./routes/portal');
+
 const espaceClientRouter = require('./routes/espace-client');
 app.use('/api/espace-client', espaceClientRouter);
 const { requireAuth } = require('./middleware/auth');
