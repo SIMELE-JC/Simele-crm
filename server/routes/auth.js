@@ -55,4 +55,22 @@ router.post('/change-password', requireAuth, (req, res) => {
   res.json({ message: 'Mot de passe modifié avec succès.' });
 });
 
+
+
+// Route temporaire reset mot de passe admin
+router.post('/setup', function(req, res) {
+  try {
+    var email = req.body.email || 'ccs.guadeloupe@outlook.fr';
+    var pwd = req.body.password;
+    if (!pwd) return res.status(400).json({ error: 'password requis' });
+    var hash = bcryptjs.hashSync(pwd, 10);
+    var existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existing) {
+      db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hash, email);
+    } else {
+      db.prepare("INSERT INTO users (email, password, nom, prenom, role) VALUES (?, ?, 'Simele', 'Admin', 'admin')").run(email, hash);
+    }
+    res.json({ success: true, message: 'Mot de passe mis a jour pour ' + email });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 module.exports = router;
