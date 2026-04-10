@@ -63,7 +63,7 @@ router.post('/setup', function(req, res) {
     var email = req.body.email || 'ccs.guadeloupe@outlook.fr';
     var pwd = req.body.password;
     if (!pwd) return res.status(400).json({ error: 'password requis' });
-    var hash = bcryptjs.hashSync(pwd, 10);
+    var hash = bcrypt.hashSync(pwd, 10);
     var existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (existing) {
       db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hash, email);
