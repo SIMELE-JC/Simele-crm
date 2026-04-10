@@ -6,6 +6,7 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (err) => {
   console.error('💥 REJECTION:', err);
 });
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -17,6 +18,7 @@ const rateLimit = require('express-rate-limit');
 const { initDB } = require('./db');
 const authRouter = require('./routes/auth');
 const clientsRouter = require('./routes/clients');
+const portalRouter = require('./routes/portal');
 
 const { requireAuth } = require('./middleware/auth');
 
@@ -26,7 +28,8 @@ const PORT = process.env.PORT || 8080;
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: '*', credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb' }));
 app.use(morgan('dev'));
 
 const authLimiter = rateLimit({
@@ -37,6 +40,7 @@ const authLimiter = rateLimit({
 
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/clients', requireAuth, clientsRouter);
+app.use('/api/portal', portalRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'SIMELE CRM', timestamp: new Date().toISOString() });
@@ -48,8 +52,6 @@ app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../public/index.html'));
   }
-});</script></body>'); res.send(html);
-  }
 });
 
 initDB();
@@ -57,4 +59,5 @@ initDB();
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ SIMELE CRM démarré sur le port ${PORT}`);
   console.log(`🌐 Environnement : ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📝 Portail client : /api/portal`);
 });
