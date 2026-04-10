@@ -46,7 +46,9 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    const fs=require('fs'); let html=fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8'); html=html.replace('</body>','<script>window.addEventListener("load",function(){var l=document.getElementById("login-screen");var a=document.getElementById("app-shell");if(l)l.style.display="flex";if(a)a.style.display="none";});</script></body>'); res.send(html);
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  }
+});</script></body>'); res.send(html);
   }
 });
 
