@@ -204,99 +204,141 @@ router.get('/stats/dashboard', (req, res) => {
 
 
 // Route aperçu Devis
-router.get('/:id/devis', auth, (req, res) => {
+
+router.get('/:id/devis', auth, function(req, res) {
   try {
-    const c = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
+    var c = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
     if (!c) return res.status(404).json({ error: 'Client introuvable' });
-    const date = new Date().toLocaleDateString('fr-FR');
-    const num = 'DEV-' + new Date().getFullYear() + '-' + String(req.params.id).padStart(4,'0');
-    const prix = {'Diagnostic de projet':'80,00','Coaching 3 seances':'240,00','Coaching 5 seances':'380,00','Business Plan':'450,00','Previsionnel financier':'350,00','Pack Essentiel Creation':'590,00','Pack Financement':'890,00','Pack Global':'1 290,00'};
-    const p = c.prestation || '';
-    const keys = Object.keys(prix);
-    let montant = 'A definir';
-    for(let k of keys){ if(p.includes(k.split(' ')[0])) { montant = prix[k] + ' EUR'; break; } }
-    const nomClient = (c.prenom || '') + ' ' + (c.nom || '');
-    const h = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Devis ' + num + '</title>' +
-      '<style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#1b2d5b}' +
-      '.hd{display:flex;justify-content:space-between;border-bottom:3px solid #1b2d5b;padding-bottom:20px;margin-bottom:30px}' +
-      'table{width:100%;border-collapse:collapse}th{background:#1b2d5b;color:white;padding:12px;text-align:left}' +
-      'td{padding:12px;border-bottom:1px solid #e0e0e0}.tr{font-weight:bold;background:#f0f4f8}' +
-      '.np{background:#1b2d5b;color:white;padding:10px 20px;margin:-40px -40px 30px;display:flex;justify-content:space-between}' +
-      '@media print{.np{display:none}}</style></head><body>' +
-      '<div class="np"><span>Apercu Devis ' + num + '</span>' +
-      '<button onclick="window.print()" style="background:white;color:#1b2d5b;border:none;padding:8px 16px;border-radius:4px;cursor:pointer">Imprimer / PDF</button></div>' +
-      '<div class="hd"><div><h1 style="margin:0;font-size:20px">Cabinet de Conseils SIMELE</h1>' +
-      '<p style="margin:4px 0;color:#666;font-size:13px">Expert en Creation & Structuration - Guadeloupe</p>' +
-      '<p style="margin:4px 0;color:#666;font-size:13px">ccs.guadeloupe@outlook.fr</p></div>' +
-      '<div style="text-align:right"><div style="font-size:28px;font-weight:bold">DEVIS</div>' +
-      '<p style="margin:4px 0;font-size:13px">N deg ' + num + '</p>' +
-      '<p style="margin:4px 0;font-size:13px">Date : ' + date + '</p>' +
-      '<p style="margin:4px 0;font-size:13px">Valable 30 jours</p></div></div>' +
-      '<div style="background:#f0f4f8;padding:20px;border-radius:8px;margin-bottom:25px">' +
-      '<h3 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;color:#666">Client</h3>' +
-      '<p style="margin:4px 0"><strong>' + nomClient + '</strong></p>' +
-      (c.email ? '<p style="margin:4px 0">' + c.email + '</p>' : '') +
-      (c.tel ? '<p style="margin:4px 0">' + c.tel + '</p>' : '') + '</div>' +
-      '<table><thead><tr><th>Prestation</th><th>Description</th><th style="text-align:right">Montant</th></tr></thead><tbody>' +
-      (p ? '<tr><td>' + p + '</td><td>Accompagnement personnalise - Cabinet SIMELE</td><td style="text-align:right">' + montant + '</td></tr>' : '<tr><td colspan="3" style="text-align:center;color:#666">Prestations a definir</td></tr>') +
-      '<tr class="tr"><td colspan="2">TOTAL (TVA non applicable - art. 293 B CGI)</td><td style="text-align:right">' + montant + '</td></tr>' +
-      '</tbody></table>' +
-      '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #e0e0e0;font-size:12px;color:#666">' +
-      '<p>Paiement : 50% a la signature, 50% a la livraison.</p>' +
-      '<br><p>Signature client (bon pour accord) :</p>' +
-      '<div style="border-top:1px solid #999;margin-top:50px;width:300px;padding-top:5px;font-size:11px">Date et signature</div></div>' +
-      '</body></html>';
-    res.setHeader('Content-Type','text/html; charset=utf-8');
-    res.send(h);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    var dateStr = new Date().toLocaleDateString('fr-FR');
+    var numDevis = 'DEV-' + new Date().getFullYear() + '-' + String(req.params.id).padStart(4, '0');
+    var nomClient = (c.prenom || '') + ' ' + (c.nom || '');
+    var prestation = c.prestation || '';
+    var email = c.email || '';
+    var tel = c.tel || '';
+    
+    var prixMap = {
+      'Diagnostic': '80,00 EUR',
+      'Coaching 3': '240,00 EUR',
+      'Coaching 5': '380,00 EUR',
+      'Business Plan': '450,00 EUR',
+      'Previsionnel': '350,00 EUR',
+      'Essentiel': '590,00 EUR',
+      'Financement': '890,00 EUR',
+      'Global': '1 290,00 EUR'
+    };
+    var montant = 'A definir';
+    var keys = Object.keys(prixMap);
+    for (var i = 0; i < keys.length; i++) {
+      if (prestation.indexOf(keys[i]) !== -1) { montant = prixMap[keys[i]]; break; }
+    }
+
+    var lignePrestation = prestation 
+      ? '<tr><td>' + prestation + '</td><td>Accompagnement Cabinet SIMELE</td><td align="right">' + montant + '</td></tr>'
+      : '<tr><td colspan="3" align="center">Prestations a definir lors de entretien</td></tr>';
+
+    var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+      + '<title>Devis ' + numDevis + '</title>'
+      + '<style>'
+      + 'body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#1b2d5b}'
+      + '.header{display:flex;justify-content:space-between;border-bottom:3px solid #1b2d5b;padding-bottom:20px;margin-bottom:30px}'
+      + 'table{width:100%;border-collapse:collapse}'
+      + 'th{background:#1b2d5b;color:white;padding:12px;text-align:left}'
+      + 'td{padding:12px;border-bottom:1px solid #e0e0e0}'
+      + '.total{font-weight:bold;background:#f0f4f8}'
+      + '.topbar{background:#1b2d5b;color:white;padding:10px 20px;margin:-40px -40px 30px;display:flex;justify-content:space-between;align-items:center}'
+      + '@media print{.topbar{display:none}}'
+      + '</style></head><body>'
+      + '<div class="topbar"><span>Apercu Devis ' + numDevis + '</span>'
+      + '<button onclick="window.print()" style="background:white;color:#1b2d5b;border:none;padding:8px 16px;border-radius:4px;cursor:pointer">Imprimer ou PDF</button></div>'
+      + '<div class="header">'
+      + '<div><h1 style="margin:0;font-size:20px">Cabinet de Conseils SIMELE</h1>'
+      + '<p style="margin:4px 0;color:#666;font-size:13px">Expert en Creation - Guadeloupe</p>'
+      + '<p style="margin:4px 0;color:#666;font-size:13px">ccs.guadeloupe@outlook.fr</p></div>'
+      + '<div style="text-align:right"><div style="font-size:28px;font-weight:bold">DEVIS</div>'
+      + '<p style="margin:4px 0;font-size:13px">N ' + numDevis + '</p>'
+      + '<p style="margin:4px 0;font-size:13px">Date : ' + dateStr + '</p>'
+      + '<p style="margin:4px 0;font-size:13px">Valable 30 jours</p></div></div>'
+      + '<div style="background:#f0f4f8;padding:20px;border-radius:8px;margin-bottom:25px">'
+      + '<h3 style="margin:0 0 10px;font-size:13px;text-transform:uppercase;color:#666">Client</h3>'
+      + '<p style="margin:4px 0"><strong>' + nomClient + '</strong></p>'
+      + (email ? '<p style="margin:4px 0">' + email + '</p>' : '')
+      + (tel ? '<p style="margin:4px 0">' + tel + '</p>' : '')
+      + '</div>'
+      + '<table><thead><tr><th>Prestation</th><th>Description</th><th>Montant</th></tr></thead><tbody>'
+      + lignePrestation
+      + '<tr class="total"><td colspan="2">TOTAL (TVA non applicable art. 293 B CGI)</td><td>' + montant + '</td></tr>'
+      + '</tbody></table>'
+      + '<div style="margin-top:40px;padding-top:20px;border-top:1px solid #e0e0e0;font-size:12px;color:#666">'
+      + '<p>Paiement : 50 pourcent a la signature, 50 pourcent a la livraison.</p>'
+      + '<p>Modalites : Virement, cheque ou especes.</p>'
+      + '<br><p>Signature client (bon pour accord) :</p>'
+      + '<div style="border-top:1px solid #999;margin-top:50px;width:300px;padding-top:5px">Date et signature</div>'
+      + '</div></body></html>';
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch(e) {
+    console.error('Devis error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
-router.get('/:id/contrat', auth, (req, res) => {
+router.get('/:id/contrat', auth, function(req, res) {
   try {
-    const c = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
+    var c = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
     if (!c) return res.status(404).json({ error: 'Client introuvable' });
-    const date = new Date().toLocaleDateString('fr-FR');
-    const num = 'CTR-' + new Date().getFullYear() + '-' + String(req.params.id).padStart(4,'0');
-    const nomClient = (c.prenom || '') + ' ' + (c.nom || '');
-    const prestation = c.prestation || 'Prestations definir selon entretien';
-    const projet = c.projet || '';
-    const h = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Contrat ' + num + '</title>' +
-      '<style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#1b2d5b;line-height:1.6}' +
-      'h1{text-align:center;font-size:20px;text-transform:uppercase;letter-spacing:2px;border-bottom:3px solid #1b2d5b;padding-bottom:15px}' +
-      'h2{font-size:15px;text-transform:uppercase;border-left:4px solid #1b2d5b;padding-left:10px;margin-top:25px}' +
-      '.p{background:#f0f4f8;padding:20px;border-radius:8px;margin:20px 0}' +
-      '.sb{display:flex;justify-content:space-between;margin-top:60px}' +
-      '.sl{width:45%;border-top:1px solid #999;padding-top:5px;font-size:12px;color:#666}' +
-      '.np{background:#1b2d5b;color:white;padding:10px 20px;margin:-40px -40px 30px;display:flex;justify-content:space-between}' +
-      '@media print{.np{display:none}}</style></head><body>' +
-      '<div class="np"><span>Apercu Contrat ' + num + '</span>' +
-      '<button onclick="window.print()" style="background:white;color:#1b2d5b;border:none;padding:8px 16px;border-radius:4px;cursor:pointer">Imprimer / PDF</button></div>' +
-      '<h1>Contrat de Prestation de Services</h1>' +
-      '<p style="text-align:center;color:#666;font-size:13px">N deg ' + num + ' - Etabli le ' + date + '</p>' +
-      '<div class="p"><h2>Parties</h2>' +
-      '<p><strong>Prestataire :</strong> Cabinet de Conseils SIMELE - Guadeloupe - ccs.guadeloupe@outlook.fr</p><br>' +
-      '<p><strong>Client :</strong> ' + nomClient + (c.email ? ' - ' + c.email : '') + (c.tel ? ' - ' + c.tel : '') + (c.adresse ? '<br>' + c.adresse : '') + '</p></div>' +
-      '<h2>Article 1 - Objet</h2>' +
-      '<p>Le Cabinet de Conseils SIMELE fournira : <strong>' + prestation + '</strong>' + (projet ? ' pour le projet : ' + projet : '') + '.</p>' +
-      '<h2>Article 2 - Modalites</h2>' +
-      '<p>La prestation debute a la date convenue et se deroule selon un planning etabli en commun, en presentiel ou visioconference.</p>' +
-      '<h2>Article 3 - Tarifs</h2>' +
-      '<p>Tarif selon devis joint. Reglement : 50% a la signature, 50% a la livraison. TVA non applicable, art. 293 B du CGI.</p>' +
-      '<h2>Article 4 - Obligations du prestataire</h2>' +
-      '<p>Fourniture des prestations avec professionnalisme. Respect strict de la confidentialite des informations du client.</p>' +
-      '<h2>Article 5 - Obligations du client</h2>' +
-      '<p>Fournir les informations necessaires, respecter les rendez-vous convenus, regler les honoraires aux echeances prevues.</p>' +
-      '<h2>Article 6 - Confidentialite</h2>' +
-      '<p>Les deux parties traitent confidentiellement toutes les informations echangees.</p>' +
-      '<h2>Article 7 - Droit applicable</h2>' +
-      '<p>Droit francais. Tout litige sera soumis aux tribunaux competents de Guadeloupe.</p>' +
-      '<div class="sb">' +
-      '<div class="sl"><strong>Le Prestataire</strong><br>Cabinet de Conseils SIMELE<br><br><br>Date : _______________<br>Signature :</div>' +
-      '<div class="sl"><strong>Le Client</strong><br>' + nomClient + '<br>(Lu et approuve)<br>Date : _______________<br>Signature :</div>' +
-      '</div></body></html>';
-    res.setHeader('Content-Type','text/html; charset=utf-8');
-    res.send(h);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    var dateStr = new Date().toLocaleDateString('fr-FR');
+    var numContrat = 'CTR-' + new Date().getFullYear() + '-' + String(req.params.id).padStart(4, '0');
+    var nomClient = (c.prenom || '') + ' ' + (c.nom || '');
+    var prestation = c.prestation || 'Prestations a definir';
+    var projet = c.projet ? 'Projet : ' + c.projet : '';
+    var contactInfo = (c.email || '') + (c.tel ? ' - ' + c.tel : '') + (c.adresse ? '<br>' + c.adresse : '');
+
+    var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+      + '<title>Contrat ' + numContrat + '</title>'
+      + '<style>'
+      + 'body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;color:#1b2d5b;line-height:1.6}'
+      + 'h1{text-align:center;font-size:20px;text-transform:uppercase;letter-spacing:2px;border-bottom:3px solid #1b2d5b;padding-bottom:15px}'
+      + 'h2{font-size:15px;text-transform:uppercase;border-left:4px solid #1b2d5b;padding-left:10px;margin-top:25px}'
+      + '.bloc{background:#f0f4f8;padding:20px;border-radius:8px;margin:20px 0}'
+      + '.signatures{display:flex;justify-content:space-between;margin-top:60px}'
+      + '.sig{width:45%;border-top:1px solid #999;padding-top:5px;font-size:12px;color:#666}'
+      + '.topbar{background:#1b2d5b;color:white;padding:10px 20px;margin:-40px -40px 30px;display:flex;justify-content:space-between;align-items:center}'
+      + '@media print{.topbar{display:none}}'
+      + '</style></head><body>'
+      + '<div class="topbar"><span>Apercu Contrat ' + numContrat + '</span>'
+      + '<button onclick="window.print()" style="background:white;color:#1b2d5b;border:none;padding:8px 16px;border-radius:4px;cursor:pointer">Imprimer ou PDF</button></div>'
+      + '<h1>Contrat de Prestation de Services</h1>'
+      + '<p style="text-align:center;color:#666;font-size:13px">Numero ' + numContrat + ' - Etabli le ' + dateStr + '</p>'
+      + '<div class="bloc"><h2>Parties</h2>'
+      + '<p><strong>Prestataire :</strong> Cabinet de Conseils SIMELE - Guadeloupe<br>ccs.guadeloupe@outlook.fr</p><br>'
+      + '<p><strong>Client :</strong> ' + nomClient + '<br>' + contactInfo + '</p></div>'
+      + '<h2>Article 1 - Objet du contrat</h2>'
+      + '<p>Le Cabinet de Conseils SIMELE fournira la prestation suivante :<br>'
+      + '<strong>' + prestation + '</strong><br>' + projet + '</p>'
+      + '<h2>Article 2 - Modalites</h2>'
+      + '<p>La prestation debute a la date convenue entre les parties selon un planning etabli en commun, en presentiel ou visioconference.</p>'
+      + '<h2>Article 3 - Tarifs et paiement</h2>'
+      + '<p>Tarif selon devis joint. Reglement : 50 pourcent a la signature, 50 pourcent a la livraison. TVA non applicable, art. 293 B du CGI.</p>'
+      + '<h2>Article 4 - Obligations du prestataire</h2>'
+      + '<p>Fourniture des prestations avec professionnalisme. Respect strict de la confidentialite des informations confiees par le client.</p>'
+      + '<h2>Article 5 - Obligations du client</h2>'
+      + '<p>Fournir toutes informations necessaires, respecter les rendez-vous convenus, regler les honoraires aux echeances prevues.</p>'
+      + '<h2>Article 6 - Confidentialite</h2>'
+      + '<p>Les deux parties traitent confidentiellement toutes les informations echangees dans le cadre de ce contrat.</p>'
+      + '<h2>Article 7 - Droit applicable</h2>'
+      + '<p>Droit francais. Tout litige sera soumis aux tribunaux competents de Guadeloupe.</p>'
+      + '<div class="signatures">'
+      + '<div class="sig"><strong>Le Prestataire</strong><br>Cabinet de Conseils SIMELE<br><br><br>Date : ___________<br>Signature :</div>'
+      + '<div class="sig"><strong>Le Client</strong><br>' + nomClient + '<br>(Lu et approuve)<br>Date : ___________<br>Signature :</div>'
+      + '</div></body></html>';
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch(e) {
+    console.error('Contrat error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = router;
