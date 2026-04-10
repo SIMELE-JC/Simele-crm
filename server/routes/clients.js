@@ -1,4 +1,4 @@
-const { auth } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
 const express = require('express');
 const { db } = require('../db');
 
@@ -151,7 +151,7 @@ router.delete('/:id', (req, res) => {
 });
 
 // ── POST /api/clients/:id/entretien ──────────────────────
-router.post('/:id/entretien', auth, (req, res) => {
+router.post('/:id/entretien', requireAuth, (req, res) => {
   try {
     const { score, profil, notes, situation, projet, besoins, recommandations, prochaine_etape } = req.body;
     const id = req.params.id;
@@ -205,7 +205,7 @@ router.get('/stats/dashboard', (req, res) => {
 
 // Route aperçu Devis
 
-router.get('/:id/devis', auth, function(req, res) {
+router.get('/:id/devis', requireAuth, function(req, res) {
   try {
     var c = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
     if (!c) return res.status(404).json({ error: 'Client introuvable' });
@@ -283,7 +283,7 @@ router.get('/:id/devis', auth, function(req, res) {
   }
 });
 
-router.get('/:id/contrat', auth, function(req, res) {
+router.get('/:id/contrat', requireAuth, function(req, res) {
   try {
     var c = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
     if (!c) return res.status(404).json({ error: 'Client introuvable' });
