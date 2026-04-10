@@ -1,48 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<script>
-(function() {
-  // Initialisation CRM SIMELE - gestion login/app
-  function initCRM() {
-    var ls = document.getElementById('login-screen');
-    var as = document.getElementById('app-shell');
-    var tok = localStorage.getItem('simele_token');
-    
-    if (tok) {
-      // Token présent : vérifier qu'il est valide
-      fetch('https://ccs-gc-logi.up.railway.app/api/auth/me', {
-        headers: { 'Authorization': 'Bearer ' + tok }
-      }).then(function(r) {
-        if (r.ok) {
-          // Token valide : afficher l'app
-          if (ls) ls.style.display = 'none';
-          if (as) as.style.display = 'flex';
-        } else {
-          // Token invalide : afficher login
-          localStorage.removeItem('simele_token');
-          if (ls) ls.style.display = 'flex';
-          if (as) as.style.display = 'none';
-        }
-      }).catch(function() {
-        // Erreur réseau : afficher login
-        if (ls) ls.style.display = 'flex';
-        if (as) as.style.display = 'none';
-      });
-    } else {
-      // Pas de token : afficher login
-      if (ls) ls.style.display = 'flex';
-      if (as) as.style.display = 'none';
-    }
-  }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCRM);
-  } else {
-    initCRM();
-  }
-})();
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cabinet SIMELE — Espace de gestion</title>
@@ -1704,102 +1663,27 @@ function afficherFicheEntretien(client) {
 }</script>
 
 <script>
-// === EXPOSITION GLOBALE DES FONCTIONS CRM ===
-// Ce bloc s'assure que les fonctions sont accessibles depuis les boutons onclick
-
-window.ouvrirDevis = function(clientId) {
-  var tok = localStorage.getItem('simele_token') || '';
-  var win = window.open('', '_blank');
-  if (!win) { alert('Autorisez les popups pour ce site'); return; }
-  win.document.write('<html><body style="font-family:Arial;text-align:center;padding:50px;color:#1b2d5b"><p>Chargement du devis...</p>
-<script>
-window.ouvrirDevis = function(clientId) {
-  var tok = localStorage.getItem('simele_token') || '';
-  var win = window.open('', '_blank');
-  if (!win) { alert('Autorisez les popups'); return; }
-  win.document.write('<html><body style="text-align:center;padding:50px;font-family:Arial">Chargement du devis...</body></html>');
-  fetch('https://ccs-gc-logi.up.railway.app/api/clients/' + clientId + '/devis', { headers: { 'Authorization': 'Bearer ' + tok } })
-    .then(function(r){ return r.text(); })
-    .then(function(h){ win.document.open(); win.document.write(h); win.document.close(); })
-    .catch(function(e){ win.document.write('<p style="color:red">Erreur: '+e.message+'</p>'); });
+/* CRM SIMELE - fonctions globales */
+window.ouvrirDevis = function(id) {
+  var tok = localStorage.getItem("simele_token") || "";
+  var w = window.open("", "_blank");
+  if (!w) { alert("Autorisez les popups"); return; }
+  w.document.write("<html><body style='text-align:center;padding:50px'>Chargement...</body></html>");
+  fetch("https://ccs-gc-logi.up.railway.app/api/clients/" + id + "/devis", { headers: { "Authorization": "Bearer " + tok } })
+    .then(function(r) { return r.text(); })
+    .then(function(h) { w.document.open(); w.document.write(h); w.document.close(); })
+    .catch(function(e) { w.document.write("<p style='color:red'>Erreur: " + e.message + "</p>"); });
 };
-window.ouvrirContrat = function(clientId) {
-  var tok = localStorage.getItem('simele_token') || '';
-  var win = window.open('', '_blank');
-  if (!win) { alert('Autorisez les popups'); return; }
-  win.document.write('<html><body style="text-align:center;padding:50px;font-family:Arial">Chargement du contrat...</body></html>');
-  fetch('https://ccs-gc-logi.up.railway.app/api/clients/' + clientId + '/contrat', { headers: { 'Authorization': 'Bearer ' + tok } })
-    .then(function(r){ return r.text(); })
-    .then(function(h){ win.document.open(); win.document.write(h); win.document.close(); })
-    .catch(function(e){ win.document.write('<p style="color:red">Erreur: '+e.message+'</p>'); });
+window.ouvrirContrat = function(id) {
+  var tok = localStorage.getItem("simele_token") || "";
+  var w = window.open("", "_blank");
+  if (!w) { alert("Autorisez les popups"); return; }
+  w.document.write("<html><body style='text-align:center;padding:50px'>Chargement...</body></html>");
+  fetch("https://ccs-gc-logi.up.railway.app/api/clients/" + id + "/contrat", { headers: { "Authorization": "Bearer " + tok } })
+    .then(function(r) { return r.text(); })
+    .then(function(h) { w.document.open(); w.document.write(h); w.document.close(); })
+    .catch(function(e) { w.document.write("<p style='color:red'>Erreur: " + e.message + "</p>"); });
 };
-window.genererDevis = window.ouvrirDevis;
-window.genererContrat = window.ouvrirContrat;
-</script>
-</body></html>');
-  fetch('https://ccs-gc-logi.up.railway.app/api/clients/' + clientId + '/devis', {
-    headers: { 'Authorization': 'Bearer ' + tok }
-  }).then(function(r) {
-    return r.text();
-  }).then(function(h) {
-    win.document.open();
-    win.document.write(h);
-    win.document.close();
-  }).catch(function(e) {
-    win.document.write('<html><body style="font-family:Arial;padding:30px;color:red"><h2>Erreur</h2><p>' + e.message + '</p></body></html>');
-  });
-};
-
-window.ouvrirContrat = function(clientId) {
-  var tok = localStorage.getItem('simele_token') || '';
-  var win = window.open('', '_blank');
-  if (!win) { alert('Autorisez les popups pour ce site'); return; }
-  win.document.write('<html><body style="font-family:Arial;text-align:center;padding:50px;color:#1b2d5b"><p>Chargement du contrat...</p></body></html>');
-  fetch('https://ccs-gc-logi.up.railway.app/api/clients/' + clientId + '/contrat', {
-    headers: { 'Authorization': 'Bearer ' + tok }
-  }).then(function(r) {
-    return r.text();
-  }).then(function(h) {
-    win.document.open();
-    win.document.write(h);
-    win.document.close();
-  }).catch(function(e) {
-    win.document.write('<html><body style="font-family:Arial;padding:30px;color:red"><h2>Erreur</h2><p>' + e.message + '</p></body></html>');
-  });
-};
-
-window.sauvegarderEntretien = function() {
-  var clientId = window.currentClientId;
-  if (!clientId) {
-    var el = document.querySelector('[data-client-id]');
-    if (el) clientId = el.getAttribute('data-client-id');
-  }
-  if (!clientId) { alert('Erreur : client non identifie'); return; }
-  var tok = localStorage.getItem('simele_token') || '';
-  var score = 0, profil = 'A qualifier', notes = '', situation = '', projet = '', besoins = '', recommandations = '', prochaine_etape = '';
-  var ids = ['entretien-score','score-total','scoring-total'];
-  for (var i=0;i<ids.length;i++) { var el=document.getElementById(ids[i]); if(el){score=parseInt(el.value||el.textContent||0);break;} }
-  var pids = ['entretien-profil','profil-select','profil-result'];
-  for (var i=0;i<pids.length;i++) { var el=document.getElementById(pids[i]); if(el){profil=el.value||el.textContent||profil;break;} }
-  ['entretien-notes','notes-entretien','entretien-textarea'].forEach(function(id){var el=document.getElementById(id);if(el)notes=el.value;});
-  ['entretien-situation','situation-input'].forEach(function(id){var el=document.getElementById(id);if(el)situation=el.value;});
-  ['entretien-projet','projet-input'].forEach(function(id){var el=document.getElementById(id);if(el)projet=el.value;});
-  ['entretien-besoins','besoins-input'].forEach(function(id){var el=document.getElementById(id);if(el)besoins=el.value;});
-  ['entretien-recommandations','recommandations-input'].forEach(function(id){var el=document.getElementById(id);if(el)recommandations=el.value;});
-  ['entretien-prochaine-etape','prochaine-etape-input'].forEach(function(id){var el=document.getElementById(id);if(el)prochaine_etape=el.value;});
-  fetch('https://ccs-gc-logi.up.railway.app/api/clients/' + clientId + '/entretien', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
-    body: JSON.stringify({score:score,profil:profil,notes:notes,situation:situation,projet:projet,besoins:besoins,recommandations:recommandations,prochaine_etape:prochaine_etape})
-  }).then(function(r){return r.json();}).then(function(d){
-    if(d.success){
-      alert('Entretien sauvegarde avec succes !');
-      if(typeof chargerDossierClient==='function') chargerDossierClient(clientId);
-      else if(typeof afficherClient==='function') afficherClient(clientId);
-    } else { alert('Erreur: '+(d.error||'inconnue')); }
-  }).catch(function(e){alert('Erreur connexion: '+e.message);});
-};
-
 window.genererDevis = window.ouvrirDevis;
 window.genererContrat = window.ouvrirContrat;
 </script>
