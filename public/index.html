@@ -1663,29 +1663,7 @@ function afficherFicheEntretien(client) {
 }</script>
 
 <script>
-/* CRM SIMELE - fonctions globales */
-window.ouvrirDevis = function(id) {
-  var tok = localStorage.getItem("simele_token") || "";
-  var w = window.open("", "_blank");
-  if (!w) { alert("Autorisez les popups"); return; }
-  w.document.write("<html><body style='text-align:center;padding:50px'>Chargement...</body></html>");
-  fetch("https://ccs-gc-logi.up.railway.app/api/clients/" + id + "/devis", { headers: { "Authorization": "Bearer " + tok } })
-    .then(function(r) { return r.text(); })
-    .then(function(h) { w.document.open(); w.document.write(h); w.document.close(); })
-    .catch(function(e) { w.document.write("<p style='color:red'>Erreur: " + e.message + "</p>"); });
-};
-window.ouvrirContrat = function(id) {
-  var tok = localStorage.getItem("simele_token") || "";
-  var w = window.open("", "_blank");
-  if (!w) { alert("Autorisez les popups"); return; }
-  w.document.write("<html><body style='text-align:center;padding:50px'>Chargement...</body></html>");
-  fetch("https://ccs-gc-logi.up.railway.app/api/clients/" + id + "/contrat", { headers: { "Authorization": "Bearer " + tok } })
-    .then(function(r) { return r.text(); })
-    .then(function(h) { w.document.open(); w.document.write(h); w.document.close(); })
-    .catch(function(e) { w.document.write("<p style='color:red'>Erreur: " + e.message + "</p>"); });
-};
-window.genererDevis = window.ouvrirDevis;
-window.genererContrat = window.ouvrirContrat;
+window.ouvrirDevis=function(id){var t=localStorage.getItem("simele_token")||"";var w=window.open("","_blank");if(!w){alert("Autorisez les popups pour ccs-gc-logi.up.railway.app");return;}w.document.write("<html><body style='font-family:Arial;text-align:center;padding:50px;color:#1b2d5b'>Chargement du devis...</body></html>");fetch("https://ccs-gc-logi.up.railway.app/api/clients/"+id+"/devis",{headers:{"Authorization":"Bearer "+t}}).then(function(r){return r.text();}).then(function(h){w.document.open();w.document.write(h);w.document.close();}).catch(function(e){w.document.write("<p style='color:red'>"+e.message+"</p>");});};window.ouvrirContrat=function(id){var t=localStorage.getItem("simele_token")||"";var w=window.open("","_blank");if(!w){alert("Autorisez les popups pour ccs-gc-logi.up.railway.app");return;}w.document.write("<html><body style='font-family:Arial;text-align:center;padding:50px;color:#1b2d5b'>Chargement du contrat...</body></html>");fetch("https://ccs-gc-logi.up.railway.app/api/clients/"+id+"/contrat",{headers:{"Authorization":"Bearer "+t}}).then(function(r){return r.text();}).then(function(h){w.document.open();w.document.write(h);w.document.close();}).catch(function(e){w.document.write("<p style='color:red'>"+e.message+"</p>");});};window.genererDevis=window.ouvrirDevis;window.genererContrat=window.ouvrirContrat;
 </script>
 </body>
 </html>
