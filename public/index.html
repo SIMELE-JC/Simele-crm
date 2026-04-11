@@ -1641,26 +1641,30 @@ async async function sauvegarderEntretien() {
 
 <script>
 function afficherFicheEntretien(client) {
-  const container = document.getElementById('fiche-entretien-container') || document.getElementById('entretien-display');
-  if (!container || !client.notes_entretien) return;
-  try {
-    const fiche = JSON.parse(client.notes_entretien);
-    container.innerHTML = `
-      <div style="background:#f0f4f8;border-radius:8px;padding:1.5rem;margin-top:1rem">
-        <h4 style="margin:0 0 1rem;color:#1b2d5b;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px">📋 Fiche d'entretien du ${fiche.date||''}</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;font-size:0.85rem">
-          <div><strong>Score :</strong> ${fiche.score||0}/30</div>
-          <div><strong>Profil :</strong> ${fiche.profil||'—'}</div>
-          ${fiche.situation?'<div style="grid-column:1/-1"><strong>Situation :</strong> '+fiche.situation+'</div>':''}
-          ${fiche.projet?'<div style="grid-column:1/-1"><strong>Projet :</strong> '+fiche.projet+'</div>':''}
-          ${fiche.besoins?'<div style="grid-column:1/-1"><strong>Besoins :</strong> '+fiche.besoins+'</div>':''}
-          ${fiche.recommandations?'<div style="grid-column:1/-1"><strong>Recommandations :</strong> '+fiche.recommandations+'</div>':''}
-          ${fiche.prochaine_etape?'<div style="grid-column:1/-1"><strong>Prochaine étape :</strong> '+fiche.prochaine_etape+'</div>':''}
-          ${fiche.notes?'<div style="grid-column:1/-1"><strong>Notes :</strong> '+fiche.notes+'</div>':''}
-        </div>
-      </div>`;
-  } catch(e) { console.log('Fiche entretien parse error:', e); }
-}</script>
+  var container = document.getElementById("fiche-entretien-display");
+  if (!container) return;
+  if (!client || !client.date_entretien) {
+    container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;font-size:13px">Aucun entretien enregistre</div>';
+    return;
+  }
+  var scoreColor = client.score_entretien >= 70 ? "#2ecc71" : client.score_entretien >= 40 ? "#f39c12" : "#e74c3c";
+  var html = '<div style="background:#f8f9fa;border-radius:8px;padding:20px;border-left:4px solid ' + scoreColor + '">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">' +
+    '<h4 style="margin:0;color:#1b2d5b;font-size:14px">Entretien du ' + (client.date_entretien || "N/A") + '</h4>' +
+    '<span style="background:' + scoreColor + ';color:white;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600">Score : ' + (client.score_entretien || 0) + '/100</span>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">' +
+    (client.profil_entretien ? '<div><strong>Profil :</strong> ' + client.profil_entretien + '</div>' : '') +
+    (client.situation ? '<div><strong>Situation :</strong> ' + client.situation + '</div>' : '') +
+    (client.projet ? '<div style="grid-column:1/-1"><strong>Projet :</strong> ' + client.projet + '</div>' : '') +
+    (client.besoins ? '<div style="grid-column:1/-1"><strong>Besoins :</strong> ' + client.besoins + '</div>' : '') +
+    (client.recommandations ? '<div style="grid-column:1/-1"><strong>Recommandations :</strong> ' + client.recommandations + '</div>' : '') +
+    (client.prochaine_etape ? '<div style="grid-column:1/-1"><strong>Prochaine etape :</strong> ' + client.prochaine_etape + '</div>' : '') +
+    (client.notes_entretien ? '<div style="grid-column:1/-1"><strong>Notes :</strong> ' + client.notes_entretien + '</div>' : '') +
+    '</div></div>';
+  container.innerHTML = html;
+}
+</script>
 
 <script>
 window.ouvrirDevis=function(id){var t=localStorage.getItem("simele_token")||"";var w=window.open("","_blank");if(!w){alert("Autorisez les popups pour ccs-gc-logi.up.railway.app");return;}w.document.write("<html><body style='font-family:Arial;text-align:center;padding:50px;color:#1b2d5b'>Chargement du devis...</body></html>");fetch("https://ccs-gc-logi.up.railway.app/api/clients/"+id+"/devis",{headers:{"Authorization":"Bearer "+t}}).then(function(r){return r.text();}).then(function(h){w.document.open();w.document.write(h);w.document.close();}).catch(function(e){w.document.write("<p style='color:red'>"+e.message+"</p>");});};window.ouvrirContrat=function(id){var t=localStorage.getItem("simele_token")||"";var w=window.open("","_blank");if(!w){alert("Autorisez les popups pour ccs-gc-logi.up.railway.app");return;}w.document.write("<html><body style='font-family:Arial;text-align:center;padding:50px;color:#1b2d5b'>Chargement du contrat...</body></html>");fetch("https://ccs-gc-logi.up.railway.app/api/clients/"+id+"/contrat",{headers:{"Authorization":"Bearer "+t}}).then(function(r){return r.text();}).then(function(h){w.document.open();w.document.write(h);w.document.close();}).catch(function(e){w.document.write("<p style='color:red'>"+e.message+"</p>");});};window.genererDevis=window.ouvrirDevis;window.genererContrat=window.ouvrirContrat;
