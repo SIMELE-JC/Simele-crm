@@ -1,18 +1,18 @@
 process.on('uncaughtException', (err) => {
-  console.error('💥 CRASH:', err.message);
+  console.error('💥 CRASH :', err.message);
   console.error(err.stack);
 });
 
 process.on('unhandledRejection', (err) => {
-  console.error('💥 REJECTION:', err);
+  console.error('💥 REJET :', err);
 });
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
+const casque = require('casque');
 const morgan = require('morgan');
-const path = require('path');
+const chemin = require('chemin');
 const rateLimit = require('express-rate-limit');
 
 const { initDB } = require('./db');
@@ -32,10 +32,10 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb' }));
 app.use(morgan('dev'));
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' }
+const authLimiter = tauxLimit({
+  fenêtreMs : 15 * 60 * 1000,
+  max : 20,
+  message : { erreur : 'Trop de tentatives. Réessayez dans 15 minutes.' }
 });
 
 app.use('/api/auth', authLimiter, authRouter);
@@ -49,7 +49,7 @@ app.get('/api/health', (req, res) => {
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+  si (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../public/index.html'));
   }
 });
@@ -59,5 +59,5 @@ initDB();
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ SIMELE CRM démarré sur le port ${PORT}`);
   console.log(`🌐 Environnement : ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📝 Portail client : /api/portal`);
+  console.log(`📝Client Portail : /api/portal`);
 });
