@@ -1721,15 +1721,9 @@ async function validerInscription(id, nom) {
   const data = await API.post(`/portal/valider/${id}`, {});
   if (!data) return;
 
-  // Afficher les identifiants générés
-  const msg = `✅ Espace client créé !\n\n` +
-    `Identifiant : ${data.identifiant}\n` +
-    `Mot de passe temporaire : ${data.tempPassword}\n\n` +
-    `⚠️ Notez ces informations et transmettez-les au client par email.\n` +
-    `Ce mot de passe n'est affiché qu'une seule fois.`;
-  alert(msg);
+  // Email envoyé automatiquement au client
 
-  showToast(`Espace client créé — ${data.identifiant}`, true);
+  showToast(`✅ Espace créé — Email envoyé au client (${data.identifiant})`, true);
   await loadNouveauxClients();
 }
 
