@@ -618,18 +618,27 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
         <div class="card">
           <div class="card-title">Générer un document</div>
           <div class="form-group" style="margin-bottom:12px"><div class="form-label">Client</div>
-            <select class="form-select" id="doc-client-select"></select>
+            <select class="form-select" id="doc-client-select" onchange="loadClientForDoc()"></select>
           </div>
-          <div style="font-size:10.5px;color:var(--gray500);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Choisir un modèle</div>
-          <div class="tpl-item" onclick="genDoc('Contrat coaching 3 séances','210€')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat coaching 3 séances</div><div class="tpl-desc">Coaching stratégique · 210€</div></div></div>
-          <div class="tpl-item" onclick="genDoc('Contrat coaching 5 séances','320€')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat coaching 5 séances</div><div class="tpl-desc">Coaching stratégique · 320€</div></div></div>
-          <div class="tpl-item" onclick="genDoc('Contrat mandat accompagnement','Sur devis')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat mandat d'accompagnement</div><div class="tpl-desc">Business plan / Financement / Pack</div></div></div>
-          <div class="tpl-item" onclick="genDoc('Programme coaching 3 séances','Inclus')"><div class="tpl-icon" style="background:var(--blue-light);color:var(--blue)">DOC</div><div><div class="tpl-name">Programme coaching 3 séances</div><div class="tpl-desc">Document remis au client</div></div></div>
-          <div class="tpl-item" onclick="genDoc('Devis prestation','À compléter')"><div class="tpl-icon" style="background:#d4edda;color:var(--green-dark)">PDF</div><div><div class="tpl-name">Devis personnalisé</div><div class="tpl-desc">Toutes prestations</div></div></div>
-          <div class="gen-result" id="gen-result">
-            <div class="gen-result-title" id="gen-title">Document généré</div>
-            <div class="gen-result-desc" id="gen-desc">Les données client ont été intégrées automatiquement.</div>
-            <div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm">Exporter PDF</button><button class="btn btn-sm">Prévisualiser</button></div>
+          <div style="font-size:10.5px;color:var(--gray500);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Contrats</div>
+          <div class="tpl-item" onclick="genDoc('contrat3')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat coaching 3 séances</div><div class="tpl-desc">Coaching stratégique · 210€</div></div></div>
+          <div class="tpl-item" onclick="genDoc('contrat5')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat coaching 5 séances</div><div class="tpl-desc">Coaching stratégique · 320€</div></div></div>
+          <div class="tpl-item" onclick="genDoc('contratMandat')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat mandat d'accompagnement</div><div class="tpl-desc">Business plan / Financement / Pack</div></div></div>
+          <div style="font-size:10.5px;color:var(--gray500);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Fiches & Trames</div>
+          <div class="tpl-item" onclick="genDoc('ficheEntretien')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Fiche entretien initial</div><div class="tpl-desc">1h · Qualification client</div></div></div>
+          <div class="tpl-item" onclick="genDoc('ficheDiag')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Fiche diagnostic projet</div><div class="tpl-desc">1h30 · Analyse approfondie</div></div></div>
+          <div class="tpl-item" onclick="genDoc('trameDiag')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Trame diagnostic 1h30</div><div class="tpl-desc">Structure complète à suivre</div></div></div>
+          <div class="tpl-item" onclick="genDoc('trameRdv')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Trame RDV initial 1h</div><div class="tpl-desc">Structure entretien de prise en charge</div></div></div>
+          <div style="font-size:10.5px;color:var(--gray500);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Programmes & Tarifs</div>
+          <div class="tpl-item" onclick="genDoc('programme3')"><div class="tpl-icon" style="background:#e8f5e9;color:#2e7d32">DOC</div><div><div class="tpl-name">Programme coaching 3 séances</div><div class="tpl-desc">Document remis au client</div></div></div>
+          <div class="tpl-item" onclick="genDoc('tarifs')"><div class="tpl-icon" style="background:#fff3e0;color:#e65100">PDF</div><div><div class="tpl-name">Fiche tarifs & services</div><div class="tpl-desc">Toutes prestations</div></div></div>
+          <div id="gen-result" class="gen-result" style="display:none;margin-top:12px">
+            <div class="gen-result-title" id="gen-title"></div>
+            <div class="gen-result-desc" id="gen-desc"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn-primary btn-sm" onclick="exportDocPDF()">Exporter PDF</button>
+              <button class="btn btn-sm" onclick="previewDocPDF()">Prévisualiser</button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -637,8 +646,6 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
           <div id="docs-recent-list"></div>
         </div>
       </div>
-    </div>
-
     <!-- ===== IA ===== -->
     <div id="page-ia" style="display:none">
       <div class="ia-layout">
@@ -1270,14 +1277,379 @@ function renderDocsPage() {
   }
 }
 
-function genDoc(name, price) {
-  const sel = document.getElementById('doc-client-select');
-  const clientName = sel ? sel.options[sel.selectedIndex]?.text : '';
-  document.getElementById('gen-title').textContent = name+' — généré';
-  document.getElementById('gen-desc').textContent = 'Client : '+clientName+'. Prix : '+price+'. Prêt à exporter en PDF.';
-  document.getElementById('gen-result').classList.add('show');
-  showToast('Document "'+name+'" généré pour '+clientName, true);
+function loadClientForDoc() {
+  // Chargé automatiquement depuis la liste clients
 }
+
+var _docClient = null;
+var _docTpl = null;
+
+async function genDoc(tplId) {
+  const sel = document.getElementById('doc-client-select');
+  const clientId = sel ? sel.value : '';
+  const clientName = sel ? sel.options[sel.selectedIndex]?.text : '';
+  if (!clientId) { showToast('Sélectionnez un client', false); return; }
+
+  // Charger les données du client
+  const data = await API.get('/clients/' + clientId);
+  if (!data) return;
+  _docClient = data;
+  _docTpl = tplId;
+
+  const tplNames = {
+    contrat3: 'Contrat coaching 3 séances',
+    contrat5: 'Contrat coaching 5 séances',
+    contratMandat: "Contrat mandat d'accompagnement",
+    ficheEntretien: 'Fiche entretien initial',
+    ficheDiag: 'Fiche diagnostic projet',
+    trameDiag: 'Trame diagnostic 1h30',
+    trameRdv: 'Trame RDV initial 1h',
+    programme3: 'Programme coaching 3 séances',
+    tarifs: 'Fiche tarifs & services'
+  };
+
+  document.getElementById('gen-title').textContent = (tplNames[tplId]||tplId) + ' — prêt';
+  document.getElementById('gen-desc').textContent = 'Client : ' + clientName + '. Données préremplies.';
+  document.getElementById('gen-result').style.display = '';
+  showToast('Document prêt pour ' + clientName, true);
+}
+
+function buildDocHTML(tplId, client) {
+  const today = new Date().toLocaleDateString('fr-FR');
+  const nom = client.nom || '___';
+  const prenom = client.prenom || '___';
+  const email = client.email || '___';
+  const tel = client.tel || '___';
+  const adresse = client.adresse || '___';
+  const projet = client.projet || '___';
+  const prestation = client.prestation || '___';
+
+  const header = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid #1a365d">
+    <div style="background:#1a365d;color:#fff;width:52px;height:52px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0">CS</div>
+    <div><div style="font-size:1.1rem;font-weight:700;color:#1a365d">Cabinet de Conseils SIMELE</div>
+    <div style="font-size:.82rem;color:#6b7280">20 lotissement Tolbiac 1, 97114 Trois-Rivières · ccs.guadeloupe@outlook.fr</div></div>
+  </div>`;
+
+  const contratBase = (seances, prix) => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:14px;line-height:1.6}
+  h1{font-size:1.5rem;color:#1a365d;text-align:center;margin-bottom:8px}h2{font-size:1rem;color:#1a365d;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin-top:24px}
+  .parties{background:#f9fafb;padding:16px;border-radius:8px;margin:20px 0}.field{border-bottom:1px solid #374151;display:inline-block;min-width:200px}
+  .sign-box{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}.sign-area{border-top:1px solid #374151;padding-top:8px;min-height:80px}
+  @media print{body{margin:0}}</style></head><body>
+  ${header}
+  <h1>Contrat de prestation de services</h1>
+  <div style="text-align:center;color:#6b7280;margin-bottom:24px">Coaching stratégique — ${seances} séances</div>
+  <h2>Entre les soussignés</h2>
+  <div class="parties"><strong>Cabinet de Conseils SIMELE</strong><br>
+  Représenté par Jean-Christophe Simele<br>SIRET : 92787546800039<br>
+  Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières<br>
+  <em>Ci-après dénommé "Le Prestataire"</em></div>
+  <div class="parties">Nom / Prénom : <strong>${prenom} ${nom}</strong><br>
+  Email : ${email} · Tél : ${tel}<br>Adresse : ${adresse}<br>
+  <em>Ci-après dénommé "Le Client"</em></div>
+  <h2>Article 1 – Objet du contrat</h2>
+  <p>Le présent contrat a pour objet la réalisation d'une prestation d'accompagnement à la création et à la structuration de projet entrepreneurial. Le prestataire s'engage à accompagner le client dans le cadre d'un coaching comprenant <strong>${seances} séances</strong>, visant à structurer, sécuriser et optimiser son projet.</p>
+  <h2>Article 2 – Description de la prestation</h2>
+  <p>La prestation comprend : un accompagnement en <strong>${seances} séances</strong>, une durée estimée de 2h30 à 3h par séance, des échanges personnalisés adaptés au projet du client.</p>
+  <p>Projet du client : ${projet}</p>
+  <h2>Article 3 – Engagement du prestataire</h2>
+  <p>Le prestataire s'engage à fournir un accompagnement professionnel et personnalisé, apporter des conseils adaptés à la situation du client, et mettre en oeuvre tous les moyens nécessaires. Le prestataire est tenu à une obligation de moyens et non de résultat.</p>
+  <h2>Article 4 – Engagement du client</h2>
+  <p>Le client s'engage à fournir des informations sincères et complètes, être actif et impliqué dans la démarche, et respecter les rendez-vous fixés.</p>
+  <h2>Article 5 – Tarifs et modalités de paiement</h2>
+  <p>Le montant de la prestation est fixé à : <strong>${prix}</strong><br>
+  ☐ Paiement comptant &nbsp;&nbsp; ☐ Paiement en plusieurs fois</p>
+  <h2>Article 6 – Annulation / Report</h2>
+  <p>Toute séance annulée moins de 24h à l'avance pourra être considérée comme due. Un report peut être envisagé d'un commun accord.</p>
+  <h2>Article 7 – Confidentialité</h2>
+  <p>Les parties s'engagent à une stricte confidentialité concernant les informations personnelles du client, les données liées au projet, et les méthodes et outils du prestataire.</p>
+  <h2>Article 8 – Acceptation</h2>
+  <p>Fait à Trois-Rivières, le ${today}</p>
+  <div class="sign-box">
+    <div class="sign-area"><strong>Signature du Client</strong><br><em>(Lu et approuvé)</em></div>
+    <div class="sign-area"><strong>Signature du Prestataire</strong><br>Jean-Christophe Simele</div>
+  </div></body></html>`;
+
+  const templates = {
+    contrat3: () => contratBase('3', '210€'),
+    contrat5: () => contratBase('5', '320€'),
+
+    contratMandat: () => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:14px;line-height:1.6}
+    h1{font-size:1.5rem;color:#1a365d;text-align:center;margin-bottom:8px}h2{font-size:1rem;color:#1a365d;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin-top:24px}
+    .parties{background:#f9fafb;padding:16px;border-radius:8px;margin:20px 0}.check{margin:4px 0}
+    .sign-box{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}.sign-area{border-top:1px solid #374151;padding-top:8px;min-height:80px}
+    @media print{body{margin:0}}</style></head><body>
+    ${header}
+    <h1>Contrat de prestation de services</h1>
+    <div style="text-align:center;color:#6b7280;margin-bottom:24px">Mandat d'accompagnement</div>
+    <h2>Entre les soussignés</h2>
+    <div class="parties"><strong>Cabinet de Conseils SIMELE</strong><br>Représenté par Jean-Christophe Simele<br>SIRET : 92787546800039<br>Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières<br><em>Ci-après dénommé "Le Prestataire"</em></div>
+    <div class="parties">Nom / Prénom : <strong>${prenom} ${nom}</strong><br>Email : ${email} · Tél : ${tel}<br>Adresse : ${adresse}<br><em>Ci-après dénommé "Le Client"</em></div>
+    <h2>Article 1 – Objet du contrat</h2>
+    <p>Prestation envisagée : <strong>${prestation}</strong></p>
+    <div class="check">☐ Business plan &nbsp; ☐ Prévisionnel financier &nbsp; ☐ Dossier de financement &nbsp; ☐ Dossier de subvention</div>
+    <div class="check">☐ Pack (préciser) : _______________ &nbsp; ☐ Autre : _______________</div>
+    <p>Le prestataire est mandaté pour accompagner le client dans la structuration, la préparation et/ou la réalisation de son projet entrepreneurial : ${projet}</p>
+    <h2>Article 2 – Nature de la mission</h2>
+    <p>Le prestataire pourra être amené à collecter et analyser les informations du client, rédiger des documents (business plan, dossiers de financement), effectuer des démarches administratives, et être en relation avec des organismes tiers.</p>
+    <div class="check">☐ Le prestataire agit en qualité de conseil uniquement</div>
+    <div class="check">☐ Le prestataire agit en qualité de mandataire avec autorisation du client</div>
+    <h2>Article 3 – Durée de la mission</h2>
+    <p>La mission débute le : ${today} &nbsp;&nbsp; Durée estimée : _______________</p>
+    <h2>Article 4 – Tarifs et modalités de paiement</h2>
+    <p>Montant de la prestation : _______________ €<br>
+    ☐ Paiement comptant &nbsp; ☐ Paiement en ___ fois &nbsp; ☐ Acompte de ___% &nbsp; ☐ Success fee : ___% du financement obtenu</p>
+    <h2>Article 5 – Confidentialité & Responsabilité</h2>
+    <p>Les parties s'engagent à une stricte confidentialité. Le client reste seul responsable des décisions prises. Le prestataire ne garantit pas l'obtention de financements.</p>
+    <h2>Article 6 – Acceptation</h2>
+    <p>Fait à Trois-Rivières, le ${today}</p>
+    <div class="sign-box">
+      <div class="sign-area"><strong>Signature du Client</strong><br><em>(Lu et approuvé)</em></div>
+      <div class="sign-area"><strong>Signature du Prestataire</strong><br>Jean-Christophe Simele</div>
+    </div></body></html>`,
+
+    ficheEntretien: () => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:14px;line-height:1.6}
+    h2{font-size:.95rem;color:#1a365d;background:#f0f4ff;padding:6px 12px;border-left:4px solid #1a365d;margin:20px 0 8px}
+    .field{border-bottom:1px solid #374151;display:inline-block;min-width:180px;margin-left:4px}
+    .row{margin:6px 0}.check{display:inline;margin-right:16px}
+    .score{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+    .sc{border:1px solid #e5e7eb;border-radius:8px;padding:8px;text-align:center;font-size:.8rem}
+    @media print{body{margin:0}}</style></head><body>
+    ${header}
+    <h1 style="font-size:1.3rem;color:#1a365d;text-align:center;margin-bottom:4px">Fiche Entretien Initial</h1>
+    <div style="text-align:center;color:#6b7280;font-size:.85rem;margin-bottom:20px">Date : ${today}</div>
+    <h2>1. Identité</h2>
+    <div class="row">Nom : <strong>${nom}</strong> &nbsp;&nbsp; Prénom : <strong>${prenom}</strong></div>
+    <div class="row">Téléphone : <span class="field">${tel}</span> &nbsp;&nbsp; Email : <span class="field">${email}</span></div>
+    <div class="row">Situation : <span class="check">☐ Salarié(e)</span><span class="check">☐ Demandeur d'emploi</span><span class="check">☐ Entrepreneur</span></div>
+    <h2>2. Projet</h2>
+    <div class="row">Projet en une phrase : <span class="field" style="min-width:400px">${projet}</span></div>
+    <div class="row">Stade : <span class="check">☐ Idée</span><span class="check">☐ En cours</span><span class="check">☐ Lancé</span></div>
+    <h2>3. Objectif principal</h2>
+    <span class="check">☐ Création</span><span class="check">☐ Financement</span><span class="check">☐ Structuration</span><span class="check">☐ Autre : ________</span>
+    <h2>4. Situation actuelle</h2>
+    <span class="check">☐ Seul</span><span class="check">☐ Associé</span><span class="check">☐ Déjà entreprise</span>
+    <div class="row">Contraintes : <span class="check">☐ Financières</span><span class="check">☐ Temps</span><span class="check">☐ Autres : ________</span></div>
+    <h2>5. Financement (clé)</h2>
+    <div class="row">Budget estimé : <span class="field">________</span> &nbsp; Apport : <span class="field">________</span> &nbsp; Financement souhaité : <span class="field">________</span></div>
+    <span class="check">☐ Déjà démarché banque</span><span class="check">☐ Aucun contact</span>
+    <h2>6. Avancement</h2>
+    <span class="check">☐ Rien fait</span><span class="check">☐ Réflexion</span><span class="check">☐ Début structuration</span><span class="check">☐ Déjà avancé</span>
+    <h2>7. Motivation</h2>
+    <div class="row">Temps dispo/semaine : <span class="field">____</span> &nbsp; Échéance : <span class="field">________________</span></div>
+    <span class="check">☐ Actions déjà mises en place</span><span class="check">☐ Aucune action</span>
+    <h2>8. Capacité à investir</h2>
+    <span class="check">☐ Oui</span><span class="check">☐ Hésitant</span><span class="check">☐ Non</span>
+    <h2>9. Diagnostic express</h2>
+    <span class="check">☐ Flou</span><span class="check">☐ Structurable</span><span class="check">☐ Prêt</span>
+    <h2>10. Orientation</h2>
+    <span class="check">☐ Coaching</span><span class="check">☐ Pack Création</span><span class="check">☐ Pack Financement</span><span class="check">☐ À revoir</span>
+    <h2>Score rapide</h2>
+    <div class="score">
+      <div class="sc">Clarté<br><br>___/10</div>
+      <div class="sc">Faisabilité<br><br>___/10</div>
+      <div class="sc">Motivation<br><br>___/10</div>
+      <div class="sc">Budget<br><br>___/10</div>
+    </div>
+    <div style="text-align:right;margin-top:8px;font-weight:700">TOTAL : ___ /40</div>
+    </body></html>`,
+
+    ficheDiag: () => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:14px;line-height:1.6}
+    h2{font-size:.95rem;color:#1a365d;background:#f0f4ff;padding:6px 12px;border-left:4px solid #1a365d;margin:20px 0 8px}
+    .field{border-bottom:1px solid #374151;display:inline-block;min-width:200px;margin-left:4px}
+    .row{margin:6px 0}.check{display:inline;margin-right:16px}
+    .score{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+    .sc{border:1px solid #e5e7eb;border-radius:8px;padding:8px;text-align:center;font-size:.8rem}
+    @media print{body{margin:0}}</style></head><body>
+    ${header}
+    <h1 style="font-size:1.3rem;color:#1a365d;text-align:center;margin-bottom:4px">Fiche Diagnostic Projet (1h30)</h1>
+    <div style="text-align:center;color:#6b7280;font-size:.85rem;margin-bottom:20px">Client : ${prenom} ${nom} · ${today}</div>
+    <h2>1. Projet détaillé</h2>
+    <div class="row">Activité : <span class="field" style="min-width:400px">${projet}</span></div>
+    <div class="row">Cible : <span class="field" style="min-width:300px">________________</span></div>
+    <div class="row">Problème résolu : <span class="field" style="min-width:300px">________________</span></div>
+    <h2>2. Marché</h2>
+    <span class="check">☐ Identifié</span><span class="check">☐ Flou</span>
+    <div class="row">Concurrents : <span class="field">________________</span></div>
+    <h2>3. Modèle économique</h2>
+    <div class="row">Prix : <span class="field">________</span> &nbsp; Revenus estimés : <span class="field">________________</span></div>
+    <h2>4. Financier</h2>
+    <div class="row">Budget : <span class="field">________</span> &nbsp; Apport : <span class="field">________</span> &nbsp; Besoin : <span class="field">________</span></div>
+    <h2>5. Risques</h2>
+    <div class="row">Principaux freins : <span class="field" style="min-width:400px">________________</span></div>
+    <h2>6. Actions déjà faites</h2>
+    <span class="check">☐ Aucune</span><span class="check">☐ Quelques-unes</span><span class="check">☐ Avancé</span>
+    <h2>7. Motivation</h2>
+    <div class="row">Temps disponible : <span class="field">____</span> &nbsp; Engagement : <span class="check">☐ Fort</span><span class="check">☐ Moyen</span><span class="check">☐ Faible</span></div>
+    <h2>8. Synthèse & Recommandation</h2>
+    <div class="row">Points forts : <span class="field" style="min-width:350px">________________</span></div>
+    <div class="row">Points faibles : <span class="field" style="min-width:350px">________________</span></div>
+    <div class="row">Risques : <span class="field" style="min-width:350px">________________</span></div>
+    <div class="row" style="margin-top:12px">Recommandation : <span class="check">☐ Coaching</span><span class="check">☐ Pack Création</span><span class="check">☐ Pack Financement</span></div>
+    <h2>Score d'évaluation</h2>
+    <div class="score">
+      <div class="sc">Clarté du projet<br><br>___/10</div>
+      <div class="sc">Marché<br><br>___/10</div>
+      <div class="sc">Modèle éco<br><br>___/10</div>
+      <div class="sc">Faisabilité financière<br><br>___/10</div>
+      <div class="sc">Motivation<br><br>___/10</div>
+      <div class="sc">Capacité à payer<br><br>___/10</div>
+    </div>
+    <div style="text-align:right;margin-top:8px;font-weight:700">TOTAL : ___ /60 &nbsp;·&nbsp; 45+ = premium · 30–45 = standard · &lt;30 = à filtrer</div>
+    </body></html>`,
+
+    trameDiag: () => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:13px;line-height:1.6}
+    h2{font-size:.95rem;color:#1a365d;background:#f0f4ff;padding:6px 12px;border-left:4px solid #1a365d;margin:20px 0 8px}
+    .tblock{background:#f9fafb;border-radius:8px;padding:12px 16px;margin-bottom:12px}
+    .ttime{font-size:.8rem;color:#6b7280;float:right}
+    ul{margin:4px 0;padding-left:20px}li{margin:3px 0}
+    @media print{body{margin:0}}</style></head><body>
+    ${header}
+    <h1 style="font-size:1.3rem;color:#1a365d;text-align:center;margin-bottom:4px">Trame Diagnostic Projet (1h30)</h1>
+    <div style="text-align:center;color:#6b7280;font-size:.85rem;margin-bottom:20px">Client : ${prenom} ${nom} · ${today}</div>
+    <div class="tblock"><strong>1. Introduction & cadrage</strong><span class="ttime">5 min</span><br>
+    "On va analyser votre projet en profondeur pour identifier sa viabilité, ses points forts et les axes à travailler."</div>
+    <div class="tblock"><strong>2. Vision & projet détaillé</strong><span class="ttime">20 min</span><br>
+    Projet : <em>${projet}</em><br>
+    <ul><li>Pouvez-vous me présenter votre projet en détail ?</li><li>Quelle est votre vision à 1 an / 3 ans ?</li><li>Quelle valeur apportez-vous concrètement à vos clients ?</li><li>Pourquoi vous plutôt qu'un autre ?</li></ul></div>
+    <div class="tblock"><strong>3. Marché & positionnement</strong><span class="ttime">15 min</span><br>
+    <ul><li>Qui sont vos clients cibles ?</li><li>Avez-vous identifié vos concurrents ?</li><li>Qu'est-ce qui vous différencie ?</li><li>Comment comptez-vous trouver vos clients ?</li></ul></div>
+    <div class="tblock"><strong>4. Modèle économique</strong><span class="ttime">15 min</span><br>
+    <ul><li>Comment allez-vous générer du chiffre d'affaires ?</li><li>Quels sont vos prix ?</li><li>Avez-vous déjà testé votre offre ?</li><li>Combien de clients vous faut-il pour vivre ?</li></ul></div>
+    <div class="tblock"><strong>5. Analyse financière</strong><span class="ttime">15 min</span><br>
+    <ul><li>Quel budget global avez-vous estimé ?</li><li>Quel est votre besoin de financement ?</li><li>Avez-vous un apport ?</li><li>Avez-vous déjà construit un prévisionnel ?</li></ul></div>
+    <div class="tblock"><strong>6. Freins & risques</strong><span class="ttime">10 min</span><br>
+    <ul><li>Qu'est-ce qui pourrait faire échouer votre projet ?</li><li>Quels sont vos principaux doutes ?</li><li>Quels obstacles avez-vous déjà rencontrés ?</li></ul></div>
+    <div class="tblock"><strong>7. Motivation & capacité d'exécution</strong><span class="ttime">10 min</span><br>
+    <ul><li>Combien de temps êtes-vous prêt à investir chaque semaine ?</li><li>Qu'avez-vous déjà mis en place concrètement ?</li><li>Êtes-vous prêt à investir dans votre projet ?</li></ul></div>
+    <div class="tblock"><strong>8. Restitution + plan d'action</strong><span class="ttime">10 min</span><br>
+    Points forts : ________________________<br>Points faibles : ________________________<br>Risques : ________________________<br><br>
+    <strong>Orientation :</strong> ☐ Pack financement &nbsp; ☐ Pack création/coaching &nbsp; ☐ Coaching uniquement</div>
+    </body></html>`,
+
+    trameRdv: () => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:13px;line-height:1.6}
+    h2{font-size:.95rem;color:#1a365d;background:#f0f4ff;padding:6px 12px;border-left:4px solid #1a365d;margin:20px 0 8px}
+    .tblock{background:#f9fafb;border-radius:8px;padding:12px 16px;margin-bottom:12px}
+    .ttime{font-size:.8rem;color:#6b7280;float:right}
+    ul{margin:4px 0;padding-left:20px}li{margin:3px 0}
+    .eval{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+    .ev{border:1px solid #e5e7eb;border-radius:8px;padding:8px;text-align:center;font-size:.8rem}
+    @media print{body{margin:0}}</style></head><body>
+    ${header}
+    <h1 style="font-size:1.3rem;color:#1a365d;text-align:center;margin-bottom:4px">Trame RDV Initial (1h)</h1>
+    <div style="text-align:center;color:#6b7280;font-size:.85rem;margin-bottom:20px">Client : ${prenom} ${nom} · ${today}</div>
+    <div class="tblock"><strong>1. Accueil & cadrage</strong><span class="ttime">5 min</span><br>
+    "Je vais vous poser une série de questions pour bien comprendre votre projet et pouvoir vous orienter efficacement."</div>
+    <div class="tblock"><strong>2. Compréhension du projet</strong><span class="ttime">15 min</span><br>
+    Projet : <em>${projet}</em><br>
+    <ul><li>Quelle est votre idée de projet ?</li><li>Quel problème résout votre activité ?</li><li>À qui s'adresse votre offre ?</li><li>Qu'est-ce qui vous a donné envie de vous lancer ?</li></ul></div>
+    <div class="tblock"><strong>3. Situation actuelle</strong><span class="ttime">10 min</span><br>
+    <ul><li>Êtes-vous salarié, en recherche d'emploi ou déjà entrepreneur ?</li><li>Avez-vous des contraintes (financières, familiales, temps) ?</li><li>Travaillez-vous seul ou en équipe ?</li></ul></div>
+    <div class="tblock"><strong>4. Analyse financière & faisabilité</strong><span class="ttime">10 min</span><br>
+    <ul><li>Avez-vous estimé le coût de votre projet ?</li><li>Avez-vous un apport personnel ?</li><li>Cherchez-vous un financement ? Si oui, combien ?</li><li>Avez-vous déjà rencontré une banque ?</li></ul></div>
+    <div class="tblock"><strong>5. Motivation & écrémage</strong><span class="ttime">10 min</span><br>
+    <ul><li>Combien de temps êtes-vous prêt à consacrer chaque semaine ?</li><li>Quelle est votre échéance pour lancer ?</li><li>Quelles actions concrètes avez-vous déjà mises en place ?</li><li>Êtes-vous prêt à investir financièrement ?</li></ul></div>
+    <div class="tblock"><strong>6. Conclusion & orientation</strong><span class="ttime">10 min</span><br>
+    ☐ Client sérieux → Pack / Accompagnement<br>☐ Client intermédiaire → Coaching / RDV supplémentaires<br>☐ Client non prêt → Clarification préalable<br><br>
+    Notes : ________________________________________________</div>
+    <h2>Grille d'évaluation</h2>
+    <div class="eval">
+      <div class="ev">Clarté du projet<br><br>___/10</div>
+      <div class="ev">Faisabilité<br><br>___/10</div>
+      <div class="ev">Motivation<br><br>___/10</div>
+      <div class="ev">Capacité financière<br><br>___/10</div>
+    </div>
+    <div style="text-align:right;margin-top:8px;font-weight:700">TOTAL : ___ /40 &nbsp;·&nbsp; +30 = premium · 20–30 = coaching · -20 = à filtrer</div>
+    </body></html>`,
+
+    programme3: () => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:14px;line-height:1.7}
+    h1{font-size:1.5rem;color:#1a365d;text-align:center}h2{font-size:1.1rem;color:#1a365d;margin-top:28px;border-bottom:2px solid #1a365d;padding-bottom:4px}
+    h3{font-size:.95rem;color:#374151;text-decoration:underline;margin-top:16px}
+    ul{margin:6px 0;padding-left:22px}li{margin:4px 0}.intro{background:#f0f4ff;padding:16px;border-radius:8px;margin:16px 0;border-left:4px solid #1a365d}
+    @media print{body{margin:0}}</style></head><body>
+    ${header}
+    <h1>Programme d'accompagnement</h1>
+    <h1 style="font-size:1.2rem">Coaching stratégique (3 séances)</h1>
+    <p style="text-align:center;color:#6b7280">Client : ${prenom} ${nom} · ${today}</p>
+    <div class="intro"><strong>Introduction</strong><br>Cet accompagnement a pour objectif de structurer, sécuriser et optimiser votre projet de création d'activité. Chaque séance (2h30 à 3h) permet d'aborder des thématiques clés afin de vous apporter une vision claire, des outils concrets et un plan d'action adapté à votre situation.<br><br>Projet : <em>${projet}</em></div>
+    <h2>Séance 1 – Structuration du projet & environnement</h2>
+    <h3>Objectifs</h3>
+    <ul><li>Clarifier le projet et son positionnement</li><li>Définir une activité prioritaire</li><li>Comprendre l'environnement entrepreneurial</li></ul>
+    <h3>Points abordés</h3>
+    <ul><li>Analyse du projet et simplification</li><li>Identification de la cible client</li><li>Positionnement de l'offre</li><li>Présentation des statuts juridiques</li><li>Choix du régime adapté</li><li>Démarches de création (immatriculation, délais, obligations)</li></ul>
+    <h2>Séance 2 – Stratégie & dispositifs d'aide</h2>
+    <h3>Objectifs</h3>
+    <ul><li>Optimiser la création de l'activité</li><li>Identifier les dispositifs mobilisables</li><li>Structurer une stratégie de lancement</li></ul>
+    <h3>Points abordés</h3>
+    <ul><li>Identification des besoins financiers</li><li>Analyse des dispositifs adaptés à votre situation</li><li>Stratégie de lancement progressive</li><li>Organisation des premières étapes</li></ul>
+    <h2>Séance 3 – Structuration financière & projection</h2>
+    <h3>Objectifs</h3>
+    <ul><li>Structurer les bases financières du projet</li><li>Comprendre les attentes des financeurs</li><li>Sécuriser la viabilité du projet</li></ul>
+    <h3>Points abordés</h3>
+    <ul><li>Présentation des aides à la création</li><li>Introduction au prévisionnel</li><li>Structuration des prix et marges</li><li>Présentation des éléments attendus pour un financement</li></ul>
+    <div class="intro" style="margin-top:28px"><strong>À l'issue de cet accompagnement, vous disposerez de :</strong><ul>
+    <li>Un projet structuré et une stratégie claire</li>
+    <li>Les éléments nécessaires pour lancer votre activité</li>
+    <li>Gain de temps · Éviter les erreurs coûteuses · Sécuriser son lancement</li></ul></div>
+    </body></html>`,
+
+    tarifs: () => `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:14px;line-height:1.6}
+    h2{font-size:1rem;color:#1a365d;background:#1a365d;color:#fff;padding:8px 16px;border-radius:6px;margin-top:20px}
+    .pack{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+    .pack-title{font-weight:700;color:#1a365d;font-size:.95rem}.pack-price{float:right;color:#c9a84c;font-weight:700}
+    .pack-desc{font-size:.85rem;color:#6b7280;margin-top:4px}
+    ul{margin:4px 0;padding-left:18px}li{margin:3px 0;font-size:.88rem}
+    @media print{body{margin:0}}</style></head><body>
+    ${header}
+    <h1 style="font-size:1.4rem;color:#1a365d;text-align:center;margin-bottom:4px">Fiche Tarifs & Services</h1>
+    <div style="text-align:center;color:#6b7280;font-size:.85rem;margin-bottom:24px">Cabinet de Conseils SIMELE · Trois-Rivières, Guadeloupe</div>
+    <h2>Rendez-vous & Diagnostic</h2>
+    <div class="pack"><div class="pack-title">Rendez-vous de prise en charge <span class="pack-price">80€</span></div><div class="pack-desc">Analyse rapide du projet et orientation</div></div>
+    <div class="pack"><div class="pack-title">Diagnostic de projet (1h30) <span class="pack-price">120€ à 150€</span></div><div class="pack-desc">Analyse complète + plan d'action</div></div>
+    <h2>Coaching (apprendre à faire soi-même)</h2>
+    <div class="pack"><div class="pack-title">Pack 3 séances <span class="pack-price">210€</span></div><div class="pack-desc">Structuration du projet, méthodologie business plan, orientation financements</div></div>
+    <div class="pack"><div class="pack-title">Pack 5 séances <span class="pack-price">320€</span></div><div class="pack-desc">Accompagnement complet, autonomie du porteur</div></div>
+    <h2>Prestations à la carte</h2>
+    <div class="pack"><div class="pack-title">Business plan <span class="pack-price">500€ à 900€</span></div></div>
+    <div class="pack"><div class="pack-title">Prévisionnel financier <span class="pack-price">300€ à 600€</span></div></div>
+    <div class="pack"><div class="pack-title">Dossier de financement <span class="pack-price">500€ à 1 200€</span></div></div>
+    <div class="pack"><div class="pack-title">Dossier de subvention / aides <span class="pack-price">400€ à 1 000€</span></div></div>
+    <h2>Packs d'accompagnement</h2>
+    <div class="pack"><div class="pack-title">Pack ESSENTIEL <span class="pack-price">500€ à 800€</span></div><div class="pack-desc">Diagnostic · Orientation · Plan d'action · Mise en relation</div></div>
+    <div class="pack"><div class="pack-title">Pack CRÉATION <span class="pack-price">900€ à 1 500€</span></div><div class="pack-desc">Diagnostic complet · Business plan · Prévisionnel · Accompagnement</div></div>
+    <div class="pack"><div class="pack-title">Pack FINANCEMENT <span class="pack-price">1 500€ à 2 500€</span></div><div class="pack-desc">Business plan · Prévisionnel · Stratégie financement · Montage dossier · Préparation banque</div></div>
+    <div class="pack"><div class="pack-title">Pack ACCOMPAGNEMENT GLOBAL <span class="pack-price">2 000€ à 3 500€+</span></div><div class="pack-desc">Offre premium clé en main · Financement + subventions · Réseau d'experts · Suivi personnalisé</div></div>
+    <div class="pack"><div class="pack-title">Success fee (optionnel) <span class="pack-price">3% à 5%</span></div><div class="pack-desc">Rémunération au résultat sur le financement obtenu</div></div>
+    </body></html>`
+  };
+
+  return (templates[tplId] || (() => '<p>Template non trouvé</p>'))();
+}
+
+function exportDocPDF() {
+  if (!_docTpl || !_docClient) return;
+  const html = buildDocHTML(_docTpl, _docClient);
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => { w.focus(); w.print(); }, 500);
+}
+
+function previewDocPDF() {
+  if (!_docTpl || !_docClient) return;
+  const html = buildDocHTML(_docTpl, _docClient);
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
 
 // ===========================
 // IA
