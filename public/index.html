@@ -1,5 +1,12 @@
 <!DOCTYPE html>
 <html lang="fr">
+  <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a365d">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
 <head>
 
 <meta charset="UTF-8">
