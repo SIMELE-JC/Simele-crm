@@ -235,12 +235,12 @@ router.post('/changer-mot-de-passe', requirePortal, async (req, res) => {
     return res.status(400).json({ error: 'Minimum 6 caracteres requis.' });
   }
   try {
-    const client = db.prepare('SELECT * FROM portal_clients WHERE id = ?').get(req.user.id);
+    const client = db.prepare('SELECT * FROM portal_inscriptions WHERE id = ?').get(req.user.id);
     if (!client) return res.status(404).json({ error: 'Client introuvable.' });
     const ok = await bcrypt.compare(ancien_mdp, client.password_hash);
     if (!ok) return res.status(401).json({ error: 'Ancien mot de passe incorrect.' });
     const hash = await bcrypt.hash(nouveau_mdp, 10);
-    db.prepare('UPDATE portal_clients SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
+    db.prepare('UPDATE portal_inscriptions SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
     res.json({ success: true, message: 'Mot de passe mis a jour.' });
   } catch(e) {
     res.status(500).json({ error: e.message });
