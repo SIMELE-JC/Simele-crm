@@ -7,7 +7,53 @@ const fs      = require('fs');
 
 const { db } = require('../db');
 
+const nodemailer = require('nodemailer');
 const JWT_SECRET = process.env.JWT_SECRET || 'simele_secret_dev_changeme';
+
+async function sendEmailClient(destinataire, prenom, email, tempPassword) {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.office365.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER || 'ccs.guadeloupe@outlook.fr',
+        pass: process.env.SMTP_PASS
+      },
+      tls: { ciphers: 'SSLv3' }
+    });
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+      <div style="background:#1a365d;padding:20px;border-radius:8px 8px 0 0;text-align:center">
+        <h1 style="color:#fff;margin:0;font-size:1.4rem">Cabinet de Conseils SIMELE</h1>
+      </div>
+      <div style="background:#fff;padding:30px;border:1px solid #e8ecf4;border-top:none;border-radius:0 0 8px 8px">
+        <p style="font-size:1rem;color:#374151">Bonjour <strong>${prenom}</strong>,</p>
+        <p style="color:#374151">Votre espace client a bien été activé.</p>
+        <p style="color:#374151">Vous pouvez désormais y accéder à l'aide des identifiants provisoires suivants :</p>
+        <div style="background:#f0f4ff;border-left:4px solid #1a365d;padding:16px 20px;border-radius:4px;margin:20px 0">
+          <p style="margin:0 0 8px;color:#374151">🔐 <strong>Identifiant :</strong> ${email}</p>
+          <p style="margin:0;color:#374151">🔐 <strong>Mot de passe :</strong> <span style="font-family:monospace;background:#e8ecf4;padding:2px 8px;border-radius:4px">${tempPassword}</span></p>
+        </div>
+        <p style="color:#374151">Pour des raisons de sécurité, nous vous invitons à modifier votre mot de passe lors de votre première connexion.</p>
+        <p style="color:#374151">Cet espace sécurisé vous permettra de centraliser vos documents et de suivre l'avancement de votre projet.</p>
+        <div style="text-align:center;margin:24px 0">
+          <a href="https://www.ccsguadeloupe.fr" style="background:#1a365d;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold">Accéder à mon espace</a>
+        </div>
+        <p style="color:#6b7280;font-size:.9rem">Nous restons à votre disposition pour toute question.</p>
+        <p style="color:#6b7280;font-size:.9rem;margin:0"><strong>Cabinet de Conseils SIMELE</strong><br>Trois-Rivières, Guadeloupe<br>ccs.guadeloupe@outlook.fr</p>
+      </div>
+    </div>`;
+    await transporter.sendMail({
+      from: '"Cabinet SIMELE" <ccs.guadeloupe@outlook.fr>',
+      to: destinataire,
+      subject: 'Activation de votre espace client sécurisé',
+      html: html
+    });
+    console.log('Email envoyé à', destinataire);
+  } catch(e) {
+    console.error('Erreur email:', e.message);
+  }
+}
 
 function requireAdmin(req, res, next) {
   const header = req.headers.authorization;
@@ -101,6 +147,7 @@ router.post('/valider/:id', requireAdmin, async (req, res) => {
     }
     db.prepare("UPDATE portal_inscriptions SET statut='valide',identifiant=?,password_hash=?,client_id=?,validated_at=datetime('now') WHERE id=?")
       .run(identifiant, hash, clientId, req.params.id);
+    await sendEmailClient(insc.email, insc.prenom, insc.email, tempPassword);
     res.json({ success: true, identifiant, tempPassword, client_id: clientId });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
