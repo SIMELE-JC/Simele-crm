@@ -224,4 +224,28 @@ router.post('/commande', requirePortal, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// Changer mot de passe
+router.post('/changer-mot-de-passe', authPortal, async (req, res) => {
+  const { ancien_mdp, nouveau_mdp } = req.body;
+  if (!ancien_mdp || !nouveau_mdp) {
+    return res.status(400).json({ error: 'Les deux mots de passe sont requis.' });
+  }
+  if (nouveau_mdp.length < 6) {
+    return res.status(400).json({ error: 'Le nouveau mot de passe doit faire au moins 6 caractères.' });
+  }
+  try {
+    const db = getDb();
+    const client = db.prepare('SELECT * FROM portal_clients WHERE id = ?').get(req.user.id);
+    if (!client) return res.status(404).json({ error: 'Client introuvable.' });
+    const ok = await bcrypt.compare(ancien_mdp, client.password_hash);
+    if (!ok) return res.status(401).json({ error: 'Ancien mot de passe incorrect.' });
+    const hash = await bcrypt.hash(nouveau_mdp, 10);
+    db.prepare('UPDATE portal_clients SET password_hash = ? WHERE id = ?').run(hash, req.user.id);
+    res.json({ success: true, message: 'Mot de passe mis à jour.' });
+  } catch(e) {
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
 module.exports = router;
