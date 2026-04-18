@@ -290,6 +290,39 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
 </head>
 <body>
 
+<div id="login-screen" style="display:flex;">
+  <div style="background:white;border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:64px;height:64px;background:#0C2340;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <span style="color:#B8962E;font-size:22px;font-weight:700;font-family:Georgia,serif">CS</span>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:#0C2340">Cabinet SIMELE</div>
+      <div style="font-size:12px;color:#6C757D;margin-top:4px">Espace de gestion — Accès sécurisé</div>
+    </div>
+    <form onsubmit="handleLogin(event)">
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;font-weight:600;color:#495057;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Email</label>
+        <input id="login-email" type="email" required autocomplete="email"
+          style="width:100%;padding:10px 12px;border:1px solid #DEE2E6;border-radius:8px;font-size:14px;font-family:inherit;transition:border-color 0.15s"
+          placeholder="votre@email.fr">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;font-weight:600;color:#495057;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Mot de passe</label>
+        <input id="login-password" type="password" required autocomplete="current-password"
+          style="width:100%;padding:10px 12px;border:1px solid #DEE2E6;border-radius:8px;font-size:14px;font-family:inherit"
+          placeholder="••••••••">
+      </div>
+      <div id="login-error" style="color:#E74C3C;font-size:12px;min-height:18px;margin-bottom:10px"></div>
+      <button id="login-btn" type="submit"
+        style="width:100%;padding:11px;background:#B8962E;color:#0C2340;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.15s">
+        Se connecter
+      </button>
+    </form>
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:#ADB5BD">
+      Cabinet de Conseils SIMELE · Trois-Rivières, Guadeloupe
+    </div>
+  </div>
+</div>
 <div id="app-shell" style="display:none;">
 
 <!-- SIDEBAR -->
@@ -2356,39 +2389,7 @@ async function sauvegarderEntretien() {
 <!-- ===========================
      ÉCRAN DE CONNEXION
 =========================== -->
-<div id="login-screen" style="display:flex;">
-  <div style="background:white;border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-    <div style="text-align:center;margin-bottom:28px">
-      <div style="width:64px;height:64px;background:#0C2340;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-        <span style="color:#B8962E;font-size:22px;font-weight:700;font-family:Georgia,serif">CS</span>
-      </div>
-      <div style="font-size:18px;font-weight:700;color:#0C2340">Cabinet SIMELE</div>
-      <div style="font-size:12px;color:#6C757D;margin-top:4px">Espace de gestion — Accès sécurisé</div>
-    </div>
-    <form onsubmit="handleLogin(event)">
-      <div style="margin-bottom:14px">
-        <label style="font-size:11px;font-weight:600;color:#495057;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Email</label>
-        <input id="login-email" type="email" required autocomplete="email"
-          style="width:100%;padding:10px 12px;border:1px solid #DEE2E6;border-radius:8px;font-size:14px;font-family:inherit;transition:border-color 0.15s"
-          placeholder="votre@email.fr">
-      </div>
-      <div style="margin-bottom:8px">
-        <label style="font-size:11px;font-weight:600;color:#495057;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Mot de passe</label>
-        <input id="login-password" type="password" required autocomplete="current-password"
-          style="width:100%;padding:10px 12px;border:1px solid #DEE2E6;border-radius:8px;font-size:14px;font-family:inherit"
-          placeholder="••••••••">
-      </div>
-      <div id="login-error" style="color:#E74C3C;font-size:12px;min-height:18px;margin-bottom:10px"></div>
-      <button id="login-btn" type="submit"
-        style="width:100%;padding:11px;background:#B8962E;color:#0C2340;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background 0.15s">
-        Se connecter
-      </button>
-    </form>
-    <div style="text-align:center;margin-top:16px;font-size:11px;color:#ADB5BD">
-      Cabinet de Conseils SIMELE · Trois-Rivières, Guadeloupe
-    </div>
-  </div>
-</div>
+
 
 <script>
 function afficherFicheEntretien(client) {
