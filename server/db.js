@@ -158,4 +158,25 @@ function initDB() {
   console.log('Base de donnees initialisee:', DB_PATH);
 }
 
+
+// Table rendez-vous
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS rendez_vous (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_id   INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    date_rdv    TEXT    NOT NULL,
+    heure_rdv   TEXT    NOT NULL,
+    objet       TEXT    NOT NULL DEFAULT 'Entretien',
+    lieu        TEXT    DEFAULT 'En ligne',
+    statut      TEXT    NOT NULL DEFAULT 'confirme',
+    notes       TEXT    DEFAULT '',
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+  )`);
+} catch(e) { console.log('rdv table:', e.message); }
+
+// Colonne mot_de_passe_provisoire dans portal_inscriptions
+try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mot_de_passe_provisoire TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mdp_envoi_at TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN acces_actif INTEGER DEFAULT 0"); } catch(e) {}
+
 module.exports = { db, initDB };
