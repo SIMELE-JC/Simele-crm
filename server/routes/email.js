@@ -3,7 +3,7 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const bcryptjs = require('bcryptjs');
 const { requireAuth } = require('../middleware/auth');
-const { getDB } = require('../db');
+const db = require('../db');
 
 // Créer le transporteur SMTP Outlook
 function createTransporter() {
@@ -29,7 +29,7 @@ function genPassword() {
 
 // POST /api/email/send-acces — envoyer accès espace client (bouton manuel)
 router.post('/send-acces', requireAuth, function(req, res) {
-  var db = getDB();
+  
   var clientId = req.body.client_id;
   var client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
   if (!client) return res.status(404).json({ error: 'Client introuvable' });
@@ -85,7 +85,7 @@ router.post('/send-acces', requireAuth, function(req, res) {
 router.post('/send-acces-auto', requireAuth, function(req, res) {
   req.body.client_id = req.body.client_id;
   // Même logique que send-acces
-  var db = getDB();
+  
   var clientId = req.body.client_id;
   var client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
   if (!client || !client.email) return res.json({ success: false, reason: 'pas email' });
