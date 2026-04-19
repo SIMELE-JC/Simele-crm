@@ -647,38 +647,81 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
 
     <!-- ===== DOCUMENTS ===== -->
     <div id="page-docs" style="display:none">
-      <div class="docs-g">
-        <div class="card">
-          <div class="card-title">Générer un document</div>
-          <div class="form-group" style="margin-bottom:12px"><div class="form-label">Client</div>
-            <select class="form-select" id="doc-client-select" onchange="loadClientForDoc()"></select>
-          </div>
-          <div style="font-size:10.5px;color:var(--gray500);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Contrats</div>
-          <div class="tpl-item" onclick="genDoc('contrat3')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat coaching 3 séances</div><div class="tpl-desc">Coaching stratégique · 210€</div></div></div>
-          <div class="tpl-item" onclick="genDoc('contrat5')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat coaching 5 séances</div><div class="tpl-desc">Coaching stratégique · 320€</div></div></div>
-          <div class="tpl-item" onclick="genDoc('contratMandat')"><div class="tpl-icon" style="background:var(--red-light);color:var(--red-dark)">PDF</div><div><div class="tpl-name">Contrat mandat d'accompagnement</div><div class="tpl-desc">Business plan / Financement / Pack</div></div></div>
-          <div style="font-size:10.5px;color:var(--gray500);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Fiches & Trames</div>
-          <div class="tpl-item" onclick="genDoc('ficheEntretien')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Fiche entretien initial</div><div class="tpl-desc">1h · Qualification client</div></div></div>
-          <div class="tpl-item" onclick="genDoc('ficheDiag')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Fiche diagnostic projet</div><div class="tpl-desc">1h30 · Analyse approfondie</div></div></div>
-          <div class="tpl-item" onclick="genDoc('trameDiag')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Trame diagnostic 1h30</div><div class="tpl-desc">Structure complète à suivre</div></div></div>
-          <div class="tpl-item" onclick="genDoc('trameRdv')"><div class="tpl-icon" style="background:#e8f4fd;color:#1a6fa0">PDF</div><div><div class="tpl-name">Trame RDV initial 1h</div><div class="tpl-desc">Structure entretien de prise en charge</div></div></div>
-          <div style="font-size:10.5px;color:var(--gray500);font-weight:500;text-transform:uppercase;letter-spacing:0.4px;margin:12px 0 8px">Programmes & Tarifs</div>
-          <div class="tpl-item" onclick="genDoc('programme3')"><div class="tpl-icon" style="background:#e8f5e9;color:#2e7d32">DOC</div><div><div class="tpl-name">Programme coaching 3 séances</div><div class="tpl-desc">Document remis au client</div></div></div>
-          <div class="tpl-item" onclick="genDoc('tarifs')"><div class="tpl-icon" style="background:#fff3e0;color:#e65100">PDF</div><div><div class="tpl-name">Fiche tarifs & services</div><div class="tpl-desc">Toutes prestations</div></div></div>
-          <div id="gen-result" class="gen-result" style="display:none;margin-top:12px">
-            <div class="gen-result-title" id="gen-title"></div>
-            <div class="gen-result-desc" id="gen-desc"></div>
-            <div style="display:flex;gap:8px;margin-top:8px">
-              <button class="btn btn-primary btn-sm" onclick="exportDocPDF()">Exporter PDF</button>
-              <button class="btn btn-sm" onclick="previewDocPDF()">Prévisualiser</button>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Documents récents</div>
-          <div id="docs-recent-list"></div>
-        </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 id="docs-client-title" style="margin:0;font-size:20px;color:#1b2d5b">Documents</h2>
+      <p id="docs-client-sub" style="margin:4px 0 0;font-size:13px;color:var(--gray400)">Documents du client</p>
+    </div>
+    <button onclick="showPage('dossier')" style="background:none;border:1px solid #ddd;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:#666">&#8592; Retour au dossier</button>
+  </div>
+
+  <!-- Zone upload -->
+  <div style="background:white;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+    <h3 style="margin:0 0 16px;font-size:15px;font-weight:600;color:#1b2d5b">&#128228; Ajouter un document</h3>
+    <div onclick="document.getElementById('file-input-docs').click()"
+      style="border:2px dashed #c9a96e;border-radius:10px;padding:30px;text-align:center;cursor:pointer;background:white;transition:background 0.2s"
+      onmouseover="this.style.background='#fdf8f0'" onmouseout="this.style.background='white'">
+      <div style="font-size:36px;margin-bottom:8px">&#128193;</div>
+      <p style="margin:0;font-size:14px;color:#666">Cliquez ou glissez un fichier ici</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#999">PDF, Word, Excel, images — max 20 Mo</p>
+    </div>
+    <input type="file" id="file-input-docs" style="display:none" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt" onchange="window.uploadDocument(this)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Nom du document</label>
+        <input type="text" id="doc-nom" placeholder="Optionnel (garde le nom du fichier)"
+          style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
       </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Type</label>
+        <select id="doc-type" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
+          <option value="document">Document general</option>
+          <option value="devis">Devis</option>
+          <option value="contrat">Contrat</option>
+          <option value="facture">Facture</option>
+          <option value="rapport">Rapport / CR</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="doc-visible" checked> Visible par le client dans son espace
+      </label>
+    </div>
+    <div id="upload-progress" style="display:none;margin-top:10px">
+      <div style="background:#eee;border-radius:4px;height:6px">
+        <div id="upload-bar" style="background:#c9a96e;height:6px;border-radius:4px;width:0%;transition:width 0.3s"></div>
+      </div>
+      <p id="upload-status" style="font-size:12px;color:#666;margin:4px 0 0;text-align:center"></p>
+    </div>
+  </div>
+
+  <!-- Generateur devis/contrat -->
+  <div style="background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+    <h3 style="margin:0 0 12px;font-size:15px;font-weight:600;color:#1b2d5b">&#9889; Generer un document</h3>
+    <div style="display:flex;gap:12px">
+      <button onclick="window.genererDevis(window._currentDocsClientId)"
+        style="flex:1;background:#1b2d5b;color:white;border:none;border-radius:8px;padding:12px;cursor:pointer;font-size:13px;font-weight:600">
+        &#128196; Apercu devis
+      </button>
+      <button onclick="window.genererContrat(window._currentDocsClientId)"
+        style="flex:1;background:#c9a96e;color:white;border:none;border-radius:8px;padding:12px;cursor:pointer;font-size:13px;font-weight:600">
+        &#128221; Apercu contrat
+      </button>
+    </div>
+  </div>
+
+  <!-- Liste des documents -->
+  <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;font-size:15px;font-weight:600;color:#1b2d5b">&#128194; Documents du dossier</h3>
+      <button onclick="window.chargerDocuments()" style="background:none;border:none;color:#c9a96e;cursor:pointer;font-size:13px">&#8635; Actualiser</button>
+    </div>
+    <div id="docs-list-container">
+      <p style="text-align:center;color:#999;padding:20px;font-size:13px">Aucun client selectionne.</p>
+    </div>
+  </div>
+</div>
     <!-- ===== IA ===== -->
     <div id="page-ia" style="display:none">
       <div class="ia-layout">
@@ -1203,9 +1246,8 @@ function renderDossier(clientId) {
         </div>
 
         <div class="card">
-          <div class="card-title">Documents du dossier <button class="btn btn-sm" onclick="showPage('docs')">+ Générer</button></div>
-          <div style="font-size:11px;color:var(--gray400);padding:8px 0">Aucun document généré pour ce client.<br>Cliquez sur "+ Générer" pour créer un contrat ou un devis.</div>
-        </div>
+          <div class="card-title">Documents du dossier <button class="btn btn-sm" onclick="window.ouvrirDocs(${c.id})" style="background:#1b2d5b;color:white;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer">Voir les documents</button></div>
+        <div id="docs-preview-${c.id}" style="font-size:11px;color:var(--gray400);padding:8px 0">Cliquez sur "Voir les documents" pour accéder à l'onglet Documents de ce client.</div>
       </div>
     </div>
   `;
@@ -2420,6 +2462,146 @@ function afficherFicheEntretien(client) {
 
 <script>
 window.ouvrirDevis=function(id){var t=localStorage.getItem("simele_token")||"";var w=window.open("","_blank");if(!w){alert("Autorisez les popups pour ce site");return;}w.document.write("<html><body style='font-family:Arial;text-align:center;padding:50px;color:#1b2d5b'>Chargement du devis...</body></html>");fetch("/api/clients/"+id+"/devis",{headers:{"Authorization":"Bearer "+t}}).then(function(r){return r.text();}).then(function(h){w.document.open();w.document.write(h);w.document.close();}).catch(function(e){w.document.write("<p style='color:red'>"+e.message+"</p>");});};window.ouvrirContrat=function(id){var t=localStorage.getItem("simele_token")||"";var w=window.open("","_blank");if(!w){alert("Autorisez les popups pour ce site");return;}w.document.write("<html><body style='font-family:Arial;text-align:center;padding:50px;color:#1b2d5b'>Chargement du contrat...</body></html>");fetch("/api/clients/"+id+"/contrat",{headers:{"Authorization":"Bearer "+t}}).then(function(r){return r.text();}).then(function(h){w.document.open();w.document.write(h);w.document.close();}).catch(function(e){w.document.write("<p style='color:red'>"+e.message+"</p>");});};window.genererDevis=window.ouvrirDevis;window.genererContrat=window.ouvrirContrat;
+
+// =========================================
+// GESTION DOCUMENTS PAR CLIENT
+// =========================================
+window._currentDocsClientId = null;
+window._currentDocsClientNom = "";
+
+// Ouvrir l'onglet documents pour un client specifique
+window.ouvrirDocs = function(clientId) {
+  var client = window.clients ? window.clients.find(function(c){return c.id===clientId;}) : null;
+  window._currentDocsClientId = clientId;
+  if(client) {
+    var el = document.getElementById("docs-client-title");
+    var sub = document.getElementById("docs-client-sub");
+    if(el) el.textContent = "Documents — " + (client.prenom||"") + " " + (client.nom||"");
+    if(sub) sub.textContent = (client.email||"") + " · " + (client.prestation||"");
+  }
+  showPage("docs");
+  window.chargerDocuments();
+};
+
+// Charger la liste des documents du client courant
+window.chargerDocuments = function() {
+  var id = window._currentDocsClientId;
+  var container = document.getElementById("docs-list-container");
+  if(!id || !container) return;
+  var tok = localStorage.getItem("simele_token")||"";
+  container.innerHTML = "<p style='text-align:center;color:#999;padding:20px'>Chargement...</p>";
+  fetch("/api/documents/client/"+id, {headers:{"Authorization":"Bearer "+tok}})
+  .then(function(r){return r.json();})
+  .then(function(docs){
+    if(!docs.length) {
+      container.innerHTML = "<div style='text-align:center;padding:30px;color:#999'>" +
+        "<div style='font-size:48px;margin-bottom:12px'>&#128193;</div>" +
+        "<p style='font-size:14px'>Aucun document pour ce client.</p>" +
+        "<p style='font-size:12px'>Utilisez la zone ci-dessus pour ajouter un fichier.</p>" +
+        "</div>";
+      return;
+    }
+    var icons = {pdf:"&#128196;",doc:"&#128196;",docx:"&#128196;",xls:"&#128200;",xlsx:"&#128200;",jpg:"&#128247;",jpeg:"&#128247;",png:"&#128247;",gif:"&#128247;",txt:"&#128196;",devis:"&#128200;",contrat:"&#128221;",facture:"&#128180;",rapport:"&#128203;",document:"&#128193;"};
+    var typeColors = {devis:"#3498db",contrat:"#2ecc71",facture:"#e67e22",rapport:"#9b59b6",document:"#95a5a6"};
+    container.innerHTML = docs.map(function(doc) {
+      var ext = (doc.nom||"").split(".").pop().toLowerCase();
+      var icon = icons[ext]||icons[doc.type]||"&#128193;";
+      var color = typeColors[doc.type]||"#95a5a6";
+      var size = doc.taille > 0 ? (doc.taille > 1048576 ? (doc.taille/1048576).toFixed(1)+"Mo" : Math.round(doc.taille/1024)+"Ko") : "";
+      var visLabel = doc.visible_client ? "Visible client" : "Non visible";
+      var visColor = doc.visible_client ? "#2ecc71" : "#e74c3c";
+      return "<div style='display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #e8eaed;border-left:4px solid "+color+";border-radius:8px;margin-bottom:8px;background:white'>" +
+        "<div style='font-size:28px'>" + icon + "</div>" +
+        "<div style='flex:1;min-width:0'>" +
+          "<div style='font-weight:600;color:#1b2d5b;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" + (doc.nom||"Sans nom") + "</div>" +
+          "<div style='display:flex;gap:8px;margin-top:3px;flex-wrap:wrap'>" +
+            "<span style='font-size:11px;background:"+color+";color:white;padding:1px 8px;border-radius:10px'>" + (doc.type||"document") + "</span>" +
+            (size ? "<span style='font-size:11px;color:#999'>" + size + "</span>" : "") +
+            "<span style='font-size:11px;color:"+visColor+"'>" + visLabel + "</span>" +
+            "<span style='font-size:11px;color:#ccc'>" + (doc.created_at||"").substring(0,10) + "</span>" +
+          "</div>" +
+        "</div>" +
+        "<div style='display:flex;gap:6px;flex-shrink:0'>" +
+          "<button onclick='window.toggleVisDoc(" + doc.id + "," + (doc.visible_client?0:1) + ")' " +
+            "title='" + (doc.visible_client?"Masquer au client":"Rendre visible") + "' " +
+            "style='background:none;border:1px solid #ddd;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:13px'>&#128065;</button>" +
+          "<a href='/api/documents/" + doc.id + "/download' target='_blank' " +
+            "style='background:#1b2d5b;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;text-decoration:none;display:flex;align-items:center'>&#8681; Télécharger</a>" +
+          "<button onclick='window.supprimerDoc(" + doc.id + ")' " +
+            "style='background:none;border:1px solid #e74c3c;color:#e74c3c;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:13px'>&#128465;</button>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+  }).catch(function(e){ container.innerHTML = "<p style='color:#e74c3c;padding:20px'>Erreur: "+e.message+"</p>"; });
+};
+
+// Upload d'un fichier
+window.uploadDocument = function(input) {
+  if(!input.files || !input.files[0]) return;
+  var id = window._currentDocsClientId;
+  if(!id) { alert("Aucun client selectionne"); return; }
+  var file = input.files[0];
+  var nom = document.getElementById("doc-nom").value;
+  var type = document.getElementById("doc-type").value;
+  var visible = document.getElementById("doc-visible").checked ? "1" : "0";
+  var progress = document.getElementById("upload-progress");
+  var bar = document.getElementById("upload-bar");
+  var status = document.getElementById("upload-status");
+  if(progress) progress.style.display = "block";
+  if(status) status.textContent = "Envoi de " + file.name + "...";
+  if(bar) bar.style.width = "30%";
+  var fd = new FormData();
+  fd.append("fichier", file);
+  if(nom) fd.append("nom", nom);
+  fd.append("type", type);
+  fd.append("visible_client", visible);
+  var tok = localStorage.getItem("simele_token")||"";
+  fetch("/api/documents/client/"+id, {
+    method: "POST",
+    headers: {"Authorization": "Bearer "+tok},
+    body: fd
+  }).then(function(r){return r.json();})
+  .then(function(d){
+    if(bar) bar.style.width = "100%";
+    if(d.success) {
+      if(status) status.textContent = "Fichier ajouté avec succès !";
+      document.getElementById("doc-nom").value = "";
+      document.getElementById("doc-type").value = "document";
+      input.value = "";
+      setTimeout(function(){ if(progress) progress.style.display="none"; }, 2000);
+      window.chargerDocuments();
+    } else {
+      if(status) status.textContent = "Erreur: " + (d.error||"Echec upload");
+      if(status) status.style.color = "#e74c3c";
+    }
+  }).catch(function(e){
+    if(status) { status.textContent = "Erreur réseau: "+e.message; status.style.color="#e74c3c"; }
+  });
+};
+
+// Basculer visibilité client
+window.toggleVisDoc = function(docId, newVal) {
+  var tok = localStorage.getItem("simele_token")||"";
+  fetch("/api/documents/"+docId, {
+    method: "PUT",
+    headers: {"Content-Type":"application/json","Authorization":"Bearer "+tok},
+    body: JSON.stringify({visible_client: newVal})
+  }).then(function(r){return r.json();})
+  .then(function(d){ if(d.success) window.chargerDocuments(); })
+  .catch(function(e){ alert("Erreur: "+e.message); });
+};
+
+// Supprimer un document
+window.supprimerDoc = function(docId) {
+  if(!confirm("Supprimer ce document définitivement ? Cette action est irréversible.")) return;
+  var tok = localStorage.getItem("simele_token")||"";
+  fetch("/api/documents/"+docId, {
+    method: "DELETE",
+    headers: {"Authorization": "Bearer "+tok}
+  }).then(function(r){return r.json();})
+  .then(function(d){ if(d.success) window.chargerDocuments(); else alert("Erreur: "+(d.error||"Echec")); })
+  .catch(function(e){ alert("Erreur: "+e.message); });
+};
 </script>
 </body>
 </html>
