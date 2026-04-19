@@ -18,6 +18,7 @@ const rateLimit = require('express-rate-limit');
 const { initDB } = require('./db');
 const authRouter = require('./routes/auth');
 const clientsRouter = require('./routes/clients');
+const contratsRouter = require('./routes/contrats');
 const documentsRouter = require('./routes/documents');
 const rdvRouter = require('./routes/rdv');
 const emailRouter = require('./routes/email');
@@ -42,6 +43,7 @@ const authLimiter = rateLimit({
 
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/clients', requireAuth, clientsRouter);
+app.use('/api/contrats', requireAuth, contratsRouter);
 app.use('/api/documents', requireAuth, documentsRouter);
 app.use('/api/rdv', requireAuth, rdvRouter);
 app.use('/api/email', requireAuth, emailRouter);
