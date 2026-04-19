@@ -137,8 +137,8 @@ router.post('/prestation', requireAuth, function(req, res) {
       '<div class="partie">' +
       '<div class="partie-title">Le Client</div>' +
       '<strong>' + nomClient + '</strong><br>' +
-      (adresseClient ? adresseClient.replace(/
-/g,'<br>') : '<span style="color:#999">Adresse : _______________________</span>') +
+      (adresseClient ? adresseClient.split("\n").join(
+"<br>") : '<span style="color:#999">Adresse : _______________________</span>') +
       '</div></div>' +
       '<div class="article"><h2>Article 1 - Objet du contrat</h2>' +
       '<p>Le present contrat a pour objet la realisation de la prestation suivante :</p>' +
