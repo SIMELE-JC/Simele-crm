@@ -713,122 +713,227 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
   <!-- FORMULAIRE CONTRAT DE PRESTATION -->
   <div style="background:white;border-radius:12px;padding:24px;margin-top:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h3 style="margin:0;font-size:15px;font-weight:600;color:#1b2d5b">&#128221; Contrat de Prestation de Services</h3>
+      <div>
+        <h3 style="margin:0;font-size:15px;font-weight:600;color:#1b2d5b">&#128221; Contrat de Prestation de Services</h3>
+        <p style="margin:4px 0 0;font-size:12px;color:#999">Selectionner un service pour generer le contrat personnalise</p>
+      </div>
       <button onclick="document.getElementById('form-contrat-prestation').style.display=document.getElementById('form-contrat-prestation').style.display==='none'?'block':'none'"
-        style="background:none;border:1px solid #c9a96e;color:#c9a96e;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px">
-        Afficher / Masquer le formulaire
+        style="background:#1b2d5b;color:white;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600">
+        &#128196; Creer un contrat
       </button>
     </div>
     <div id="form-contrat-prestation" style="display:none">
 
-      <!-- Article 1 -->
-      <div style="margin-bottom:16px;padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
-        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 1 — Objet du contrat</p>
-        <p style="font-size:12px;color:#666;margin:0 0 8px">Cocher les prestations concernees :</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" name="prest_cp" value="Business plan"> Business plan</label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" name="prest_cp" value="Previsionnel financier"> Previsionnel financier</label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" name="prest_cp" value="Dossier de financement"> Dossier de financement</label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" name="prest_cp" value="Dossier de subvention"> Dossier de subvention</label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" name="prest_cp" value="Pack" id="prest_pack_check"> Pack :</label>
-          <input type="text" id="pack_detail_cp" placeholder="Preciser..." style="padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" name="prest_cp" value="Autre" id="prest_autre_check"> Autre :</label>
-          <input type="text" id="autre_detail_cp" placeholder="Preciser..." style="padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+      <!-- SELECTION DU SERVICE -->
+      <div style="margin-bottom:20px;padding:16px;background:#f0f4f8;border-radius:10px;border-left:4px solid #1b2d5b">
+        <p style="font-weight:700;font-size:14px;color:#1b2d5b;margin:0 0 14px">&#9315; Choisir le service</p>
+
+        <!-- COACHING -->
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;letter-spacing:1px">&#127959; Coaching entrepreneurial</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <label onclick="window.selectService('coaching3','Coaching entrepreneurial - 3 seances','240,00 EUR','coaching')" id="lbl_coaching3"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Coaching 3 seances</strong><br>
+              <span style="font-size:11px;color:#666">3 x 1h30 — Accompagnement individuel</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">240 EUR</span>
+            </div>
+          </label>
+          <label onclick="window.selectService('coaching5','Coaching entrepreneurial - 5 seances','380,00 EUR','coaching')" id="lbl_coaching5"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Coaching 5 seances</strong><br>
+              <span style="font-size:11px;color:#666">5 x 1h30 — Suivi renforce</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">380 EUR</span>
+            </div>
+          </label>
         </div>
-      </div>
 
-      <!-- Article 2 -->
-      <div style="margin-bottom:16px;padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
-        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 2 — Qualite du prestataire</p>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="qualite_cp" value="conseil" checked> Conseil uniquement
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-          <input type="radio" name="qualite_cp" value="mandataire"> Mandataire avec autorisation du client
-        </label>
-      </div>
+        <!-- CONSEIL -->
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;letter-spacing:1px">&#128203; Prestations de conseil</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <label onclick="window.selectService('diag','Diagnostic de projet','80,00 EUR','conseil')" id="lbl_diag"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Diagnostic de projet</strong><br>
+              <span style="font-size:11px;color:#666">Analyse 1h30</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">80 EUR</span>
+            </div>
+          </label>
+          <label onclick="window.selectService('bp','Business plan','450,00 EUR','conseil')" id="lbl_bp"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Business plan</strong><br>
+              <span style="font-size:11px;color:#666">Redaction complete</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">450 EUR</span>
+            </div>
+          </label>
+          <label onclick="window.selectService('prev','Previsionnel financier','350,00 EUR','conseil')" id="lbl_prev"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Previsionnel financier</strong><br>
+              <span style="font-size:11px;color:#666">3 ans projetes</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">350 EUR</span>
+            </div>
+          </label>
+          <label onclick="window.selectService('fin','Dossier de financement','Sur devis','conseil')" id="lbl_fin"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Dossier de financement</strong><br>
+              <span style="font-size:11px;color:#666">Constitution du dossier</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">Devis</span>
+            </div>
+          </label>
+          <label onclick="window.selectService('sub','Dossier de subvention','Sur devis','conseil')" id="lbl_sub"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Dossier de subvention</strong><br>
+              <span style="font-size:11px;color:#666">Aide et accompagnement</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">Devis</span>
+            </div>
+          </label>
+          <label onclick="window.selectService('mandat','Mandat d\'accompagnement','Sur devis','conseil')" id="lbl_mandat"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><strong style="font-size:13px;color:#1b2d5b">Mandat d&#39;accompagnement</strong><br>
+              <span style="font-size:11px;color:#666">Representation client</span></div>
+              <span style="font-size:15px;font-weight:700;color:#c9a96e">Devis</span>
+            </div>
+          </label>
+        </div>
 
-      <!-- Article 3 -->
-      <div style="margin-bottom:16px;padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
-        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 3 — Duree de la mission</p>
+        <!-- PACKS -->
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;color:#c9a96e;margin:0 0 8px;letter-spacing:1px">&#127775; Packs complets</p>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-          <div>
-            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date de debut</label>
-            <input type="date" id="date_debut_cp" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
+          <label onclick="window.selectService('pack_essentiel','Pack Essentiel Creation','590,00 EUR','pack')" id="lbl_pack_essentiel"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div><strong style="font-size:13px;color:#1b2d5b">Pack Essentiel</strong><br>
+            <span style="font-size:11px;color:#666">Diagnostic + Business Plan</span></div>
+            <div style="font-size:15px;font-weight:700;color:#c9a96e;margin-top:6px">590 EUR</div>
+          </label>
+          <label onclick="window.selectService('pack_financement','Pack Financement','890,00 EUR','pack')" id="lbl_pack_financement"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div><strong style="font-size:13px;color:#1b2d5b">Pack Financement</strong><br>
+            <span style="font-size:11px;color:#666">BP + Previsionnel + Financement</span></div>
+            <div style="font-size:15px;font-weight:700;color:#c9a96e;margin-top:6px">890 EUR</div>
+          </label>
+          <label onclick="window.selectService('pack_global','Pack Global','1 290,00 EUR','pack')" id="lbl_pack_global"
+            style="border:2px solid #e0e0e0;border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;background:white">
+            <div><strong style="font-size:13px;color:#1b2d5b">Pack Global</strong><br>
+            <span style="font-size:11px;color:#666">Tous les services</span></div>
+            <div style="font-size:15px;font-weight:700;color:#c9a96e;margin-top:6px">1 290 EUR</div>
+          </label>
+        </div>
+
+        <!-- Service selectionne affiché -->
+        <div id="service-selectionne" style="display:none;margin-top:14px;background:#1b2d5b;color:white;padding:12px 16px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:11px;color:#c9a96e">Service selectionne :</span><br>
+          <strong id="service-selectionne-label" style="font-size:14px"></strong></div>
+          <span id="service-selectionne-tarif" style="font-size:20px;font-weight:bold;color:#c9a96e"></span>
+        </div>
+      </div>
+
+      <!-- Montant personnalisable -->
+      <div style="margin-bottom:16px;padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #c9a96e">
+        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Montant (modifiable si devis)</p>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="number" id="montant_cp" placeholder="Ex: 450"
+            style="width:150px;padding:10px;border:2px solid #c9a96e;border-radius:6px;font-size:16px;font-weight:700;text-align:center">
+          <span style="font-size:14px;color:#666">EUR</span>
+          <span style="font-size:12px;color:#999">(Le tarif est pre-rempli selon le service choisi)</span>
+        </div>
+      </div>
+
+      <!-- Qualite + Duree -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
+          <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 2 — Qualite</p>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px">
+            <input type="radio" name="qualite_cp" value="conseil" checked> Conseil uniquement
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="radio" name="qualite_cp" value="mandataire"> Mandataire
+          </label>
+        </div>
+        <div style="padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
+          <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 3 — Duree</p>
+          <div style="margin-bottom:8px">
+            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Date de debut</label>
+            <input type="date" id="date_debut_cp" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:8px">
+            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Duree estimee</label>
+            <input type="text" id="duree_cp" placeholder="Ex: 2 mois" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px;box-sizing:border-box">
           </div>
           <div>
-            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Duree estimee</label>
-            <input type="text" id="duree_cp" placeholder="Ex: 3 mois" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
-          </div>
-          <div>
-            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Date de fin previsionnelle</label>
-            <input type="date" id="date_fin_cp" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
+            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Date de fin previsionnelle</label>
+            <input type="date" id="date_fin_cp" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px;box-sizing:border-box">
           </div>
         </div>
       </div>
 
-      <!-- Article 6 -->
+      <!-- Paiement -->
       <div style="margin-bottom:16px;padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
-        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 6 — Tarifs et paiement</p>
-        <div style="margin-bottom:10px">
-          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Montant total (EUR)</label>
-          <input type="number" id="montant_cp" placeholder="Ex: 1500" style="width:200px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-weight:600">
-        </div>
-        <p style="font-size:12px;color:#666;margin:0 0 8px">Modalites de paiement :</p>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:6px">
+        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 6 — Modalites de paiement</p>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px">
           <input type="radio" name="modalite_cp" value="comptant" checked> Paiement comptant
         </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="modalite_cp" value="echelonne"> Paiement echelonne — 
-          <input type="number" id="nb_fois_cp" placeholder="nb" style="width:50px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> fois
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px">
+          <input type="radio" name="modalite_cp" value="echelonne"> Paiement echelonne en
+          <input type="number" id="nb_fois_cp" placeholder="nb" style="width:45px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> fois
         </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="modalite_cp" value="acompte"> Acompte de 
-          <input type="number" id="acompte_pct_cp" placeholder="%" style="width:50px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> %
-          soit <input type="number" id="acompte_eur_cp" placeholder="EUR" style="width:80px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> EUR
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px">
+          <input type="radio" name="modalite_cp" value="acompte"> Acompte de
+          <input type="number" id="acompte_pct_cp" placeholder="%" style="width:45px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> %
+          soit <input type="number" id="acompte_eur_cp" placeholder="EUR" style="width:70px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> EUR
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
           <input type="checkbox" id="success_fee_check_cp"> Success fee :
-          <input type="number" id="success_fee_cp" placeholder="%" style="width:50px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> % du financement obtenu
+          <input type="number" id="success_fee_cp" placeholder="%" style="width:45px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px"> % du financement obtenu
         </label>
       </div>
 
-      <!-- Article 8 -->
-      <div style="margin-bottom:16px;padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
-        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 8 — Mandat (si applicable)</p>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:6px">
-          <input type="checkbox" name="mandat_cp" value="Representer le client aupres d'organismes"> Representer le client aupres d'organismes
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:6px">
-          <input type="checkbox" name="mandat_cp" value="Transmettre des documents en son nom"> Transmettre des documents en son nom
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-          <input type="checkbox" name="mandat_cp" value="Echanger avec des partenaires"> Echanger avec des partenaires
-        </label>
-      </div>
-
-      <!-- Adresse + Signatures -->
-      <div style="margin-bottom:16px;padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #c9a96e">
-        <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Informations complementaires</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Adresse du client (si non renseignee dans le dossier)</label>
-            <textarea id="adresse_client_cp" rows="2" placeholder="20 rue des Fleurs, 97100 Basse-Terre..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box"></textarea>
+      <!-- Mandat + Infos complementaires -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #1b2d5b">
+          <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Article 8 — Mandat (si applicable)</p>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" name="mandat_cp" value="Representer le client aupres d&#39;organismes"> Representer aupres d'organismes
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" name="mandat_cp" value="Transmettre des documents en son nom"> Transmettre des documents
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+            <input type="checkbox" name="mandat_cp" value="Echanger avec des partenaires"> Echanger avec des partenaires
+          </label>
+        </div>
+        <div style="padding:14px;background:#f8f9fa;border-radius:8px;border-left:4px solid #c9a96e">
+          <p style="font-weight:600;font-size:13px;color:#1b2d5b;margin:0 0 10px">Signature</p>
+          <div style="margin-bottom:8px">
+            <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Adresse client (si absente du dossier)</label>
+            <textarea id="adresse_client_cp" rows="2" placeholder="Adresse complete..."
+              style="width:100%;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px;box-sizing:border-box"></textarea>
           </div>
-          <div>
-            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Lieu de signature</label>
-            <input type="text" id="lieu_sig_cp" value="Trois-Rivieres" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
-            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px;margin-top:8px">Date de signature</label>
-            <input type="date" id="date_sig_cp" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Lieu</label>
+              <input type="text" id="lieu_sig_cp" value="Trois-Rivieres"
+                style="width:100%;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:11px;color:#666;display:block;margin-bottom:3px">Date</label>
+              <input type="date" id="date_sig_cp"
+                style="width:100%;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px;box-sizing:border-box">
+            </div>
           </div>
         </div>
       </div>
 
-      <button onclick="window.genererContratPrestation()" style="width:100%;background:#1b2d5b;color:white;border:none;border-radius:8px;padding:14px;cursor:pointer;font-size:15px;font-weight:600;margin-top:8px">
-        &#128196; Generer le Contrat de Prestation
+      <button onclick="window.genererContratPrestation()"
+        style="width:100%;background:#1b2d5b;color:white;border:none;border-radius:8px;padding:16px;cursor:pointer;font-size:15px;font-weight:700;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:10px">
+        &#128196; Generer le Contrat de Prestation de Services
       </button>
     </div>
-  </div>
   </div>
 
   <!-- Liste des documents -->
@@ -2723,30 +2828,63 @@ window.supprimerDoc = function(docId) {
   .catch(function(e){ alert("Erreur: "+e.message); });
 };
 
+
+
+// ===== SELECTION SERVICE CONTRAT =====
+window._selectedService = {id:"",label:"",tarif:"",categorie:""};
+
+window.selectService = function(id, label, tarif, categorie) {
+  window._selectedService = {id:id, label:label, tarif:tarif, categorie:categorie};
+  // Reset toutes les cartes
+  var allLbls = ["coaching3","coaching5","diag","bp","prev","fin","sub","mandat","pack_essentiel","pack_financement","pack_global"];
+  allLbls.forEach(function(l){
+    var el = document.getElementById("lbl_"+l);
+    if(el) { el.style.borderColor="#e0e0e0"; el.style.background="white"; }
+  });
+  // Surligner la carte selectionnee
+  var sel = document.getElementById("lbl_"+id);
+  if(sel) { sel.style.borderColor="#1b2d5b"; sel.style.background="#f0f4f8"; }
+  // Afficher le resume
+  var box = document.getElementById("service-selectionne");
+  var lbl = document.getElementById("service-selectionne-label");
+  var tar = document.getElementById("service-selectionne-tarif");
+  if(box) box.style.display="flex";
+  if(lbl) lbl.textContent = label;
+  if(tar) tar.textContent = tarif;
+  // Pre-remplir le montant
+  var montantNum = tarif.replace(/[^0-9]/g,"");
+  var montantInput = document.getElementById("montant_cp");
+  if(montantInput && montantNum) montantInput.value = montantNum;
+  else if(montantInput) montantInput.value = "";
+};
+
 window.genererContratPrestation = function() {
   var id = window._currentDocsClientId;
   if(!id) { alert("Aucun client selectionne"); return; }
-  var prestations = [];
-  document.querySelectorAll('input[name="prest_cp"]:checked').forEach(function(el){ prestations.push(el.value); });
+  var svc = window._selectedService;
+  if(!svc || !svc.id) { alert("Veuillez selectionner un service"); return; }
   var qualite = (document.querySelector('input[name="qualite_cp"]:checked')||{}).value||"conseil";
   var modalite = (document.querySelector('input[name="modalite_cp"]:checked')||{}).value||"comptant";
   var mandat = [];
   document.querySelectorAll('input[name="mandat_cp"]:checked').forEach(function(el){ mandat.push(el.value); });
+  var montantVal = (document.getElementById("montant_cp")||{}).value;
+  var montantFormate = montantVal ? montantVal.replace(/\B(?=(\d{3})+(?!\d))/g,".") + ",00 EUR" : svc.tarif;
   var payload = {
     client_id: id,
-    prestations: prestations,
-    pack_detail: (document.getElementById("pack_detail_cp")||{}).value||"",
-    autre_detail: (document.getElementById("autre_detail_cp")||{}).value||"",
+    service_id: svc.id,
+    service_label: svc.label,
+    service_tarif: montantFormate,
+    service_categorie: svc.categorie,
     qualite: qualite,
     date_debut: (document.getElementById("date_debut_cp")||{}).value||"",
     duree_estimee: (document.getElementById("duree_cp")||{}).value||"",
     date_fin: (document.getElementById("date_fin_cp")||{}).value||"",
-    montant: (document.getElementById("montant_cp")||{}).value||"",
+    montant: montantFormate,
     modalite_paiement: modalite,
     nb_fois: (document.getElementById("nb_fois_cp")||{}).value||"",
     acompte_percent: (document.getElementById("acompte_pct_cp")||{}).value||"",
     acompte_euros: (document.getElementById("acompte_eur_cp")||{}).value||"",
-    success_fee: document.getElementById("success_fee_check_cp")&&document.getElementById("success_fee_check_cp").checked?(document.getElementById("success_fee_cp")||{}).value||"":"",
+    success_fee: (document.getElementById("success_fee_check_cp")||{}).checked?(document.getElementById("success_fee_cp")||{}).value||"":"",
     mandat_options: mandat,
     adresse_client: (document.getElementById("adresse_client_cp")||{}).value||"",
     lieu_signature: (document.getElementById("lieu_sig_cp")||{}).value||"Trois-Rivieres",
@@ -2754,15 +2892,15 @@ window.genererContratPrestation = function() {
   };
   var tok = localStorage.getItem("simele_token")||"";
   var win = window.open("","_blank");
-  if(!win) { alert("Autorisez les popups pour voir le contrat"); return; }
-  win.document.write("<html><body style='font-family:Arial;text-align:center;padding:50px;color:#1b2d5b'>Generation du contrat...</body></html>");
-  fetch("/api/contrats/prestation", {
-    method: "POST",
-    headers: {"Content-Type":"application/json","Authorization":"Bearer "+tok},
-    body: JSON.stringify(payload)
+  if(!win) { alert("Autorisez les popups"); return; }
+  win.document.write("<html><body style='font-family:Arial;text-align:center;padding:80px;color:#1b2d5b'><h2>Generation du contrat...</h2><p>"+svc.label+"</p></body></html>");
+  fetch("/api/contrats/prestation",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+tok},
+    body:JSON.stringify(payload)
   }).then(function(r){return r.text();})
-  .then(function(h){ win.document.open(); win.document.write(h); win.document.close(); })
-  .catch(function(e){ win.document.write("<p style='color:red'>Erreur: "+e.message+"</p>"); });
+  .then(function(h){win.document.open();win.document.write(h);win.document.close();})
+  .catch(function(e){win.document.write("<p style='color:red'>Erreur: "+e.message+"</p>");});
 };
 </script>
 </body>
