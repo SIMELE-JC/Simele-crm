@@ -91,7 +91,7 @@ router.post('/prestation', requireAuth, function(req, res) {
 
     // Lignes mandat
     var mandatItems = [
-      'Representer le client aupres d'organismes',
+      'Representer le client aupres d&#39;organismes',
       'Transmettre des documents en son nom',
       'Echanger avec des partenaires'
     ];
@@ -157,14 +157,14 @@ router.post('/prestation', requireAuth, function(req, res) {
       'Duree estimee : <strong>' + (dureeEstimee||'__________________________') + '</strong><br>' +
       'Date previsionnelle de fin : <strong>' + (dateFin||'____ / ____ / ______') + '</strong></p></div>' +
       '<div class="article"><h2>Article 4 - Engagement du prestataire</h2>' +
-      '<p>Le prestataire s'engage a :</p>' +
+      '<p>Le prestataire s&#39;engage a :</p>' +
       '<ul style="margin:4px 0 8px 20px">' +
       '<li>Realiser la prestation avec diligence et professionnalisme</li>' +
       '<li>Mettre en oeuvre les moyens necessaires a la mission</li>' +
-      '<li>Informer le client de l'avancement</li></ul>' +
+      '<li>Informer le client de l&#39;avancement</li></ul>' +
       '<p><em>Le prestataire est tenu a une obligation de moyens.</em></p></div>' +
       '<div class="article"><h2>Article 5 - Engagement du client</h2>' +
-      '<p>Le client s'engage a :</p>' +
+      '<p>Le client s&#39;engage a :</p>' +
       '<ul style="margin:4px 0 8px 20px">' +
       '<li>Fournir des informations exactes, completes et a jour</li>' +
       '<li>Transmettre les documents necessaires</li>' +
@@ -175,7 +175,7 @@ router.post('/prestation', requireAuth, function(req, res) {
       '<p>Montant de la prestation : <strong style="font-size:15px;color:#1b2d5b">' + (montant?montant+' EUR':'__________________ EUR') + '</strong></p>' +
       '<p>Modalites :</p>' + lignesPaiement + '</div>' +
       '<div class="article"><h2>Article 7 - Confidentialite</h2>' +
-      '<p>Les parties s'engagent a une stricte confidentialite concernant :</p>' +
+      '<p>Les parties s&#39;engagent a une stricte confidentialite concernant :</p>' +
       '<ul style="margin:4px 0 8px 20px">' +
       '<li>Les informations personnelles</li>' +
       '<li>Les donnees financieres</li>' +
@@ -187,7 +187,7 @@ router.post('/prestation', requireAuth, function(req, res) {
       '<p>Dans le cadre de certaines prestations, le client autorise le prestataire a (cocher si applicable) :</p>' +
       lignesMandat + '</div>' +
       '<div class="article"><h2>Article 9 - Propriete intellectuelle</h2>' +
-      '<p>Les documents produits restent la propriete du prestataire jusqu'au paiement integral.<br>' +
+      '<p>Les documents produits restent la propriete du prestataire jusqu&#39;au paiement integral.<br>' +
       'Le client peut les utiliser uniquement pour son projet.<br>' +
       'Toute reproduction ou diffusion est interdite sans accord.</p></div>' +
       '<div class="article"><h2>Article 10 - Responsabilite</h2>' +
@@ -196,13 +196,13 @@ router.post('/prestation', requireAuth, function(req, res) {
       '<li>des decisions prises</li>' +
       '<li>des informations transmises</li>' +
       '<li>des resultats du projet</li></ul>' +
-      '<p><em>Le prestataire ne garantit pas l'obtention de financements.</em></p></div>' +
+      '<p><em>Le prestataire ne garantit pas l&#39;obtention de financements.</em></p></div>' +
       '<div class="article"><h2>Article 11 - Annulation / Resiliation</h2>' +
-      '<p>En cas d'annulation :</p>' +
+      '<p>En cas d&#39;annulation :</p>' +
       '<ul style="margin:4px 0 8px 20px">' +
-      '<li>L'acompte reste du</li>' +
+      '<li>L&#39;acompte reste du</li>' +
       '<li>Les prestations realisees sont facturees</li></ul>' +
-      '<p>Le contrat peut etre resilie en cas de manquement d'une des parties.</p></div>' +
+      '<p>Le contrat peut etre resilie en cas de manquement d&#39;une des parties.</p></div>' +
       '<div class="article"><h2>Article 12 - Acceptation</h2>' +
       '<p>Le present contrat prend effet a signature.</p></div>' +
       '<hr style="margin:30px 0;border-color:#ccc">' +
