@@ -2836,318 +2836,118 @@ window.supprimerDoc = function(docId) {
 
 
 
-// ===== SELECTION SERVICE CONTRAT =====
-window._selectedService = {id:"",label:"",tarif:"",categorie:""};
 
-window.selectService = function(id, label, tarif, categorie) {
-  window._selectedService = {id:id, label:label, tarif:tarif, categorie:categorie};
-  // Reset toutes les cartes
-  var allLbls = ["coaching3","coaching5","diag","bp","prev","fin","sub","mandat","pack_essentiel","pack_financement","pack_global"];
-  allLbls.forEach(function(l){
-    var el = document.getElementById("lbl_"+l);
-    if(el) { el.style.borderColor="#e0e0e0"; el.style.background="white"; }
-  });
-  // Surligner la carte selectionnee
-  var sel = document.getElementById("lbl_"+id);
-  if(sel) { sel.style.borderColor="#1b2d5b"; sel.style.background="#f0f4f8"; }
-  // Afficher le resume
-  var box = document.getElementById("service-selectionne");
-  var lbl = document.getElementById("service-selectionne-label");
-  var tar = document.getElementById("service-selectionne-tarif");
-  if(box) box.style.display="flex";
-  if(lbl) lbl.textContent = label;
-  if(tar) tar.textContent = tarif;
-  // Pre-remplir le montant
-  var montantNum = tarif.replace(/[^0-9]/g,"");
-  var montantInput = document.getElementById("montant_cp");
-  if(montantInput && montantNum) montantInput.value = montantNum;
-  else if(montantInput) montantInput.value = "";
-};
-
-
-
-// ===== SÉLECTEUR CLIENT DOCS =====
-window.changerClientDocs = function(clientId) {
-  if(!clientId) return;
-
-  // Détecter si c'est un client CRM ou portal
-  var isCrm = clientId.toString().indexOf('crm_') === 0;
-  var isPortal = clientId.toString().indexOf('portal_') === 0;
-  var realId = parseInt(clientId.toString().replace('crm_','').replace('portal_',''));
-
-  window._currentDocsClientId = realId;
-  window._currentDocsSource = isPortal ? 'portal' : 'crm';
-
-  var client = null;
-  if(isCrm && window.clients) {
-    client = window.clients.find(function(c){ return c.id === realId; });
-  } else if(isPortal && window._portalClients) {
-    client = window._portalClients.find(function(i){ return i.id === realId; });
-  }
-
-  var titleEl = document.getElementById('docs-client-title');
-  var subEl = document.getElementById('docs-client-sub');
-  var badge = document.getElementById('docs-client-badge');
-  if(client) {
-    var nom = (client.prenom||'') + ' ' + (client.nom||'');
-    if(titleEl) titleEl.textContent = 'Documents — ' + nom;
-    if(subEl) subEl.textContent = (client.email||'') + (client.prestation ? ' · ' + client.prestation : '') + (isPortal ? ' · Inscrit portail' : '');
-    if(badge) { badge.style.display='block'; badge.textContent = nom + (isPortal ? ' (portail)' : ''); }
-  }
-  // Passer la barre en vert
-  var bar = document.getElementById('docs-client-selector-bar');
-  if(bar) { bar.style.background='#d4edda'; bar.style.borderColor='#28a745'; bar.style.boxShadow='none'; }
-
-  // Recharger les documents (seulement pour clients CRM qui ont un vrai id)
-  if(isCrm) window.chargerDocuments();
-};
-
-// Peupler le sélecteur quand les clients sont chargés
-var _origPopulateDocs = window.populateDocsSelect || function(){};
+// ===== DOCS : SELECTEUR CLIENT =====
 window.populateDocsSelect = function() {
-  var sel = document.getElementById('docs-global-client-select');
+  var sel = document.getElementById("docs-global-client-select");
   if(!sel) return;
-  var tok = localStorage.getItem('simele_token') || '';
-
-  // Charger clients CRM + inscriptions portal validées en parallèle
+  var tok = localStorage.getItem("simele_token") || "";
   Promise.all([
-    fetch('/api/clients', {headers:{'Authorization':'Bearer '+tok}}).then(function(r){return r.json();}),
-    fetch('/api/portal/inscriptions', {headers:{'Authorization':'Bearer '+tok}}).then(function(r){return r.json();}).catch(function(){return {inscriptions:[]};})
+    fetch("/api/clients", {headers:{"Authorization":"Bearer "+tok}}).then(function(r){return r.json();}),
+    fetch("/api/portal/inscriptions", {headers:{"Authorization":"Bearer "+tok}}).then(function(r){return r.json();}).catch(function(){return {inscriptions:[]};}).catch(function(){return {inscriptions:[];};})
   ]).then(function(results) {
-    var clients = (results[0].clients || results[0] || []);
-    var inscriptions = (results[1].inscriptions || []);
-
-    // Inscriptions validées non encore converties en client CRM
-    var portalOnly = inscriptions.filter(function(i) {
-      return (i.statut === 'valide' || i.statut === 'validé') && !i.client_id;
-    });
-
-    // Mémoriser pour usage ultérieur
+    var clients = results[0].clients || [];
+    var inscriptions = results[1].inscriptions || [];
+    var portalOnly = inscriptions.filter(function(i) { return i.statut === "valide" && !i.client_id; });
     window.clients = clients;
     window._portalClients = portalOnly;
-
-    // Vider et repeupler le select
     var currentVal = sel.value;
-    sel.innerHTML = '<option value="">— Sélectionner un client —</option>';
-
-    // Groupe 1 : Clients CRM
+    sel.innerHTML = "";
+    var opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "--- Choisir un client ---";
+    sel.appendChild(opt0);
     if(clients.length > 0) {
-      var grp1 = document.createElement('optgroup');
-      grp1.label = '📋 Dossiers CRM (' + clients.length + ')';
+      var grp1 = document.createElement("optgroup");
+      grp1.label = "Dossiers CRM (" + clients.length + ")";
       clients.forEach(function(c) {
-        var opt = document.createElement('option');
-        opt.value = 'crm_' + c.id;
-        opt.textContent = (c.prenom||'') + ' ' + (c.nom||'') + (c.prestation ? ' — ' + c.prestation : '');
-        if(window._currentDocsClientId && c.id === window._currentDocsClientId && window._currentDocsSource !== 'portal') opt.selected = true;
+        var opt = document.createElement("option");
+        opt.value = "crm_" + c.id;
+        opt.textContent = (c.prenom||"") + " " + (c.nom||"") + (c.prestation ? " - " + c.prestation : "");
+        if(window._currentDocsClientId && c.id === window._currentDocsClientId && window._currentDocsSource !== "portal") opt.selected = true;
         grp1.appendChild(opt);
       });
       sel.appendChild(grp1);
     }
-
-    // Groupe 2 : Inscriptions portal validées sans dossier CRM
     if(portalOnly.length > 0) {
-      var grp2 = document.createElement('optgroup');
-      grp2.label = '🌐 Inscrits Portail (' + portalOnly.length + ')';
+      var grp2 = document.createElement("optgroup");
+      grp2.label = "Inscrits Portail (" + portalOnly.length + ")";
       portalOnly.forEach(function(i) {
-        var opt = document.createElement('option');
-        opt.value = 'portal_' + i.id;
-        opt.textContent = (i.prenom||'') + ' ' + (i.nom||'') + (i.prestation ? ' — ' + i.prestation : '') + ' (portail)';
+        var opt = document.createElement("option");
+        opt.value = "portal_" + i.id;
+        opt.textContent = (i.prenom||"") + " " + (i.nom||"") + " (portail)";
         grp2.appendChild(opt);
       });
       sel.appendChild(grp2);
     }
-
-    // Restaurer la valeur sélectionnée si possible
-    if(currentVal) sel.value = currentVal;
     if(window._currentDocsClientId) {
-      var prefix = window._currentDocsSource === 'portal' ? 'portal_' : 'crm_';
+      var prefix = window._currentDocsSource === "portal" ? "portal_" : "crm_";
       sel.value = prefix + window._currentDocsClientId;
     }
-  }).catch(function(e) { console.error('populateDocsSelect error:', e); });
+  }).catch(function(e) { console.error("populateDocsSelect error:", e); });
 };
 
-// Surcharger ouvrirDocs pour aussi mettre à jour le select
-var _origOuvrirDocs = window.ouvrirDocs;
-window.ouvrirDocs = function(clientId) {
-  if(_origOuvrirDocs) _origOuvrirDocs(clientId);
-  // Mettre à jour le select
-  var sel = document.getElementById('docs-global-client-select');
-  if(sel) sel.value = clientId || '';
-  var bar = document.getElementById('docs-client-selector-bar');
-  if(bar && clientId) { bar.style.background='#d4edda'; bar.style.borderColor='#28a745'; }
-  // Peupler si pas encore fait
-  window.populateDocsSelect();
-};
-
-// Hook sur le chargement des clients pour peupler le select
-var _origLoadClients = window.loadClients;
-window.loadClients = function() {
-  var result = _origLoadClients ? _origLoadClients.apply(this, arguments) : null;
-  setTimeout(window.populateDocsSelect, 500);
-  return result;
-};
-
-// Vérification client avant génération de contrat
-var _origGenererContrat = window.genererContratPrestation;
-window.genererContratPrestation = function() {
-  var id = window._currentDocsClientId;
-  if(!id) {
-    // Essayer de récupérer depuis le select
-    var sel = document.getElementById('docs-global-client-select');
-    if(sel && sel.value) {
-      window.changerClientDocs(sel.value);
-      id = window._currentDocsClientId;
-    }
+window.changerClientDocs = function(val) {
+  if(!val) return;
+  var isCrm = val.indexOf("crm_") === 0;
+  var isPortal = val.indexOf("portal_") === 0;
+  var realId = parseInt(val.replace("crm_","").replace("portal_",""));
+  window._currentDocsClientId = realId;
+  window._currentDocsSource = isPortal ? "portal" : "crm";
+  var client = null;
+  if(isCrm && window.clients) client = window.clients.find(function(c){ return c.id===realId; });
+  else if(isPortal && window._portalClients) client = window._portalClients.find(function(i){ return i.id===realId; });
+  var titleEl = document.getElementById("docs-client-title");
+  var subEl = document.getElementById("docs-client-sub");
+  var badge = document.getElementById("docs-client-badge");
+  var bar = document.getElementById("docs-client-selector-bar");
+  if(client) {
+    var nom = (client.prenom||"") + " " + (client.nom||"");
+    if(titleEl) titleEl.textContent = "Documents - " + nom;
+    if(subEl) subEl.textContent = (client.email||"") + (isPortal ? " (portail)" : "");
+    if(badge) { badge.style.display="block"; badge.textContent = nom; }
   }
-  if(!id) {
-    alert('Veuillez sélectionner un client avant de générer le contrat.');
-    // Scroller vers le sélecteur
-    var bar = document.getElementById('docs-client-selector-bar');
-    if(bar) { bar.scrollIntoView({behavior:'smooth'}); bar.style.boxShadow='0 0 0 3px #ffc107'; }
-    return;
-  }
-  if(_origGenererContrat) _origGenererContrat();
+  if(bar) { bar.style.background="#d4edda"; bar.style.borderColor="#28a745"; bar.style.boxShadow="none"; }
+  if(isCrm) window.chargerDocuments();
 };
 
-// Appel initial pour peupler quand la page-docs est affichée
-var _origShowPage = window.showPage;
+// Hook showPage pour peupler le select quand on ouvre docs
+var _origShowPageDocs = window.showPage;
 window.showPage = function(page) {
-  if(_origShowPage) _origShowPage(page);
-  if(page === 'docs') {
-    setTimeout(function() {
-      window.populateDocsSelect();
-      // Si pas de client sélectionné, mettre en évidence le sélecteur
-      if(!window._currentDocsClientId) {
-        var bar = document.getElementById('docs-client-selector-bar');
-        if(bar) bar.style.boxShadow = '0 0 0 3px #ffc107';
-      }
-    }, 100);
+  if(_origShowPageDocs) _origShowPageDocs(page);
+  if(page === "docs") {
+    setTimeout(function() { window.populateDocsSelect(); }, 200);
   }
 };
 
-// =========================================
-// SELECTEUR CLIENT DANS ONGLET DOCUMENTS
-// =========================================
-
-window.peuplerSelectClient = function() {
-  var sel = document.getElementById("select-client-contrat");
-  if (!sel) return;
-  sel.innerHTML = '<option value="">-- Selectionner un client --</option>';
-  var clients = window.clients || [];
-  clients.forEach(function(c) {
-    var opt = document.createElement("option");
-    opt.value = c.id;
-    opt.textContent = (c.prenom||"") + " " + (c.nom||"") + (c.prestation ? " — " + c.prestation : "");
-    sel.appendChild(opt);
-  });
-  // Pré-sélectionner le client courant si déjà défini
-  if (window._currentDocsClientId) {
-    sel.value = window._currentDocsClientId;
-    var badge = document.getElementById("client-selector-badge");
-    if (badge) badge.style.display = "inline-block";
-  }
-};
-
-window.changerClientDocs = function(clientId) {
-  if (!clientId) return;
-  window._currentDocsClientId = parseInt(clientId);
-  var client = (window.clients||[]).find(function(c){ return c.id == clientId; });
-  if (client) {
-    var title = document.getElementById("docs-client-title");
-    var sub = document.getElementById("docs-client-sub");
-    if (title) title.textContent = "Documents — " + (client.prenom||"") + " " + (client.nom||"");
-    if (sub) sub.textContent = (client.email||"") + (client.prestation ? " · " + client.prestation : "");
-  }
-  var badge = document.getElementById("client-selector-badge");
-  if (badge) badge.style.display = "inline-block";
-  window.chargerDocuments();
-};
-
-var _origOuvrirDocs = window.ouvrirDocs;
-window.ouvrirDocs = function(clientId) {
-  if (_origOuvrirDocs) _origOuvrirDocs(clientId);
-  setTimeout(function() {
-    window.peuplerSelectClient();
-    var sel = document.getElementById("select-client-contrat");
-    if (sel) sel.value = clientId;
-    var badge = document.getElementById("client-selector-badge");
-    if (badge) badge.style.display = "inline-block";
-  }, 100);
-};
-
-document.addEventListener("DOMContentLoaded", function() {
-  var docsNav = document.querySelector('[onclick*="showPage(''docs'')"], [onclick*="showPage(\"docs\")"]');
-});
-
-var _origShowPage = typeof showPage === "function" ? showPage : null;
-if (typeof showPage === "function") {
-  var __showPageOrig = showPage;
-  window.showPage = function(page) {
-    __showPageOrig(page);
-    if (page === "docs") {
-      setTimeout(window.peuplerSelectClient, 150);
-    }
-  };
-}
-
-var _origGenererContrat = window.genererContratPrestation;
+// Surcharger genererContratPrestation pour valider le client
+var _origGenCP = window.genererContratPrestation;
 window.genererContratPrestation = function() {
-  // Vérifier qu'un client est sélectionné
-  var sel = document.getElementById("select-client-contrat");
-  if (sel && sel.value && !window._currentDocsClientId) {
-    window._currentDocsClientId = parseInt(sel.value);
-  }
   var id = window._currentDocsClientId;
-  if (!id) {
+  if(!id) {
+    var sel = document.getElementById("docs-global-client-select");
+    if(sel && sel.value) { window.changerClientDocs(sel.value); id = window._currentDocsClientId; }
+  }
+  if(!id) {
     alert("Veuillez selectionner un client avant de generer le contrat.");
-    var selEl = document.getElementById("select-client-contrat");
-    if (selEl) selEl.focus();
+    var bar = document.getElementById("docs-client-selector-bar");
+    if(bar) { bar.scrollIntoView({behavior:"smooth"}); bar.style.boxShadow="0 0 0 3px #ffc107"; }
     return;
   }
-  var svc = window._selectedService;
-  if (!svc || !svc.id) { alert("Veuillez selectionner un service."); return; }
-  var qualite = (document.querySelector('input[name="qualite_cp"]:checked')||{}).value||"conseil";
-  var modalite = (document.querySelector('input[name="modalite_cp"]:checked')||{}).value||"comptant";
-  var mandat = [];
-  document.querySelectorAll('input[name="mandat_cp"]:checked').forEach(function(el){ mandat.push(el.value); });
-  var montantVal = (document.getElementById("montant_cp")||{}).value||"";
-  var montantFormate = montantVal ? montantVal + ",00 EUR" : svc.tarif;
-  var payload = {
-    client_id: id,
-    service_id: svc.id,
-    service_label: svc.label,
-    service_tarif: montantFormate,
-    service_categorie: svc.categorie,
-    qualite: qualite,
-    date_debut: (document.getElementById("date_debut_cp")||{}).value||"",
-    duree_estimee: (document.getElementById("duree_cp")||{}).value||"",
-    date_fin: (document.getElementById("date_fin_cp")||{}).value||"",
-    montant: montantFormate,
-    modalite_paiement: modalite,
-    nb_fois: (document.getElementById("nb_fois_cp")||{}).value||"",
-    acompte_percent: (document.getElementById("acompte_pct_cp")||{}).value||"",
-    acompte_euros: (document.getElementById("acompte_eur_cp")||{}).value||"",
-    success_fee: (document.getElementById("success_fee_check_cp")||{}).checked?(document.getElementById("success_fee_cp")||{}).value||"":"",
-    mandat_options: mandat,
-    adresse_client: (document.getElementById("adresse_client_cp")||{}).value||"",
-    lieu_signature: (document.getElementById("lieu_sig_cp")||{}).value||"Trois-Rivieres",
-    date_signature: (document.getElementById("date_sig_cp")||{}).value||""
-  };
-  var tok = localStorage.getItem("simele_token")||"";
-  var win = window.open("","_blank");
-  if(!win) { alert("Autorisez les popups"); return; }
-  win.document.write("<html><body style='font-family:Arial;text-align:center;padding:80px;color:#1b2d5b'><h2>Generation du contrat...</h2><p>" + svc.label + "</p></body></html>");
-  fetch("/api/contrats/prestation",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+tok},
-    body:JSON.stringify(payload)
-  }).then(function(r){return r.text();})
-  .then(function(h){
-    win.document.open(); win.document.write(h); win.document.close();
-    // Rafraîchir la liste des documents
-    setTimeout(function(){ if(typeof window.chargerDocuments==="function") window.chargerDocuments(); }, 500);
-  })
-  .catch(function(e){win.document.write("<p style='color:red'>Erreur: "+e.message+"</p>");});
+  if(_origGenCP) _origGenCP();
+};
+
+// Surcharger ouvrirDocs pour mettre a jour le select
+var _origOuvrirDocsSel = window.ouvrirDocs;
+window.ouvrirDocs = function(clientId) {
+  if(_origOuvrirDocsSel) _origOuvrirDocsSel(clientId);
+  setTimeout(function() {
+    window.populateDocsSelect();
+    var sel = document.getElementById("docs-global-client-select");
+    if(sel && clientId) { sel.value = "crm_" + clientId; }
+    var bar = document.getElementById("docs-client-selector-bar");
+    if(bar && clientId) { bar.style.background="#d4edda"; bar.style.borderColor="#28a745"; }
+  }, 300);
 };
 </script>
 </body>
