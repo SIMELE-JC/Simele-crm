@@ -58,4 +58,16 @@ router.post('/change-password', requireAuth, (req, res) => {
 
 
 // Route temporaire reset mot de passe admin
+// Route temporaire reset mdp - USAGE UNIQUE
+router.post('/reset-now', function(req, res) {
+  try {
+    var bcrypt = require('bcryptjs');
+    var db = require('../db').db;
+    var hash = bcrypt.hashSync('Simele2024!', 10);
+    db.prepare("UPDATE users SET password = ? WHERE email = ?")
+      .run(hash, 'ccs.guadeloupe@outlook.fr');
+    res.json({ ok: true, msg: 'Mot de passe reinitialise: Simele2024!' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
