@@ -156,23 +156,23 @@ router.post('/prestation', requireAuth, function(req, res) {
       'Duree estimee : <strong>' + (dureeEstimee||'__________________________') + '</strong><br>' +
       'Date previsionnelle de fin : <strong>' + (dateFin||'____ / ____ / ______') + '</strong></p>' +
       '<h2>Article 4 - Engagement du prestataire</h2>' +
-      '<p>Le prestataire s'engage a realiser la prestation avec diligence et professionnalisme, mettre en oeuvre les moyens necessaires, et informer le client de l'avancement. <em>Obligation de moyens.</em></p>' +
+      '<p>Le prestataire s&#39;engage a realiser la prestation avec diligence et professionnalisme, mettre en oeuvre les moyens necessaires, et informer le client de l&#39;avancement. <em>Obligation de moyens.</em></p>' +
       '<h2>Article 5 - Engagement du client</h2>' +
-      '<p>Le client s'engage a fournir des informations exactes et completes, transmettre les documents necessaires, etre disponible pour les echanges et valider les elements transmis. <em>Tout retard peut impacter la mission.</em></p>' +
+      '<p>Le client s&#39;engage a fournir des informations exactes et completes, transmettre les documents necessaires, etre disponible pour les echanges et valider les elements transmis. <em>Tout retard peut impacter la mission.</em></p>' +
       '<h2>Article 6 - Tarifs et modalites de paiement</h2>' +
       '<p>Montant de la prestation : <strong style="font-size:16px;color:#1b2d5b">' + montant + '</strong></p>' +
       '<p>Modalites :</p>' + lignesPaiement +
       '<h2>Article 7 - Confidentialite</h2>' +
-      '<p>Les parties s'engagent a une stricte confidentialite concernant les informations personnelles, donnees financieres, elements du projet et methodes du cabinet. Aucune information ne pourra etre divulguee sans accord ecrit. Cette obligation reste valable apres la fin du contrat.</p>' +
+      '<p>Les parties s&#39;engagent a une stricte confidentialite concernant les informations personnelles, donnees financieres, elements du projet et methodes du cabinet. Aucune information ne pourra etre divulguee sans accord ecrit. Cette obligation reste valable apres la fin du contrat.</p>' +
       '<h2>Article 8 - Mandat</h2>' +
       '<p>Dans le cadre de certaines prestations, le client autorise le prestataire a (si applicable) :</p>' +
       lignesMandat +
       '<h2>Article 9 - Propriete intellectuelle</h2>' +
-      '<p>Les documents produits restent la propriete du prestataire jusqu'au paiement integral. Le client peut les utiliser uniquement pour son projet. Toute reproduction ou diffusion est interdite sans accord.</p>' +
+      '<p>Les documents produits restent la propriete du prestataire jusqu&#39;au paiement integral. Le client peut les utiliser uniquement pour son projet. Toute reproduction ou diffusion est interdite sans accord.</p>' +
       '<h2>Article 10 - Responsabilite</h2>' +
-      '<p>Le client reste seul responsable des decisions prises, des informations transmises et des resultats du projet. Le prestataire ne garantit pas l'obtention de financements.</p>' +
+      '<p>Le client reste seul responsable des decisions prises, des informations transmises et des resultats du projet. Le prestataire ne garantit pas l&#39;obtention de financements.</p>' +
       '<h2>Article 11 - Annulation / Resiliation</h2>' +
-      '<p>En cas d'annulation : l'acompte reste du et les prestations realisees sont facturees. Le contrat peut etre resilie en cas de manquement d'une des parties.</p>' +
+      '<p>En cas d&#39;annulation : l&#39;acompte reste du et les prestations realisees sont facturees. Le contrat peut etre resilie en cas de manquement d&#39;une des parties.</p>' +
       '<h2>Article 12 - Acceptation</h2>' +
       '<p>Le present contrat prend effet a signature des deux parties.</p>' +
       '<hr style="margin:30px 0;border-color:#ddd">' +
