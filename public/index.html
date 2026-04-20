@@ -647,6 +647,18 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
 
     <!-- ===== DOCUMENTS ===== -->
     <div id="page-docs" style="display:none">
+  <!-- SÉLECTEUR CLIENT EN HAUT DE PAGE-DOCS -->
+  <div id="docs-client-selector-bar" style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
+    <span style="font-size:20px">&#128100;</span>
+    <div style="flex:1">
+      <label style="font-size:12px;font-weight:700;color:#856404;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px">Client concerné par ce document</label>
+      <select id="docs-global-client-select" onchange="window.changerClientDocs(this.value)"
+        style="width:100%;padding:8px 12px;border:2px solid #ffc107;border-radius:7px;font-size:14px;font-weight:600;color:#1b2d5b;background:white;cursor:pointer">
+        <option value="">— Sélectionner un client —</option>
+      </select>
+    </div>
+    <div id="docs-client-badge" style="display:none;background:#1b2d5b;color:white;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap"></div>
+  </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
     <div>
       <h2 id="docs-client-title" style="margin:0;font-size:20px;color:#1b2d5b">Documents</h2>
@@ -2901,6 +2913,103 @@ window.genererContratPrestation = function() {
   }).then(function(r){return r.text();})
   .then(function(h){win.document.open();win.document.write(h);win.document.close();})
   .catch(function(e){win.document.write("<p style='color:red'>Erreur: "+e.message+"</p>");});
+};
+
+// ===== SÉLECTEUR CLIENT DOCS =====
+window.changerClientDocs = function(clientId) {
+  if(!clientId) return;
+  window._currentDocsClientId = parseInt(clientId);
+  var client = window.clients ? window.clients.find(function(c){ return c.id === parseInt(clientId); }) : null;
+  // Mettre à jour le titre
+  var titleEl = document.getElementById('docs-client-title');
+  var subEl = document.getElementById('docs-client-sub');
+  var badge = document.getElementById('docs-client-badge');
+  if(client) {
+    if(titleEl) titleEl.textContent = 'Documents — ' + (client.prenom||'') + ' ' + (client.nom||'');
+    if(subEl) subEl.textContent = (client.email||'') + (client.prestation ? ' · ' + client.prestation : '');
+    if(badge) { badge.style.display='block'; badge.textContent = (client.prenom||'') + ' ' + (client.nom||''); }
+    // Masquer la barre d'avertissement
+    var bar = document.getElementById('docs-client-selector-bar');
+    if(bar) bar.style.background='#d4edda'; 
+    if(bar) bar.style.borderColor='#28a745';
+  }
+  // Recharger les documents
+  window.chargerDocuments();
+};
+
+// Peupler le sélecteur quand les clients sont chargés
+var _origPopulateDocs = window.populateDocsSelect || function(){};
+window.populateDocsSelect = function() {
+  var sel = document.getElementById('docs-global-client-select');
+  if(!sel || !window.clients || !window.clients.length) return;
+  // Vider et repeupler
+  sel.innerHTML = '<option value="">— Sélectionner un client —</option>';
+  window.clients.forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = (c.prenom||'') + ' ' + (c.nom||'') + (c.prestation ? ' — ' + c.prestation : '');
+    if(window._currentDocsClientId && c.id === window._currentDocsClientId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+};
+
+// Surcharger ouvrirDocs pour aussi mettre à jour le select
+var _origOuvrirDocs = window.ouvrirDocs;
+window.ouvrirDocs = function(clientId) {
+  if(_origOuvrirDocs) _origOuvrirDocs(clientId);
+  // Mettre à jour le select
+  var sel = document.getElementById('docs-global-client-select');
+  if(sel) sel.value = clientId || '';
+  var bar = document.getElementById('docs-client-selector-bar');
+  if(bar && clientId) { bar.style.background='#d4edda'; bar.style.borderColor='#28a745'; }
+  // Peupler si pas encore fait
+  window.populateDocsSelect();
+};
+
+// Hook sur le chargement des clients pour peupler le select
+var _origLoadClients = window.loadClients;
+window.loadClients = function() {
+  var result = _origLoadClients ? _origLoadClients.apply(this, arguments) : null;
+  setTimeout(window.populateDocsSelect, 500);
+  return result;
+};
+
+// Vérification client avant génération de contrat
+var _origGenererContrat = window.genererContratPrestation;
+window.genererContratPrestation = function() {
+  var id = window._currentDocsClientId;
+  if(!id) {
+    // Essayer de récupérer depuis le select
+    var sel = document.getElementById('docs-global-client-select');
+    if(sel && sel.value) {
+      window.changerClientDocs(sel.value);
+      id = window._currentDocsClientId;
+    }
+  }
+  if(!id) {
+    alert('Veuillez sélectionner un client avant de générer le contrat.');
+    // Scroller vers le sélecteur
+    var bar = document.getElementById('docs-client-selector-bar');
+    if(bar) { bar.scrollIntoView({behavior:'smooth'}); bar.style.boxShadow='0 0 0 3px #ffc107'; }
+    return;
+  }
+  if(_origGenererContrat) _origGenererContrat();
+};
+
+// Appel initial pour peupler quand la page-docs est affichée
+var _origShowPage = window.showPage;
+window.showPage = function(page) {
+  if(_origShowPage) _origShowPage(page);
+  if(page === 'docs') {
+    setTimeout(function() {
+      window.populateDocsSelect();
+      // Si pas de client sélectionné, mettre en évidence le sélecteur
+      if(!window._currentDocsClientId) {
+        var bar = document.getElementById('docs-client-selector-bar');
+        if(bar) bar.style.boxShadow = '0 0 0 3px #ffc107';
+      }
+    }, 100);
+  }
 };
 </script>
 </body>
