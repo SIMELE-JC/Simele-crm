@@ -2869,39 +2869,101 @@ window.selectService = function(id, label, tarif, categorie) {
 // ===== SÉLECTEUR CLIENT DOCS =====
 window.changerClientDocs = function(clientId) {
   if(!clientId) return;
-  window._currentDocsClientId = parseInt(clientId);
-  var client = window.clients ? window.clients.find(function(c){ return c.id === parseInt(clientId); }) : null;
-  // Mettre à jour le titre
+
+  // Détecter si c'est un client CRM ou portal
+  var isCrm = clientId.toString().indexOf('crm_') === 0;
+  var isPortal = clientId.toString().indexOf('portal_') === 0;
+  var realId = parseInt(clientId.toString().replace('crm_','').replace('portal_',''));
+
+  window._currentDocsClientId = realId;
+  window._currentDocsSource = isPortal ? 'portal' : 'crm';
+
+  var client = null;
+  if(isCrm && window.clients) {
+    client = window.clients.find(function(c){ return c.id === realId; });
+  } else if(isPortal && window._portalClients) {
+    client = window._portalClients.find(function(i){ return i.id === realId; });
+  }
+
   var titleEl = document.getElementById('docs-client-title');
   var subEl = document.getElementById('docs-client-sub');
   var badge = document.getElementById('docs-client-badge');
   if(client) {
-    if(titleEl) titleEl.textContent = 'Documents — ' + (client.prenom||'') + ' ' + (client.nom||'');
-    if(subEl) subEl.textContent = (client.email||'') + (client.prestation ? ' · ' + client.prestation : '');
-    if(badge) { badge.style.display='block'; badge.textContent = (client.prenom||'') + ' ' + (client.nom||''); }
-    // Masquer la barre d'avertissement
-    var bar = document.getElementById('docs-client-selector-bar');
-    if(bar) bar.style.background='#d4edda'; 
-    if(bar) bar.style.borderColor='#28a745';
+    var nom = (client.prenom||'') + ' ' + (client.nom||'');
+    if(titleEl) titleEl.textContent = 'Documents — ' + nom;
+    if(subEl) subEl.textContent = (client.email||'') + (client.prestation ? ' · ' + client.prestation : '') + (isPortal ? ' · Inscrit portail' : '');
+    if(badge) { badge.style.display='block'; badge.textContent = nom + (isPortal ? ' (portail)' : ''); }
   }
-  // Recharger les documents
-  window.chargerDocuments();
+  // Passer la barre en vert
+  var bar = document.getElementById('docs-client-selector-bar');
+  if(bar) { bar.style.background='#d4edda'; bar.style.borderColor='#28a745'; bar.style.boxShadow='none'; }
+
+  // Recharger les documents (seulement pour clients CRM qui ont un vrai id)
+  if(isCrm) window.chargerDocuments();
 };
 
 // Peupler le sélecteur quand les clients sont chargés
 var _origPopulateDocs = window.populateDocsSelect || function(){};
 window.populateDocsSelect = function() {
   var sel = document.getElementById('docs-global-client-select');
-  if(!sel || !window.clients || !window.clients.length) return;
-  // Vider et repeupler
-  sel.innerHTML = '<option value="">— Sélectionner un client —</option>';
-  window.clients.forEach(function(c) {
-    var opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = (c.prenom||'') + ' ' + (c.nom||'') + (c.prestation ? ' — ' + c.prestation : '');
-    if(window._currentDocsClientId && c.id === window._currentDocsClientId) opt.selected = true;
-    sel.appendChild(opt);
-  });
+  if(!sel) return;
+  var tok = localStorage.getItem('simele_token') || '';
+
+  // Charger clients CRM + inscriptions portal validées en parallèle
+  Promise.all([
+    fetch('/api/clients', {headers:{'Authorization':'Bearer '+tok}}).then(function(r){return r.json();}),
+    fetch('/api/portal/inscriptions', {headers:{'Authorization':'Bearer '+tok}}).then(function(r){return r.json();}).catch(function(){return {inscriptions:[]};})
+  ]).then(function(results) {
+    var clients = (results[0].clients || results[0] || []);
+    var inscriptions = (results[1].inscriptions || []);
+
+    // Inscriptions validées non encore converties en client CRM
+    var portalOnly = inscriptions.filter(function(i) {
+      return (i.statut === 'valide' || i.statut === 'validé') && !i.client_id;
+    });
+
+    // Mémoriser pour usage ultérieur
+    window.clients = clients;
+    window._portalClients = portalOnly;
+
+    // Vider et repeupler le select
+    var currentVal = sel.value;
+    sel.innerHTML = '<option value="">— Sélectionner un client —</option>';
+
+    // Groupe 1 : Clients CRM
+    if(clients.length > 0) {
+      var grp1 = document.createElement('optgroup');
+      grp1.label = '📋 Dossiers CRM (' + clients.length + ')';
+      clients.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = 'crm_' + c.id;
+        opt.textContent = (c.prenom||'') + ' ' + (c.nom||'') + (c.prestation ? ' — ' + c.prestation : '');
+        if(window._currentDocsClientId && c.id === window._currentDocsClientId && window._currentDocsSource !== 'portal') opt.selected = true;
+        grp1.appendChild(opt);
+      });
+      sel.appendChild(grp1);
+    }
+
+    // Groupe 2 : Inscriptions portal validées sans dossier CRM
+    if(portalOnly.length > 0) {
+      var grp2 = document.createElement('optgroup');
+      grp2.label = '🌐 Inscrits Portail (' + portalOnly.length + ')';
+      portalOnly.forEach(function(i) {
+        var opt = document.createElement('option');
+        opt.value = 'portal_' + i.id;
+        opt.textContent = (i.prenom||'') + ' ' + (i.nom||'') + (i.prestation ? ' — ' + i.prestation : '') + ' (portail)';
+        grp2.appendChild(opt);
+      });
+      sel.appendChild(grp2);
+    }
+
+    // Restaurer la valeur sélectionnée si possible
+    if(currentVal) sel.value = currentVal;
+    if(window._currentDocsClientId) {
+      var prefix = window._currentDocsSource === 'portal' ? 'portal_' : 'crm_';
+      sel.value = prefix + window._currentDocsClientId;
+    }
+  }).catch(function(e) { console.error('populateDocsSelect error:', e); });
 };
 
 // Surcharger ouvrirDocs pour aussi mettre à jour le select
