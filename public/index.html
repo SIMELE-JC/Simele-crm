@@ -659,13 +659,7 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
     </div>
     <div id="docs-client-badge" style="display:none;background:#1b2d5b;color:white;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap"></div>
   </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-    <div>
-      <h2 id="docs-client-title" style="margin:0;font-size:20px;color:#1b2d5b">Documents</h2>
-      <p id="docs-client-sub" style="margin:4px 0 0;font-size:13px;color:var(--gray400)">Documents du client</p>
-    </div>
-    <button onclick="showPage('dossier')" style="background:none;border:1px solid #ddd;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:#666">&#8592; Retour au dossier</button>
-  </div>
+  <div style="margin-bottom:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><h2 id="docs-client-title" style="margin:0;font-size:20px;color:#1b2d5b">Documents</h2><p id="docs-client-sub" style="margin:4px 0 0;font-size:13px;color:var(--gray400)">Documents du client</p></div><button onclick="showPage('dossier')" style="background:none;border:1px solid #ddd;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:#666">&#8592; Retour au dossier</button></div><div id="client-selector-bar" style="background:#f0f4f8;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;border-left:4px solid #c9a96e"><span style="font-size:13px;color:#1b2d5b;font-weight:600;white-space:nowrap">&#128100; Client :</span><select id="select-client-contrat" onchange="window.changerClientDocs(this.value)" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:white;color:#1b2d5b;font-weight:500;cursor:pointer"><option value="">-- Selectionner un client --</option></select><span id="client-selector-badge" style="display:none;background:#1b2d5b;color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600">&#10003; Selectionne</span></div></div>
 
   <!-- Zone upload -->
   <div style="background:white;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
@@ -2870,50 +2864,7 @@ window.selectService = function(id, label, tarif, categorie) {
   else if(montantInput) montantInput.value = "";
 };
 
-window.genererContratPrestation = function() {
-  var id = window._currentDocsClientId;
-  if(!id) { alert("Aucun client selectionne"); return; }
-  var svc = window._selectedService;
-  if(!svc || !svc.id) { alert("Veuillez selectionner un service"); return; }
-  var qualite = (document.querySelector('input[name="qualite_cp"]:checked')||{}).value||"conseil";
-  var modalite = (document.querySelector('input[name="modalite_cp"]:checked')||{}).value||"comptant";
-  var mandat = [];
-  document.querySelectorAll('input[name="mandat_cp"]:checked').forEach(function(el){ mandat.push(el.value); });
-  var montantVal = (document.getElementById("montant_cp")||{}).value;
-  var montantFormate = montantVal ? montantVal.replace(/\B(?=(\d{3})+(?!\d))/g,".") + ",00 EUR" : svc.tarif;
-  var payload = {
-    client_id: id,
-    service_id: svc.id,
-    service_label: svc.label,
-    service_tarif: montantFormate,
-    service_categorie: svc.categorie,
-    qualite: qualite,
-    date_debut: (document.getElementById("date_debut_cp")||{}).value||"",
-    duree_estimee: (document.getElementById("duree_cp")||{}).value||"",
-    date_fin: (document.getElementById("date_fin_cp")||{}).value||"",
-    montant: montantFormate,
-    modalite_paiement: modalite,
-    nb_fois: (document.getElementById("nb_fois_cp")||{}).value||"",
-    acompte_percent: (document.getElementById("acompte_pct_cp")||{}).value||"",
-    acompte_euros: (document.getElementById("acompte_eur_cp")||{}).value||"",
-    success_fee: (document.getElementById("success_fee_check_cp")||{}).checked?(document.getElementById("success_fee_cp")||{}).value||"":"",
-    mandat_options: mandat,
-    adresse_client: (document.getElementById("adresse_client_cp")||{}).value||"",
-    lieu_signature: (document.getElementById("lieu_sig_cp")||{}).value||"Trois-Rivieres",
-    date_signature: (document.getElementById("date_sig_cp")||{}).value||""
-  };
-  var tok = localStorage.getItem("simele_token")||"";
-  var win = window.open("","_blank");
-  if(!win) { alert("Autorisez les popups"); return; }
-  win.document.write("<html><body style='font-family:Arial;text-align:center;padding:80px;color:#1b2d5b'><h2>Generation du contrat...</h2><p>"+svc.label+"</p></body></html>");
-  fetch("/api/contrats/prestation",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+tok},
-    body:JSON.stringify(payload)
-  }).then(function(r){return r.text();})
-  .then(function(h){win.document.open();win.document.write(h);win.document.close();})
-  .catch(function(e){win.document.write("<p style='color:red'>Erreur: "+e.message+"</p>");});
-};
+
 
 // ===== SÉLECTEUR CLIENT DOCS =====
 window.changerClientDocs = function(clientId) {
@@ -3010,6 +2961,131 @@ window.showPage = function(page) {
       }
     }, 100);
   }
+};
+
+// =========================================
+// SELECTEUR CLIENT DANS ONGLET DOCUMENTS
+// =========================================
+
+window.peuplerSelectClient = function() {
+  var sel = document.getElementById("select-client-contrat");
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Selectionner un client --</option>';
+  var clients = window.clients || [];
+  clients.forEach(function(c) {
+    var opt = document.createElement("option");
+    opt.value = c.id;
+    opt.textContent = (c.prenom||"") + " " + (c.nom||"") + (c.prestation ? " — " + c.prestation : "");
+    sel.appendChild(opt);
+  });
+  // Pré-sélectionner le client courant si déjà défini
+  if (window._currentDocsClientId) {
+    sel.value = window._currentDocsClientId;
+    var badge = document.getElementById("client-selector-badge");
+    if (badge) badge.style.display = "inline-block";
+  }
+};
+
+window.changerClientDocs = function(clientId) {
+  if (!clientId) return;
+  window._currentDocsClientId = parseInt(clientId);
+  var client = (window.clients||[]).find(function(c){ return c.id == clientId; });
+  if (client) {
+    var title = document.getElementById("docs-client-title");
+    var sub = document.getElementById("docs-client-sub");
+    if (title) title.textContent = "Documents — " + (client.prenom||"") + " " + (client.nom||"");
+    if (sub) sub.textContent = (client.email||"") + (client.prestation ? " · " + client.prestation : "");
+  }
+  var badge = document.getElementById("client-selector-badge");
+  if (badge) badge.style.display = "inline-block";
+  window.chargerDocuments();
+};
+
+var _origOuvrirDocs = window.ouvrirDocs;
+window.ouvrirDocs = function(clientId) {
+  if (_origOuvrirDocs) _origOuvrirDocs(clientId);
+  setTimeout(function() {
+    window.peuplerSelectClient();
+    var sel = document.getElementById("select-client-contrat");
+    if (sel) sel.value = clientId;
+    var badge = document.getElementById("client-selector-badge");
+    if (badge) badge.style.display = "inline-block";
+  }, 100);
+};
+
+document.addEventListener("DOMContentLoaded", function() {
+  var docsNav = document.querySelector('[onclick*="showPage(''docs'')"], [onclick*="showPage(\"docs\")"]');
+});
+
+var _origShowPage = typeof showPage === "function" ? showPage : null;
+if (typeof showPage === "function") {
+  var __showPageOrig = showPage;
+  window.showPage = function(page) {
+    __showPageOrig(page);
+    if (page === "docs") {
+      setTimeout(window.peuplerSelectClient, 150);
+    }
+  };
+}
+
+var _origGenererContrat = window.genererContratPrestation;
+window.genererContratPrestation = function() {
+  // Vérifier qu'un client est sélectionné
+  var sel = document.getElementById("select-client-contrat");
+  if (sel && sel.value && !window._currentDocsClientId) {
+    window._currentDocsClientId = parseInt(sel.value);
+  }
+  var id = window._currentDocsClientId;
+  if (!id) {
+    alert("Veuillez selectionner un client avant de generer le contrat.");
+    var selEl = document.getElementById("select-client-contrat");
+    if (selEl) selEl.focus();
+    return;
+  }
+  var svc = window._selectedService;
+  if (!svc || !svc.id) { alert("Veuillez selectionner un service."); return; }
+  var qualite = (document.querySelector('input[name="qualite_cp"]:checked')||{}).value||"conseil";
+  var modalite = (document.querySelector('input[name="modalite_cp"]:checked')||{}).value||"comptant";
+  var mandat = [];
+  document.querySelectorAll('input[name="mandat_cp"]:checked').forEach(function(el){ mandat.push(el.value); });
+  var montantVal = (document.getElementById("montant_cp")||{}).value||"";
+  var montantFormate = montantVal ? montantVal + ",00 EUR" : svc.tarif;
+  var payload = {
+    client_id: id,
+    service_id: svc.id,
+    service_label: svc.label,
+    service_tarif: montantFormate,
+    service_categorie: svc.categorie,
+    qualite: qualite,
+    date_debut: (document.getElementById("date_debut_cp")||{}).value||"",
+    duree_estimee: (document.getElementById("duree_cp")||{}).value||"",
+    date_fin: (document.getElementById("date_fin_cp")||{}).value||"",
+    montant: montantFormate,
+    modalite_paiement: modalite,
+    nb_fois: (document.getElementById("nb_fois_cp")||{}).value||"",
+    acompte_percent: (document.getElementById("acompte_pct_cp")||{}).value||"",
+    acompte_euros: (document.getElementById("acompte_eur_cp")||{}).value||"",
+    success_fee: (document.getElementById("success_fee_check_cp")||{}).checked?(document.getElementById("success_fee_cp")||{}).value||"":"",
+    mandat_options: mandat,
+    adresse_client: (document.getElementById("adresse_client_cp")||{}).value||"",
+    lieu_signature: (document.getElementById("lieu_sig_cp")||{}).value||"Trois-Rivieres",
+    date_signature: (document.getElementById("date_sig_cp")||{}).value||""
+  };
+  var tok = localStorage.getItem("simele_token")||"";
+  var win = window.open("","_blank");
+  if(!win) { alert("Autorisez les popups"); return; }
+  win.document.write("<html><body style='font-family:Arial;text-align:center;padding:80px;color:#1b2d5b'><h2>Generation du contrat...</h2><p>" + svc.label + "</p></body></html>");
+  fetch("/api/contrats/prestation",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+tok},
+    body:JSON.stringify(payload)
+  }).then(function(r){return r.text();})
+  .then(function(h){
+    win.document.open(); win.document.write(h); win.document.close();
+    // Rafraîchir la liste des documents
+    setTimeout(function(){ if(typeof window.chargerDocuments==="function") window.chargerDocuments(); }, 500);
+  })
+  .catch(function(e){win.document.write("<p style='color:red'>Erreur: "+e.message+"</p>");});
 };
 </script>
 </body>
