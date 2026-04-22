@@ -179,4 +179,28 @@ try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mot_de_passe_provisoir
 try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mdp_envoi_at TEXT"); } catch(e) {}
 try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN acces_actif INTEGER DEFAULT 0"); } catch(e) {}
 
+
+// Table coaching sessions
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS coaching_sessions (
+    id                         INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_id                  INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    seance_number              INTEGER NOT NULL CHECK(seance_number IN (1,2,3)),
+    statut                     TEXT    NOT NULL DEFAULT 'en_cours',
+    bloc1                      TEXT    DEFAULT '{}',
+    bloc2                      TEXT    DEFAULT '{}',
+    bloc3                      TEXT    DEFAULT '{}',
+    bloc4                      TEXT    DEFAULT '{}',
+    bloc5                      TEXT    DEFAULT '{}',
+    synthese_points_cles       TEXT    DEFAULT '',
+    synthese_risques           TEXT    DEFAULT '',
+    synthese_opportunites      TEXT    DEFAULT '',
+    synthese_prochaines_etapes TEXT    DEFAULT '',
+    checklists                 TEXT    DEFAULT '{}',
+    created_at                 TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at                 TEXT    NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(client_id, seance_number)
+  )`);
+} catch(e) { console.log('coaching_sessions:', e.message); }
+
 module.exports = { db, initDB };
