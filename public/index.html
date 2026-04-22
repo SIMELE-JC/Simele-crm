@@ -1174,6 +1174,7 @@ const pageTitles = {
   docs:['Génération de documents','Contrats, devis, programmes'],
   ia:['IA Assistante SIMELE','Analyse, suggestions, alertes'],
   'nouveaux-clients':['Nouveaux clients','Demandes d\'inscription — Portail client'],
+  coaching:['Coaching stratégique','Questionnaires & suivi des séances'],
   'espace-client':['Espace client','Vue du portail client depuis le CRM']
 };
 
@@ -1194,6 +1195,7 @@ function showPage(id, clientId=null) {
   if(id==='docs') renderDocsPage();
   if(id==='ia') updateIASuggestions();
   if(id==='nouveaux-clients') loadNouveauxClients();
+  if(id==='coaching') renderCoachingPage();
   if(id==='programme') {
     const c = getClientById(currentClientId);
     const lbl = document.getElementById('prog-client-label');
@@ -1438,6 +1440,7 @@ function renderDossier(clientId) {
           <div class="tab" onclick="showPage('entretien')">Entretien</div>
           <div class="tab" onclick="showPage('programme')">Programme</div>
           <div class="tab" onclick="showPage('docs')">Documents</div>
+          <div class="tab" onclick="showPage('coaching')">&#127919; Coaching</div>
         </div>
 
         ${c.score!==null?`
@@ -1674,7 +1677,17 @@ function buildDocHTML(tplId, client) {
   <div class="sign-box">
     <div class="sign-area"><strong>Signature du Client</strong><br><em>(Lu et approuvé)</em></div>
     <div class="sign-area"><strong>Signature du Prestataire</strong><br>Jean-Christophe Simele</div>
-  </div></body></html>`;
+  </div>
+<div id="page-coaching" style="display:none">
+  <div id="coaching-content" style="padding:20px">
+    <div class="empty-state">
+      <div class="empty-state-icon">&#127919;</div>
+      <div class="empty-state-title">Coaching</div>
+      <div class="empty-state-desc">Sélectionnez un client pour accéder aux questionnaires.</div>
+    </div>
+  </div>
+</div>
+</body></html>`;
 
   const templates = {
     contrat3: () => contratBase('3', '210€'),
@@ -2938,6 +2951,372 @@ window.ouvrirDocs = function(clientId) {
     if (bar && clientId) { bar.style.background = "#d4edda"; bar.style.borderColor = "#28a745"; }
   }, 400);
 };
+
+
+// ===========================
+// COACHING
+// ===========================
+var _coachingData = {};
+
+const COACHING_SEANCES = {
+  1: {
+    titre: 'Séance 1 – Structuration du Projet & Environnement',
+    duree: '2h30 à 3h',
+    couleur: '#1b2d5b',
+    blocs: [
+      { titre: 'Bloc 1 – Compréhension du projet', questions: [
+        'Quel est le concept principal de votre projet ?',
+        'Quelle problématique ou besoin votre projet cherche-t-il à résoudre ?',
+        'Quelle est votre vision à long terme pour cette entreprise ?',
+        'Quelles sont les valeurs fondamentales qui guideront votre activité ?',
+        'En quoi votre projet se distingue-t-il des offres existantes sur le marché ?',
+        'Décrivez votre parcours et vos motivations personnelles.'
+      ]},
+      { titre: 'Bloc 2 – Clarification stratégique', questions: [
+        'Qui est votre client idéal ? (profil, besoins, habitudes, freins)',
+        'Quelle est l'offre de produits ou services que vous souhaitez proposer ?',
+        'Comment percevez-vous l'environnement concurrentiel de votre secteur ?',
+        'Quels sont les principaux acteurs de votre écosystème (partenaires, fournisseurs) ?',
+        'Quelle est la proposition de valeur unique de votre offre ?'
+      ]},
+      { titre: 'Bloc 3 – Données concrètes', questions: [
+        'Quel statut juridique envisagez-vous ? (micro-entreprise, SASU, EURL...)',
+        'Avez-vous déjà une idée du nom commercial de votre entreprise ?',
+        'Quelle est l'adresse du siège social envisagé ?',
+        'Quelles démarches administratives avez-vous identifiées pour l'immatriculation ?',
+        'Connaissez-vous les organismes sociaux et fiscaux liés à votre activité ?',
+        'Quels sont les délais que vous estimez nécessaires pour le lancement ?'
+      ]},
+      { titre: 'Bloc 4 – Aide à la décision', questions: [
+        'Parmi les statuts juridiques, lequel vous semble le plus adapté et pourquoi ?',
+        'Quels sont les avantages et inconvénients de chaque option de statut ?',
+        'Comment comptez-vous valider l'adéquation de votre offre avec les besoins ?',
+        'Quels sont les risques majeurs que vous identifiez pour le lancement ?',
+        'Quelle est la priorité numéro un pour les 3 prochains mois ?'
+      ]},
+      { titre: 'Bloc 5 – Plan d'action', questions: [
+        'Listez les 3 premières actions concrètes pour avancer sur la structuration.',
+        'Quelles sont les prochaines étapes pour affiner le positionnement de votre offre ?',
+        'Qui peut vous accompagner ou vous apporter des ressources complémentaires ?',
+        'Fixez une date butoir pour la réalisation de ces premières actions.'
+      ]}
+    ]
+  },
+  2: {
+    titre: 'Séance 2 – Stratégie & Dispositifs d'Aide',
+    duree: '2h30 à 3h',
+    couleur: '#2e7d32',
+    blocs: [
+      { titre: 'Bloc 1 – Compréhension du projet', questions: [
+        'Quels sont vos objectifs financiers à court (1 an), moyen (3 ans) et long terme (5 ans) ?',
+        'Comment envisagez-vous la croissance de votre activité ?',
+        'Quels sont les principaux postes de dépenses que vous anticipez ?',
+        'Quelles ressources (humaines, matérielles, financières) possédez-vous déjà ?',
+        'Quelles sont les ressources manquantes et comment comptez-vous les acquérir ?'
+      ]},
+      { titre: 'Bloc 2 – Clarification stratégique', questions: [
+        'Quelle est votre stratégie de prix ? (coût+, valeur perçue, pénétration, écrémage)',
+        'Comment comptez-vous commercialiser votre offre ? (canaux, partenariats)',
+        'Quelle est votre stratégie de communication et de marketing ?',
+        'Avez-vous identifié des dispositifs d'aide à la création ? (subventions, prêts d'honneur)',
+        'Comment comptez-vous organiser les premières étapes de votre lancement ?'
+      ]},
+      { titre: 'Bloc 3 – Données concrètes', questions: [
+        'Quel est le montant estimé de votre besoin en financement initial ?',
+        'Avez-vous déjà contacté des banques ou organismes de financement ?',
+        'Quels sont les coûts fixes et variables que vous avez identifiés ?',
+        'Quels documents financiers avez-vous préparés ou comptez-vous préparer ?',
+        'Quels sont les KPIs que vous souhaitez suivre pour mesurer le succès ?'
+      ]},
+      { titre: 'Bloc 4 – Aide à la décision', questions: [
+        'Parmi les dispositifs d'aide identifiés, lesquels sont les plus pertinents ?',
+        'Comment allez-vous prioriser vos actions avec un budget limité ?',
+        'Quels scénarios (optimiste, réaliste, pessimiste) avez-vous envisagés ?',
+        'Comment comptez-vous gérer les imprévus pendant la phase de lancement ?',
+        'Quelle est la prochaine étape la plus critique pour votre stratégie ?'
+      ]},
+      { titre: 'Bloc 5 – Plan d'action', questions: [
+        'Listez les 3 actions prioritaires pour sécuriser votre financement initial.',
+        'Définissez les prochaines étapes pour finaliser votre stratégie commerciale.',
+        'Identifiez les personnes ou organisations pouvant vous soutenir.',
+        'Fixez une date butoir pour la réalisation de ces actions.'
+      ]}
+    ]
+  },
+  3: {
+    titre: 'Séance 3 – Structuration Financière & Projection',
+    duree: '2h30 à 3h',
+    couleur: '#7b1fa2',
+    blocs: [
+      { titre: 'Bloc 1 – Compréhension du projet', questions: [
+        'Quelle est votre vision à moyen et long terme concernant la rentabilité ?',
+        'Comment comptez-vous générer des revenus ? (modèle économique)',
+        'Quels sont les principaux coûts liés à la production de vos biens ou services ?',
+        'Avez-vous une idée du seuil de rentabilité de votre activité ?',
+        'Quelles sont vos attentes en termes de rémunération personnelle ?'
+      ]},
+      { titre: 'Bloc 2 – Clarification stratégique', questions: [
+        'Comment avez-vous défini la structure de vos prix et de vos marges ?',
+        'Quels sont les éléments clés de votre prévisionnel financier sur 3 ans ?',
+        'Quels indicateurs financiers allez-vous suivre régulièrement ? (marge brute, trésorerie, BFR)',
+        'Quels sont vos besoins en financement et à quoi serviront-ils précisément ?',
+        'Comment comptez-vous présenter votre projet aux financeurs potentiels ?'
+      ]},
+      { titre: 'Bloc 3 – Données concrètes', questions: [
+        'Quel est votre CA prévisionnel pour les années 1, 2 et 3 ?',
+        'Quel est le montant des charges fixes et variables estimées en année 1 ?',
+        'Quel est le besoin en fonds de roulement (BFR) estimé ?',
+        'Avez-vous une liste des investissements nécessaires et leur coût ?',
+        'Quels sont vos apports personnels et les financements externes envisagés ?'
+      ]},
+      { titre: 'Bloc 4 – Aide à la décision', questions: [
+        'Votre structure de prix et marges est-elle suffisamment solide pour assurer la rentabilité ?',
+        'Votre prévisionnel est-il réaliste et cohérent avec votre stratégie commerciale ?',
+        'Quels arguments clés mettrez-vous en avant pour rassurer les financeurs ?',
+        'Comment comptez-vous gérer les risques financiers (baisse d'activité, charges imprévues) ?',
+        'Quelle est la décision la plus importante concernant le financement de votre projet ?'
+      ]},
+      { titre: 'Bloc 5 – Plan d'action', questions: [
+        'Listez les 3 actions prioritaires pour finaliser votre prévisionnel financier.',
+        'Définissez les prochaines étapes pour préparer votre dossier de financement.',
+        'Identifiez les contacts clés (banquiers, experts-comptables, plateformes) à solliciter.',
+        'Fixez une date butoir pour la réalisation de ces actions.'
+      ]}
+    ]
+  }
+};
+
+const CHECKLISTS = {
+  immatriculation: { titre: 'Checklist "Immatriculation prête"', items: [
+    'Nom de l'entreprise choisi et vérifié (disponibilité)',
+    'Statut juridique défini et adapté au projet',
+    'Adresse du siège social fixée',
+    'Activité principale déclarée (code APE/NAF)',
+    'Capital social déterminé et déposé (si applicable)',
+    'Comptes bancaires professionnels ouverts',
+    'Assurance(s) professionnelle(s) souscrite(s) (RC Pro, etc.)',
+    'Déclaration d'activité effectuée auprès du CFE compétent',
+    'Numéro SIREN/SIRET obtenu',
+    'Numéro de TVA intracommunautaire obtenu (si applicable)',
+    'Inscription aux registres obligatoires (RCS, RM, etc.)',
+    'Protection de la marque ou du nom commercial (INPI)',
+    'Documents légaux et administratifs archivés'
+  ]},
+  projet: { titre: 'Checklist "Projet viable"', items: [
+    'Problématique client clairement identifiée',
+    'Solution proposée répondant au besoin du client',
+    'Proposition de valeur unique et différenciante définie',
+    'Cible client précisément identifiée et segmentée',
+    'Étude de marché réalisée et validée',
+    'Analyse concurrentielle approfondie',
+    'Modèle économique clair et générateur de revenus',
+    'Prévisionnel financier réaliste (CA, charges, rentabilité)',
+    'Seuil de rentabilité calculé et atteignable',
+    'Plan de financement initial sécurisé',
+    'Ressources humaines, matérielles et financières identifiées',
+    'Risques majeurs identifiés et plans d'atténuation définis',
+    'KPIs définis pour le suivi',
+    'Potentiel de croissance et d'évolution du projet envisagé'
+  ]},
+  strategie: { titre: 'Checklist "Stratégie claire"', items: [
+    'Vision et mission de l'entreprise définies',
+    'Objectifs stratégiques SMART fixés',
+    'Stratégie commerciale et de distribution définie',
+    'Stratégie marketing et de communication élaborée',
+    'Positionnement clair sur le marché',
+    'Plan d'action détaillé avec des étapes concrètes',
+    'Responsabilités attribuées pour chaque action',
+    'Échéancier réaliste pour la mise en œuvre',
+    'Mécanismes de suivi et d'évaluation mis en place',
+    'Flexibilité de la stratégie pour s'adapter aux évolutions',
+    'Alignement de la stratégie avec les valeurs du fondateur',
+    'Plan de développement à moyen et long terme envisagé'
+  ]}
+};
+
+async function renderCoachingPage() {
+  const client = getClientById(currentClientId);
+  const el = document.getElementById('coaching-content');
+  if (!el) return;
+  if (!client) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">&#127919;</div><div class="empty-state-title">Aucun client sélectionné</div><div class="empty-state-desc">Ouvrez un dossier client puis cliquez sur l'onglet Coaching.</div></div>`;
+    return;
+  }
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray400)">Chargement...</div>';
+  
+  // Load coaching sessions from API
+  let sessions = {};
+  try {
+    const resp = await API.get('/coaching/' + client.id);
+    if (resp && resp.sessions) {
+      resp.sessions.forEach(s => { sessions[s.seance_number] = s; });
+    }
+  } catch(e) {}
+  _coachingData[client.id] = sessions;
+  
+  const statut = (num) => {
+    const s = sessions[num];
+    if (!s) return {label:'Non démarrée', color:'var(--gray300)', bg:'var(--gray50)'};
+    if (s.statut === 'terminee') return {label:'Terminée &#10003;', color:'var(--green)', bg:'#e8f5e9'};
+    return {label:'En cours', color:'var(--amber)', bg:'#fff8e1'};
+  };
+
+  el.innerHTML = `
+    <div style="max-width:900px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--gray100)">
+        <div class="id-avatar-lg" style="background:${client.color};color:${client.textColor};width:44px;height:44px;font-size:16px">${client.initials}</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--navy)">${client.prenom} ${client.nom}</div>
+          <div style="font-size:12px;color:var(--gray400)">Programme coaching stratégique · 3 séances</div>
+        </div>
+      </div>
+
+      <!-- Stepper séances -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px">
+        ${[1,2,3].map(num => {
+          const s = statut(num); const info = COACHING_SEANCES[num];
+          return `<div class="card" style="cursor:pointer;border-left:4px solid ${info.couleur};transition:box-shadow .2s" onclick="renderCoachingSeance(${client.id}, ${num})" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+            <div style="font-weight:700;font-size:13px;color:${info.couleur}">Séance ${num}</div>
+            <div style="font-size:11px;color:var(--gray600);margin:4px 0">${info.titre.split('–')[1].trim()}</div>
+            <div style="font-size:11px;color:var(--gray400)">${info.duree}</div>
+            <div style="margin-top:8px;display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;color:${s.color};background:${s.bg}">${s.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Checklists -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">&#10003; Checklists de suivi</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          ${Object.entries(CHECKLISTS).map(([key, cl]) => `
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">${cl.titre}</div>
+              ${cl.items.map((item, i) => {
+                const checked = sessions[1] && sessions[2] && sessions[3] ?
+                  (JSON.parse(sessions[3].checklists||'{}')[key]||{})[i] : false;
+                return `<label style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;cursor:pointer;font-size:11px;color:var(--gray600)">
+                  <input type="checkbox" ${checked?'checked':''} onchange="updateChecklist('${client.id}','${key}',${i},this.checked)" style="margin-top:2px;cursor:pointer">
+                  <span>${item}</span>
+                </label>`;
+              }).join('')}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('page-title').textContent = 'Coaching – ' + client.prenom + ' ' + client.nom;
+  document.getElementById('page-sub').textContent = 'Programme 3 séances · Coaching stratégique';
+}
+
+function renderCoachingSeance(clientId, num) {
+  const client = getClientById(clientId);
+  const seance = COACHING_SEANCES[num];
+  const sessions = _coachingData[clientId] || {};
+  const session = sessions[num] || {};
+  const el = document.getElementById('coaching-content');
+  
+  const savedBloc = (n) => { try { return JSON.parse(session['bloc'+n]||'{}'); } catch(e){return{};} };
+  
+  el.innerHTML = `
+    <div style="max-width:800px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <button class="btn btn-sm" onclick="renderCoachingPage()" style="background:var(--gray100);color:var(--gray700)">
+          &#8592; Retour
+        </button>
+        <div>
+          <div style="font-size:17px;font-weight:700;color:var(--navy)">${seance.titre}</div>
+          <div style="font-size:12px;color:var(--gray400)">Durée : ${seance.duree} · ${client.prenom} ${client.nom}</div>
+        </div>
+        <div style="margin-left:auto">
+          <select id="statut-seance" style="padding:6px 12px;border-radius:8px;border:1px solid var(--gray200);font-size:12px">
+            <option value="en_cours" ${(session.statut||'en_cours')==='en_cours'?'selected':''}>En cours</option>
+            <option value="terminee" ${session.statut==='terminee'?'selected':''}>Terminée</option>
+          </select>
+        </div>
+      </div>
+      
+      ${seance.blocs.map((bloc, bi) => `
+        <div class="card" style="margin-bottom:16px;border-left:4px solid ${seance.couleur}">
+          <div class="card-title" style="color:${seance.couleur};margin-bottom:12px">${bloc.titre}</div>
+          ${bloc.questions.map((q, qi) => `
+            <div style="margin-bottom:12px">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--gray700);margin-bottom:4px">${qi+1}. ${q}</label>
+              <textarea id="b${bi+1}_q${qi}" style="width:100%;min-height:60px;padding:8px;border:1px solid var(--gray200);border-radius:6px;font-size:12px;resize:vertical;font-family:inherit" placeholder="Réponse...">${(savedBloc(bi+1)['q'+qi])||''}</textarea>
+            </div>
+          `).join('')}
+        </div>
+      `).join('')}
+      
+      <!-- Synthèse coach -->
+      <div class="card" style="margin-bottom:16px;background:#f8f9ff;border:1px solid #e3e8ff">
+        <div class="card-title" style="color:#1b2d5b;margin-bottom:12px">&#128203; Synthèse coach (usage interne)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          ${[['pts_cles','Points clés'],['risques','Risques identifiés'],['opportunites','Opportunités'],['next','Prochaines étapes']].map(([key, label]) => `
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px">${label}</label>
+              <textarea id="synth_${key}" style="width:100%;min-height:70px;padding:8px;border:1px solid #c5cae9;border-radius:6px;font-size:12px;resize:vertical;font-family:inherit" placeholder="${label}...">${session['synthese_'+key.replace('pts_cles','points_cles').replace('next','prochaines_etapes')]||''}</textarea>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div style="text-align:right;padding-bottom:20px">
+        <button class="btn btn-primary" onclick="saveCoachingSeance(${clientId}, ${num})" style="padding:10px 28px;font-size:14px">
+          &#128190; Enregistrer la séance ${num}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveCoachingSeance(clientId, num) {
+  const seance = COACHING_SEANCES[num];
+  const blocs = {};
+  seance.blocs.forEach((bloc, bi) => {
+    const b = {};
+    bloc.questions.forEach((q, qi) => {
+      const el = document.getElementById('b'+(bi+1)+'_q'+qi);
+      if(el) b['q'+qi] = el.value;
+    });
+    blocs['bloc'+(bi+1)] = b;
+  });
+  const payload = {
+    statut: document.getElementById('statut-seance')?.value || 'en_cours',
+    ...blocs,
+    synthese_points_cles: document.getElementById('synth_pts_cles')?.value||'',
+    synthese_risques: document.getElementById('synth_risques')?.value||'',
+    synthese_opportunites: document.getElementById('synth_opportunites')?.value||'',
+    synthese_prochaines_etapes: document.getElementById('synth_next')?.value||''
+  };
+  try {
+    const resp = await API.post('/coaching/'+clientId+'/seance/'+num, payload);
+    if (resp && resp.session) {
+      if (!_coachingData[clientId]) _coachingData[clientId] = {};
+      _coachingData[clientId][num] = resp.session;
+      showToast('Séance '+num+' enregistrée avec succès !', true);
+    }
+  } catch(e) { showToast('Erreur lors de l'enregistrement.', false); }
+}
+
+async function updateChecklist(clientId, key, idx, checked) {
+  const sessions = _coachingData[clientId] || {};
+  const session3 = sessions[3] || {};
+  let cl = {};
+  try { cl = JSON.parse(session3.checklists||'{}'); } catch(e){}
+  if (!cl[key]) cl[key] = {};
+  cl[key][idx] = checked;
+  try {
+    const resp = await API.post('/coaching/'+clientId+'/seance/3', {
+      statut: session3.statut||'en_cours', checklists: cl
+    });
+    if(resp && resp.session) {
+      if(!_coachingData[clientId]) _coachingData[clientId]={};
+      _coachingData[clientId][3] = resp.session;
+    }
+  } catch(e) {}
+}
+
 </script>
 </body>
 </html>
