@@ -23,6 +23,7 @@ const documentsRouter = require('./routes/documents');
 const rdvRouter = require('./routes/rdv');
 const emailRouter = require('./routes/email');
 const portalRouter = require('./routes/portal');
+const coachingRouter = require('./routes/coaching');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/documents', requireAuth, documentsRouter);
 app.use('/api/rdv', requireAuth, rdvRouter);
 app.use('/api/email', requireAuth, emailRouter);
 app.use('/api/portal', portalRouter);
+app.use('/api/coaching', requireAuth, coachingRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'SIMELE CRM', timestamp: new Date().toISOString() });
