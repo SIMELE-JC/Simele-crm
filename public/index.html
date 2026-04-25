@@ -2918,8 +2918,8 @@ window.changerClientDocs = function(val) {
 };
 
 var _spOrig = window.showPage;
-window.showPage = function(p) {
-  if (_spOrig) _spOrig(p);
+window.showPage = function(p, clientId) {
+  if (_spOrig) _spOrig(p, clientId);
   if (p === "docs") setTimeout(function() { window.populateDocsSelect(); }, 200);
 };
 
