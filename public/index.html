@@ -1195,7 +1195,7 @@ function showPage(id, clientId=null) {
   if(id==='docs') renderDocsPage();
   if(id==='ia') updateIASuggestions();
   if(id==='nouveaux-clients') loadNouveauxClients();
-  if(id==='coaching') renderCoachingPage();
+  if(id==='coaching') { renderCoachingPage(); return; }
   if(id==='programme') {
     const c = getClientById(currentClientId);
     const lbl = document.getElementById('prog-client-label');
@@ -1677,12 +1677,7 @@ function buildDocHTML(tplId, client) {
   <div class="sign-box">
     <div class="sign-area"><strong>Signature du Client</strong><br><em>(Lu et approuvé)</em></div>
     <div class="sign-area"><strong>Signature du Prestataire</strong><br>Jean-Christophe Simele</div>
-  </div>      <div class="empty-state-title">Coaching</div>
-      <div class="empty-state-desc">Sélectionnez un client pour accéder aux questionnaires.</div>
-    </div>
-  </div>
-</div>
-
+  </div></body></html>`;
 
   const templates = {
     contrat3: () => contratBase('3', '210€'),
@@ -2947,49 +2942,45 @@ window.ouvrirDocs = function(clientId) {
   }, 400);
 };
 
-
-
+// ===========================
+// COACHING STRATEGIQUE
+// ===========================
 var _coachingData = {};
 
 var SEANCE_DATA = [null,
   {titre:"Seance 1 - Structuration du Projet",duree:"2h30 a 3h",couleur:"#1b2d5b",blocs:[
     {t:"Bloc 1 - Comprehension du projet",q:["Quel est le concept principal de votre projet ?","Quelle problematique votre projet cherche-t-il a resoudre ?","Quelle est votre vision a long terme pour cette entreprise ?","Quelles sont les valeurs fondamentales qui guideront votre activite ?","En quoi votre projet se distingue-t-il des offres existantes ?","Decrivez votre parcours et vos motivations personnelles."]},
-    {t:"Bloc 2 - Clarification strategique",q:["Qui est votre client ideal ? (profil, besoins, habitudes, freins)","Quelle est votre offre de produits ou services ?","Comment percevez-vous l’environnement concurrentiel de votre secteur ?","Quels sont les principaux acteurs de votre ecosysteme ?","Quelle est la proposition de valeur unique de votre offre ?"]},
-    {t:"Bloc 3 - Donnees concretes",q:["Quel statut juridique envisagez-vous ? (micro-entreprise, SASU, EURL)","Avez-vous une idee du nom commercial de votre entreprise ?","Quelle est l’adresse du siege social envisage ?","Quelles demarches administratives avez-vous identifiees ?","Connaissez-vous les organismes sociaux et fiscaux lies a votre activite ?","Quels sont les delais necessaires pour le lancement ?"]},
-    {t:"Bloc 4 - Aide a la decision",q:["Quel statut juridique vous semble le plus adapte et pourquoi ?","Quels sont les avantages et inconvenients de chaque statut ?","Comment comptez-vous valider l’adequation de votre offre avec les besoins ?","Quels sont les risques majeurs pour le lancement ?","Quelle est la priorite numero un pour les 3 prochains mois ?"]},
-    {t:"Bloc 5 - Plan d’action",q:["Listez les 3 premieres actions pour la structuration juridique.","Prochaines etapes pour affiner le positionnement de votre offre ?","Qui peut vous accompagner ou vous apporter des ressources ?","Fixez une date butoir pour ces premieres actions."]}
+    {t:"Bloc 2 - Clarification strategique",q:["Qui est votre client ideal ? (profil, besoins, habitudes, freins)","Quelle est votre offre de produits ou services ?","Comment percevez-vous l'environnement concurrentiel de votre secteur ?","Quels sont les principaux acteurs de votre ecosysteme ?","Quelle est la proposition de valeur unique de votre offre ?"]},
+    {t:"Bloc 3 - Donnees concretes",q:["Quel statut juridique envisagez-vous ? (micro-entreprise, SASU, EURL)","Avez-vous une idee du nom commercial de votre entreprise ?","Quelle est l'adresse du siege social envisage ?","Quelles demarches administratives avez-vous identifiees ?","Connaissez-vous les organismes sociaux et fiscaux lies a votre activite ?","Quels sont les delais necessaires pour le lancement ?"]},
+    {t:"Bloc 4 - Aide a la decision",q:["Quel statut juridique vous semble le plus adapte et pourquoi ?","Quels sont les avantages et inconvenients de chaque statut ?","Comment comptez-vous valider l'adequation de votre offre avec les besoins ?","Quels sont les risques majeurs pour le lancement ?","Quelle est la priorite numero un pour les 3 prochains mois ?"]},
+    {t:"Bloc 5 - Plan d'action",q:["Listez les 3 premieres actions pour la structuration juridique.","Prochaines etapes pour affiner le positionnement de votre offre ?","Qui peut vous accompagner ou vous apporter des ressources ?","Fixez une date butoir pour ces premieres actions."]}
   ]},
-  {titre:"Seance 2 - Strategie & Dispositifs d’Aide",duree:"2h30 a 3h",couleur:"#2e7d32",blocs:[
+  {titre:"Seance 2 - Strategie et Dispositifs d'Aide",duree:"2h30 a 3h",couleur:"#2e7d32",blocs:[
     {t:"Bloc 1 - Comprehension du projet",q:["Quels sont vos objectifs financiers a court, moyen et long terme ?","Comment envisagez-vous la croissance de votre activite ?","Quels sont les principaux postes de depenses anticipes ?","Quelles ressources possedez-vous deja pour lancer le projet ?","Quelles ressources manquent et comment comptez-vous les acquerir ?"]},
-    {t:"Bloc 2 - Clarification strategique",q:["Quelle est votre strategie de prix ? (cout+, valeur percue, penetration)","Comment comptez-vous commercialiser votre offre ? (canaux, partenariats)","Quelle est votre strategie de communication et de marketing ?","Avez-vous identifie des dispositifs d’aide a la creation d’entreprise ?","Comment organiserez-vous les premieres etapes de votre lancement ?"]},
+    {t:"Bloc 2 - Clarification strategique",q:["Quelle est votre strategie de prix ? (cout+, valeur percue, penetration)","Comment comptez-vous commercialiser votre offre ? (canaux, partenariats)","Quelle est votre strategie de communication et de marketing ?","Avez-vous identifie des dispositifs d'aide a la creation d'entreprise ?","Comment organiserez-vous les premieres etapes de votre lancement ?"]},
     {t:"Bloc 3 - Donnees concretes",q:["Quel est le montant estime de votre besoin en financement initial ?","Avez-vous deja contacte des banques ou organismes de financement ?","Quels sont les couts fixes et variables identifies ?","Quels documents financiers avez-vous prepares ou prevoyez-vous ?","Quels KPIs souhaitez-vous suivre pour mesurer le succes ?"]},
-    {t:"Bloc 4 - Aide a la decision",q:["Parmi les dispositifs d’aide, lesquels sont les plus pertinents ?","Comment prioriserez-vous vos actions avec un budget limite ?","Quels scenarios (optimiste, realiste, pessimiste) avez-vous envisages ?","Comment gererez-vous les imprevus pendant la phase de lancement ?","Quelle est la prochaine etape la plus critique pour votre strategie ?"]},
-    {t:"Bloc 5 - Plan d’action",q:["3 actions prioritaires pour securiser votre financement initial.","Prochaines etapes pour finaliser votre strategie commerciale.","Personnes ou organisations pouvant vous apporter un soutien.","Date butoir pour la realisation de ces actions."]}
+    {t:"Bloc 4 - Aide a la decision",q:["Parmi les dispositifs d'aide, lesquels sont les plus pertinents ?","Comment prioriserez-vous vos actions avec un budget limite ?","Quels scenarios (optimiste, realiste, pessimiste) avez-vous envisages ?","Comment gererez-vous les imprevus pendant la phase de lancement ?","Quelle est la prochaine etape la plus critique pour votre strategie ?"]},
+    {t:"Bloc 5 - Plan d'action",q:["3 actions prioritaires pour securiser votre financement initial.","Prochaines etapes pour finaliser votre strategie commerciale.","Personnes ou organisations pouvant vous apporter un soutien.","Date butoir pour la realisation de ces actions."]}
   ]},
-  {titre:"Seance 3 - Structuration Financiere & Projection",duree:"2h30 a 3h",couleur:"#7b1fa2",blocs:[
-    {t:"Bloc 1 - Comprehension du projet",q:["Quelle est votre vision concernant la rentabilite de l’entreprise ?","Comment comptez-vous generer des revenus ? (modele economique)","Quels sont les principaux couts lies a la production ?","Avez-vous une idee du seuil de rentabilite de votre activite ?","Quelles sont vos attentes en termes de remuneration personnelle ?"]},
+  {titre:"Seance 3 - Structuration Financiere et Projection",duree:"2h30 a 3h",couleur:"#7b1fa2",blocs:[
+    {t:"Bloc 1 - Comprehension du projet",q:["Quelle est votre vision concernant la rentabilite de l'entreprise ?","Comment comptez-vous generer des revenus ? (modele economique)","Quels sont les principaux couts lies a la production ?","Avez-vous une idee du seuil de rentabilite de votre activite ?","Quelles sont vos attentes en termes de remuneration personnelle ?"]},
     {t:"Bloc 2 - Clarification strategique",q:["Comment avez-vous defini la structure de vos prix et de vos marges ?","Quels sont les elements cles de votre previsionnel financier sur 3 ans ?","Quels indicateurs financiers allez-vous suivre ? (marge brute, tresorerie, BFR)","Quels sont vos besoins en financement et a quoi serviront-ils ?","Comment comptez-vous presenter votre projet aux financeurs ?"]},
     {t:"Bloc 3 - Donnees concretes",q:["Quel est votre CA previsionnel pour les annees 1, 2 et 3 ?","Quel est le montant des charges fixes et variables en annee 1 ?","Quel est le besoin en fonds de roulement (BFR) estime ?","Avez-vous une liste des investissements necessaires et leur cout ?","Quels sont vos apports personnels et financements externes envisages ?"]},
     {t:"Bloc 4 - Aide a la decision",q:["Votre structure de prix et marges assure-t-elle la rentabilite ?","Votre previsionnel est-il realiste et coherent avec votre strategie ?","Quels arguments cles rassureront les financeurs sur la viabilite ?","Comment gererez-vous les risques financiers imprevus ?","Quelle est la decision la plus importante concernant le financement ?"]},
-    {t:"Bloc 5 - Plan d’action",q:["3 actions prioritaires pour finaliser votre previsionnel financier.","Prochaines etapes pour preparer votre dossier de financement.","Contacts cles a solliciter (banquiers, experts-comptables).","Date butoir pour la realisation de ces actions."]}
+    {t:"Bloc 5 - Plan d'action",q:["3 actions prioritaires pour finaliser votre previsionnel financier.","Prochaines etapes pour preparer votre dossier de financement.","Contacts cles a solliciter (banquiers, experts-comptables).","Date butoir pour la realisation de ces actions."]}
   ]}
 ];
 
 var CHKLISTS = {
-  immatriculation: {t:"Immatriculation prete",q:["Nom de l’entreprise choisi et verifie","Statut juridique defini et adapte au projet","Adresse du siege social fixee","Activite principale declaree (code APE/NAF)","Capital social determine et depose (si applicable)","Comptes bancaires professionnels ouverts","Assurances professionnelles souscrites (RC Pro)","Declaration d’activite effectuee aupres du CFE competent","Numero SIREN/SIRET obtenu","Numero de TVA intracommunautaire obtenu (si applicable)","Inscription aux registres obligatoires (RCS, RM)","Protection de la marque ou du nom commercial (INPI)","Documents legaux et administratifs archives"]},
-  projet: {t:"Projet viable",q:["Problematique client clairement identifiee","Solution proposee repondant au besoin du client","Proposition de valeur unique et differenciante definie","Cible client precisement identifiee et segmentee","Etude de marche realisee et validee","Analyse concurrentielle approfondie","Modele economique clair et generateur de revenus","Previsionnel financier realiste (CA, charges, rentabilite)","Seuil de rentabilite calcule et atteignable","Plan de financement initial securise","Ressources humaines, materielles et financieres identifiees","Risques majeurs identifies et plans d’attenuation definis","KPIs definis pour le suivi","Potentiel de croissance et d’evolution du projet envisage"]},
-  strategie: {t:"Strategie claire",q:["Vision et mission de l’entreprise definies","Objectifs strategiques SMART fixes","Strategie commerciale et de distribution definie","Strategie marketing et de communication elaboree","Positionnement clair sur le marche","Plan d’action detaille avec etapes concretes","Responsabilites attribuees pour chaque action","Echeancier realiste pour la mise en oeuvre","Mecanismes de suivi et d’evaluation mis en place","Flexibilite de la strategie pour s’adapter aux evolutions","Alignement de la strategie avec les valeurs du fondateur","Plan de developpement a moyen et long terme envisage"]}
+  immatriculation: {t:"Immatriculation prete",q:["Nom de l'entreprise choisi et verifie","Statut juridique defini et adapte au projet","Adresse du siege social fixee","Activite principale declaree (code APE/NAF)","Capital social determine et depose (si applicable)","Comptes bancaires professionnels ouverts","Assurances professionnelles souscrites (RC Pro)","Declaration d'activite effectuee aupres du CFE competent","Numero SIREN/SIRET obtenu","Numero de TVA intracommunautaire obtenu (si applicable)","Inscription aux registres obligatoires (RCS, RM)","Protection de la marque ou du nom commercial (INPI)","Documents legaux et administratifs archives"]},
+  projet: {t:"Projet viable",q:["Problematique client clairement identifiee","Solution proposee repondant au besoin du client","Proposition de valeur unique et differenciante definie","Cible client precisement identifiee et segmentee","Etude de marche realisee et validee","Analyse concurrentielle approfondie","Modele economique clair et generateur de revenus","Previsionnel financier realiste (CA, charges, rentabilite)","Seuil de rentabilite calcule et atteignable","Plan de financement initial securise","Ressources humaines, materielles et financieres identifiees","Risques majeurs identifies et plans d'attenuation definis","KPIs definis pour le suivi","Potentiel de croissance et d'evolution du projet envisage"]},
+  strategie: {t:"Strategie claire",q:["Vision et mission de l'entreprise definies","Objectifs strategiques SMART fixes","Strategie commerciale et de distribution definie","Strategie marketing et de communication elaboree","Positionnement clair sur le marche","Plan d'action detaille avec etapes concretes","Responsabilites attribuees pour chaque action","Echeancier realiste pour la mise en oeuvre","Mecanismes de suivi et d'evaluation mis en place","Flexibilite de la strategie pour s'adapter aux evolutions","Alignement de la strategie avec les valeurs du fondateur","Plan de developpement a moyen et long terme envisage"]}
 };
 
-function _coachStatut(session) {
+function _statut(session) {
   if (!session) return {label:"Non demarree",color:"var(--gray400)",bg:"var(--gray50)"};
   if (session.statut === "terminee") return {label:"Terminee ✓",color:"#2e7d32",bg:"#e8f5e9"};
   return {label:"En cours",color:"#f57c00",bg:"#fff8e1"};
-}
-
-function _el(tag, attrs, html) {
-  var a = Object.keys(attrs||{}).map(function(k){return k+'="'+attrs[k]+'"';}).join(" ");
-  return "<"+tag+(a?" "+a:"")+">"+( html||"")+"</"+tag+">";
 }
 
 async function renderCoachingPage() {
@@ -2997,148 +2988,138 @@ async function renderCoachingPage() {
   var el = document.getElementById("coaching-content");
   if (!el) return;
   if (!client) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#127919;</div><div class="empty-state-title">Aucun client selectionne</div><div class="empty-state-desc">Ouvrez un dossier client puis cliquez sur Coaching.</div></div>';
+    el.innerHTML = "<div class=\"empty-state\"><div class=\"empty-state-icon\">&#127919;</div><div class=\"empty-state-title\">Aucun client selectionne</div><div class=\"empty-state-desc\">Ouvrez un dossier client puis cliquez sur Coaching.</div></div>";
     return;
   }
-  el.innerHTML = '<div style="text-align:center;padding:30px">Chargement...</div>';
+  el.innerHTML = "<div style=\"text-align:center;padding:30px\">Chargement...</div>";
   var sessions = {};
   try {
-    var resp = await API.get("/coaching/"+client.id);
-    if (resp && resp.sessions) resp.sessions.forEach(function(s){ sessions[s.seance_number]=s; });
-  } catch(e){}
+    var resp = await API.get("/coaching/" + client.id);
+    if (resp && resp.sessions) { resp.sessions.forEach(function(s){ sessions[s.seance_number] = s; }); }
+  } catch(e) {}
   _coachingData[client.id] = sessions;
-
-  var html = '<div style="max-width:900px;margin:0 auto">';
-  html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--gray100)">';
-  html += '<div class="id-avatar-lg" style="background:'+client.color+';color:'+client.textColor+';width:44px;height:44px;font-size:16px">'+client.initials+'</div>';
-  html += '<div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+client.prenom+" "+client.nom+'</div>';
-  html += '<div style="font-size:12px;color:var(--gray400)">Programme coaching &middot; 3 séances</div></div></div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px">';
-  for (var n=1;n<=3;n++) {
-    var si = SEANCE_DATA[n]; var st = _coachStatut(sessions[n]);
-    html += '<div class="card" style="cursor:pointer;border-left:4px solid '+si.couleur+'" onclick="renderCoachingSeance('+client.id+','+n+')">';
-    html += '<div style="font-weight:700;font-size:13px;color:'+si.couleur+'">Séance '+n+'</div>';
-    html += '<div style="font-size:11px;color:var(--gray600);margin:4px 0">'+si.titre+'</div>';
-    html += '<div style="font-size:11px;color:var(--gray400)">'+si.duree+'</div>';
-    html += '<div style="margin-top:8px;display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;color:'+st.color+';background:'+st.bg+'">'+st.label+'</div></div>';
+  var html = "<div style=\"max-width:900px;margin:0 auto\">";
+  html += "<div style=\"display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--gray100)\">";
+  html += "<div class=\"id-avatar-lg\" style=\"background:" + client.color + ";color:" + client.textColor + ";width:44px;height:44px;font-size:16px\">" + client.initials + "</div>";
+  html += "<div><div style=\"font-size:18px;font-weight:700;color:var(--navy)\">" + client.prenom + " " + client.nom + "</div>";
+  html += "<div style=\"font-size:12px;color:var(--gray400)\">Programme coaching &middot; 3 seances</div></div></div>";
+  html += "<div style=\"display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px\">";
+  for (var n = 1; n <= 3; n++) {
+    var si = SEANCE_DATA[n]; var st = _statut(sessions[n]);
+    html += "<div class=\"card\" style=\"cursor:pointer;border-left:4px solid " + si.couleur + "\" onclick=\"renderCoachingSeance(" + client.id + "," + n + ")\">";
+    html += "<div style=\"font-weight:700;font-size:13px;color:" + si.couleur + "\">Seance " + n + "</div>";
+    html += "<div style=\"font-size:11px;color:var(--gray600);margin:4px 0\">" + si.titre + "</div>";
+    html += "<div style=\"font-size:11px;color:var(--gray400)\">" + si.duree + "</div>";
+    html += "<div style=\"margin-top:8px;display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;color:" + st.color + ";background:" + st.bg + "\">" + st.label + "</div></div>";
   }
-  html += '</div>';
-  html += '<div class="card"><div class="card-title" style="margin-bottom:16px">&#10003; Checklists de suivi</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">';
+  html += "</div><div class=\"card\"><div class=\"card-title\" style=\"margin-bottom:16px\">&#10003; Checklists de suivi</div>";
+  html += "<div style=\"display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px\">";
   var clKeys = Object.keys(CHKLISTS);
-  for (var ci=0;ci<clKeys.length;ci++) {
+  for (var ci = 0; ci < clKeys.length; ci++) {
     var ck = clKeys[ci]; var cl = CHKLISTS[ck];
-    html += '<div><div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">'+cl.t+'</div>';
-    for (var qi=0;qi<cl.q.length;qi++) {
+    html += "<div><div style=\"font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px\">" + cl.t + "</div>";
+    for (var qi = 0; qi < cl.q.length; qi++) {
       var isChecked = false;
-      try { var cld=JSON.parse(sessions[3]?sessions[3].checklists||"{}":"{}"); isChecked=!!(cld[ck]&&cld[ck][qi]); } catch(e){}
-      html += '<label style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;cursor:pointer;font-size:11px;color:var(--gray600)">';
-      html += '<input type="checkbox" data-client="'+client.id+'" data-key="'+ck+'" data-idx="'+qi+'" '+(isChecked?"checked":"")+'style="margin-top:2px;cursor:pointer"> ';
-      html += '<span>'+cl.q[qi]+'</span></label>';
+      try { var cld = JSON.parse(sessions[3] ? sessions[3].checklists || "{}" : "{}"); isChecked = !!(cld[ck] && cld[ck][qi]); } catch(e) {}
+      html += "<label style=\"display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;cursor:pointer;font-size:11px;color:var(--gray600)\">";
+      html += "<input type=\"checkbox\" data-client=\"" + client.id + "\" data-key=\"" + ck + "\" data-idx=\"" + qi + "\" " + (isChecked ? "checked" : "") + " style=\"margin-top:2px;cursor:pointer\"> ";
+      html += "<span>" + cl.q[qi] + "</span></label>";
     }
-    html += '</div>';
+    html += "</div>";
   }
-  html += '</div></div></div>';
+  html += "</div></div></div>";
   el.innerHTML = html;
-  el.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-      updateChecklist(this.dataset.client, this.dataset.key, parseInt(this.dataset.idx), this.checked);
-    });
+  el.querySelectorAll("input[type=checkbox]").forEach(function(cb) {
+    cb.addEventListener("change", function() { updateChecklist(this.dataset.client, this.dataset.key, parseInt(this.dataset.idx), this.checked); });
   });
-  document.getElementById("page-title").textContent = "Coaching - "+client.prenom+" "+client.nom;
-  document.getElementById("page-sub").textContent = "Programme 3 seances · Coaching strategique";
+  document.getElementById("page-title").textContent = "Coaching - " + client.prenom + " " + client.nom;
+  document.getElementById("page-sub").textContent = "Programme 3 seances - Coaching strategique";
 }
 
 function renderCoachingSeance(clientId, num) {
   var client = getClientById(clientId);
   var si = SEANCE_DATA[num];
-  var sessions = _coachingData[clientId]||{};
-  var session = sessions[num]||{};
+  var sessions = _coachingData[clientId] || {};
+  var session = sessions[num] || {};
   var el = document.getElementById("coaching-content");
-
-  function savedBloc(n) { try { return JSON.parse(session["bloc"+n]||"{}"); } catch(e){return{};} }
-
-  var html = '<div style="max-width:800px;margin:0 auto">';
-  html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">';
-  html += '<button class="btn btn-sm" onclick="renderCoachingPage()" style="background:var(--gray100);color:var(--gray700)">&#8592; Retour</button>';
-  html += '<div><div style="font-size:17px;font-weight:700;color:var(--navy)">'+si.titre+'</div>';
-  html += '<div style="font-size:12px;color:var(--gray400)">'+si.duree+' &middot; '+client.prenom+" "+client.nom+'</div></div>';
-  html += '<div style="margin-left:auto"><select id="statut-seance" style="padding:6px 12px;border-radius:8px;border:1px solid var(--gray200);font-size:12px">';
-  html += '<option value="en_cours"'+(!session.statut||session.statut==="en_cours"?" selected":"")+'>En cours</option>';
-  html += '<option value="terminee"'+(session.statut==="terminee"?" selected":"")+'>Terminee</option>';
-  html += '</select></div></div>';
-
-  for (var bi=0;bi<si.blocs.length;bi++) {
+  function savedBloc(n) { try { return JSON.parse(session["bloc" + n] || "{}"); } catch(e) { return {}; } }
+  var html = "<div style=\"max-width:800px;margin:0 auto\">";
+  html += "<div style=\"display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap\">";
+  html += "<button class=\"btn btn-sm\" onclick=\"renderCoachingPage()\" style=\"background:var(--gray100);color:var(--gray700)\">&#8592; Retour</button>";
+  html += "<div><div style=\"font-size:17px;font-weight:700;color:var(--navy)\">" + si.titre + "</div>";
+  html += "<div style=\"font-size:12px;color:var(--gray400)\">" + si.duree + " &middot; " + client.prenom + " " + client.nom + "</div></div>";
+  html += "<div style=\"margin-left:auto\"><select id=\"statut-seance\" style=\"padding:6px 12px;border-radius:8px;border:1px solid var(--gray200);font-size:12px\">";
+  html += "<option value=\"en_cours\"" + (!session.statut || session.statut === "en_cours" ? " selected" : "") + ">En cours</option>";
+  html += "<option value=\"terminee\"" + (session.statut === "terminee" ? " selected" : "") + ">Terminee</option>";
+  html += "</select></div></div>";
+  for (var bi = 0; bi < si.blocs.length; bi++) {
     var bloc = si.blocs[bi];
-    html += '<div class="card" style="margin-bottom:16px;border-left:4px solid '+si.couleur+'">';
-    html += '<div class="card-title" style="color:'+si.couleur+';margin-bottom:12px">'+bloc.t+'</div>';
-    for (var qi=0;qi<bloc.q.length;qi++) {
-      var savedVal = (savedBloc(bi+1)["q"+qi])||"";
-      html += '<div style="margin-bottom:12px">';
-      html += '<label style="display:block;font-size:12px;font-weight:600;color:var(--gray700);margin-bottom:4px">'+(qi+1)+". "+bloc.q[qi]+'</label>';
-      html += '<textarea id="b'+(bi+1)+'_q'+qi+'" style="width:100%;min-height:60px;padding:8px;border:1px solid var(--gray200);border-radius:6px;font-size:12px;resize:vertical;font-family:inherit" placeholder="Reponse...">'+savedVal+'</textarea>';
-      html += '</div>';
+    html += "<div class=\"card\" style=\"margin-bottom:16px;border-left:4px solid " + si.couleur + "\">";
+    html += "<div class=\"card-title\" style=\"color:" + si.couleur + ";margin-bottom:12px\">" + bloc.t + "</div>";
+    for (var qi = 0; qi < bloc.q.length; qi++) {
+      var savedVal = (savedBloc(bi + 1)["q" + qi]) || "";
+      html += "<div style=\"margin-bottom:12px\">";
+      html += "<label style=\"display:block;font-size:12px;font-weight:600;color:var(--gray700);margin-bottom:4px\">" + (qi + 1) + ". " + bloc.q[qi] + "</label>";
+      html += "<textarea id=\"b" + (bi + 1) + "_q" + qi + "\" style=\"width:100%;min-height:60px;padding:8px;border:1px solid var(--gray200);border-radius:6px;font-size:12px;resize:vertical;font-family:inherit\" placeholder=\"Reponse...\">" + savedVal + "</textarea></div>";
     }
-    html += '</div>';
+    html += "</div>";
   }
-
-  html += '<div class="card" style="margin-bottom:16px;background:#f8f9ff;border:1px solid #e3e8ff">';
-  html += '<div class="card-title" style="color:#1b2d5b;margin-bottom:12px">&#128203; Synthese coach (usage interne)</div>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-  var synthFields = [["pts_cles","synthese_points_cles","Points cles"],["risques","synthese_risques","Risques identifies"],["opportunites","synthese_opportunites","Opportunites"],["next","synthese_prochaines_etapes","Prochaines etapes"]];
-  for (var si2=0;si2<synthFields.length;si2++) {
-    var sf = synthFields[si2];
-    html += '<div><label style="display:block;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px">'+sf[2]+'</label>';
-    html += '<textarea id="synth_'+sf[0]+'" style="width:100%;min-height:70px;padding:8px;border:1px solid #c5cae9;border-radius:6px;font-size:12px;resize:vertical;font-family:inherit">'+( session[sf[1]]||"")+'</textarea></div>';
+  html += "<div class=\"card\" style=\"margin-bottom:16px;background:#f8f9ff;border:1px solid #e3e8ff\">";
+  html += "<div class=\"card-title\" style=\"color:#1b2d5b;margin-bottom:12px\">&#128203; Synthese coach (usage interne)</div>";
+  html += "<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px\">";
+  var synths = [["pts_cles","synthese_points_cles","Points cles"],["risques","synthese_risques","Risques identifies"],["opportunites","synthese_opportunites","Opportunites"],["next","synthese_prochaines_etapes","Prochaines etapes"]];
+  for (var si2 = 0; si2 < synths.length; si2++) {
+    var sf = synths[si2];
+    html += "<div><label style=\"display:block;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px\">" + sf[2] + "</label>";
+    html += "<textarea id=\"synth_" + sf[0] + "\" style=\"width:100%;min-height:70px;padding:8px;border:1px solid #c5cae9;border-radius:6px;font-size:12px;resize:vertical;font-family:inherit\">" + (session[sf[1]] || "") + "</textarea></div>";
   }
-  html += '</div></div>';
-  html += '<div style="text-align:right;padding-bottom:20px">';
-  html += '<button class="btn btn-primary" onclick="saveCoachingSeance('+clientId+','+num+')" style="padding:10px 28px;font-size:14px">&#128190; Enregistrer la seance '+num+'</button>';
-  html += '</div></div>';
+  html += "</div></div>";
+  html += "<div style=\"text-align:right;padding-bottom:20px\">";
+  html += "<button class=\"btn btn-primary\" onclick=\"saveCoachingSeance(" + clientId + "," + num + ")\" style=\"padding:10px 28px;font-size:14px\">&#128190; Enregistrer la seance " + num + "</button></div></div>";
   el.innerHTML = html;
 }
 
 async function saveCoachingSeance(clientId, num) {
   var si = SEANCE_DATA[num];
-  var payload = {statut: (document.getElementById("statut-seance")||{value:"en_cours"}).value};
-  for (var bi=0;bi<si.blocs.length;bi++) {
+  var statEl = document.getElementById("statut-seance");
+  var payload = {statut: statEl ? statEl.value : "en_cours"};
+  for (var bi = 0; bi < si.blocs.length; bi++) {
     var b = {};
-    for (var qi=0;qi<si.blocs[bi].q.length;qi++) {
-      var el2 = document.getElementById("b"+(bi+1)+"_q"+qi);
-      if (el2) b["q"+qi] = el2.value;
+    for (var qi = 0; qi < si.blocs[bi].q.length; qi++) {
+      var el2 = document.getElementById("b" + (bi + 1) + "_q" + qi);
+      if (el2) b["q" + qi] = el2.value;
     }
-    payload["bloc"+(bi+1)] = b;
+    payload["bloc" + (bi + 1)] = b;
   }
-  var synths = [["pts_cles","synthese_points_cles"],["risques","synthese_risques"],["opportunites","synthese_opportunites"],["next","synthese_prochaines_etapes"]];
-  for (var si3=0;si3<synths.length;si3++) {
-    var el3 = document.getElementById("synth_"+synths[si3][0]);
-    payload[synths[si3][1]] = el3 ? el3.value : "";
+  var sfields = [["pts_cles","synthese_points_cles"],["risques","synthese_risques"],["opportunites","synthese_opportunites"],["next","synthese_prochaines_etapes"]];
+  for (var si3 = 0; si3 < sfields.length; si3++) {
+    var el3 = document.getElementById("synth_" + sfields[si3][0]);
+    payload[sfields[si3][1]] = el3 ? el3.value : "";
   }
   try {
-    var resp = await API.post("/coaching/"+clientId+"/seance/"+num, payload);
+    var resp = await API.post("/coaching/" + clientId + "/seance/" + num, payload);
     if (resp && resp.session) {
-      if (!_coachingData[clientId]) _coachingData[clientId]={};
+      if (!_coachingData[clientId]) _coachingData[clientId] = {};
       _coachingData[clientId][num] = resp.session;
-      showToast("Seance "+num+" enregistree avec succes !", true);
-    } else { showToast("Erreur lors de l’enregistrement.", false); }
-  } catch(e) { showToast("Erreur lors de l’enregistrement.", false); }
+      showToast("Seance " + num + " enregistree avec succes !", true);
+    } else { showToast("Erreur lors de l'enregistrement.", false); }
+  } catch(e) { showToast("Erreur lors de l'enregistrement.", false); }
 }
 
 async function updateChecklist(clientId, key, idx, checked) {
-  var sessions = _coachingData[clientId]||{};
-  var session3 = sessions[3]||{};
+  var sessions = _coachingData[clientId] || {};
+  var session3 = sessions[3] || {};
   var cl = {};
-  try { cl = JSON.parse(session3.checklists||"{}"); } catch(e){}
-  if (!cl[key]) cl[key]={};
+  try { cl = JSON.parse(session3.checklists || "{}"); } catch(e) {}
+  if (!cl[key]) cl[key] = {};
   cl[key][idx] = checked;
   try {
-    var resp = await API.post("/coaching/"+clientId+"/seance/3", {statut:session3.statut||"en_cours", checklists:cl});
-    if (resp && resp.session) { if(!_coachingData[clientId]) _coachingData[clientId]={}; _coachingData[clientId][3]=resp.session; }
-  } catch(e){}
+    var resp = await API.post("/coaching/" + clientId + "/seance/3", {statut: session3.statut || "en_cours", checklists: cl});
+    if (resp && resp.session) { if (!_coachingData[clientId]) _coachingData[clientId] = {}; _coachingData[clientId][3] = resp.session; }
+  } catch(e) {}
 }
 
 </script>
-
 <div id="page-coaching" style="display:none">
   <div id="coaching-content" style="padding:20px;max-width:960px;margin:0 auto"></div>
 </div>
