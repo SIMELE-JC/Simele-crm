@@ -355,3 +355,360 @@ window.updateProgramme = function() {
 window.imprimerProgramme=function(){var a=document.getElementById("prog-print-area");if(!a){alert("Selectionnez un client et un service.");return;}var w=window.open("","_blank");w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Programme SIMELE</title><style>body{font-family:Arial,sans-serif;margin:30px;font-size:13px}ul{margin:6px 0 6px 20px}li{margin:3px 0}@media print{body{margin:15px}}</style></head><body>"+a.innerHTML+"</body></html>");w.document.close();setTimeout(function(){w.print();},500);};
 
 (function(){var _sp=window.showPage;window.showPage=function(id,clientId){if(typeof _sp==="function")_sp(id,clientId);if(id==="programme"){setTimeout(function(){var sel=document.getElementById("prog-client-select");if(sel&&typeof clients!=="undefined"&&clients.length&&sel.options.length<=1){clients.forEach(function(c){var o=document.createElement("option");o.value=c.id;o.textContent=c.prenom+" "+c.nom;sel.appendChild(o);});}if(sel&&typeof currentClientId!=="undefined"&&currentClientId){sel.value=currentClientId;window.updateProgramme();}},300);}};})();
+
+
+/* ================================================================
+   SIMELE CRM — Extensions v3 : Scoring réel + Coaching par blocs
+   ================================================================ */
+
+/* ── 1. SCORING ENTRETIEN : calcul réel basé sur les chips ─────── */
+window.recalc = function() {
+  // Scoring basé sur les chips sélectionnées (class "on")
+  // Sections : B=Clarté, C=Capacité, D=Ressources, E=Motivation
+  var score = 0;
+  var maxScore = 100;
+
+  // Helper: valeur d'un groupe de chips
+  function chipVal(labels, weights) {
+    var chips = document.querySelectorAll('.chip.on');
+    var val = 0;
+    chips.forEach(function(c) {
+      var txt = c.textContent.trim();
+      var idx = labels.indexOf(txt);
+      if (idx > -1) val += weights[idx];
+    });
+    return val;
+  }
+
+  // Compter les chips "on" dans chaque section
+  var allOn = document.querySelectorAll('.chip.on');
+  var clarteScore = 0, faisabScore = 0, motivScore = 0, ressScore = 0;
+  allOn.forEach(function(chip) {
+    var txt = chip.textContent.trim();
+    // Clarté / Vision
+    if (txt === 'Claire') clarteScore += 10;
+    else if (txt === 'Moyenne') clarteScore += 5;
+    else if (txt === 'Floue') clarteScore += 0;
+    // Cible
+    if (txt === 'Oui' && chip.closest('.form-group') && chip.closest('.form-group').querySelector('.form-label') && chip.closest('.form-group').querySelector('.form-label').textContent.includes('Cible')) clarteScore += 8;
+    if (txt === 'Partielle') clarteScore += 4;
+    // Offre
+    if (txt === 'Oui' && chip.closest('.form-group') && chip.closest('.form-group').querySelector('.form-label') && chip.closest('.form-group').querySelector('.form-label').textContent.includes('Offre')) clarteScore += 7;
+    // Compétences
+    if (txt === 'Bon') faisabScore += 10;
+    else if (txt === 'Moyen') faisabScore += 5;
+    else if (txt === 'Faible' && chip.closest('.form-group') && chip.closest('.form-group').querySelector('.form-label') && chip.closest('.form-group').querySelector('.form-label').textContent.includes('mpét')) faisabScore += 0;
+    // Autonomie
+    if (txt === 'Forte') faisabScore += 8;
+    else if (txt === 'Moyenne') faisabScore += 4;
+    // Motivation / Engagement
+    if (txt === 'Fort' || txt === 'Forte') motivScore += 10;
+    else if (txt === 'Moyen' || txt === 'Moyenne') motivScore += 5;
+    // Disponibilité
+    if (txt === 'Plein temps') motivScore += 8;
+    else if (txt === 'Mi-temps') motivScore += 4;
+    // Budget
+    if (txt === 'Oui' && chip.closest('.form-group') && chip.closest('.form-group').querySelector('.form-label') && chip.closest('.form-group').querySelector('.form-label').textContent.includes('Budget')) ressScore += 10;
+    if (txt === 'Apport' || txt === 'Financement' || txt.includes('Aides')) ressScore += 5;
+    // Expérience domaine
+    if (txt === 'Oui' && chip.closest('.form-group') && chip.closest('.form-group').querySelector('.form-label') && chip.closest('.form-group').querySelector('.form-label').textContent.includes('xpé')) faisabScore += 7;
+  });
+
+  // Normaliser chaque dimension sur 25 points max
+  clarteScore = Math.min(25, Math.round(clarteScore * 1.0));
+  faisabScore = Math.min(25, Math.round(faisabScore * 1.0));
+  motivScore  = Math.min(25, Math.round(motivScore  * 1.0));
+  ressScore   = Math.min(25, Math.round(ressScore   * 1.0));
+  score = clarteScore + faisabScore + motivScore + ressScore;
+  score = Math.max(10, Math.min(95, score)); // entre 10 et 95
+
+  // Afficher le score
+  var liveEl = document.getElementById('live-score');
+  if (liveEl) liveEl.textContent = score;
+  window._currentEntretienScore = score;
+
+  // Mettre à jour les barres de progression
+  var bars = [
+    { pb: 'pb-cl', pv: 'pv-cl', val: Math.min(100, clarteScore * 4) },
+    { pb: 'pb-fa', pv: 'pv-fa', val: Math.min(100, faisabScore * 4) },
+    { pb: 'pb-mo', pv: 'pv-mo', val: Math.min(100, motivScore  * 4) },
+    { pb: 'pb-re', pv: 'pv-re', val: Math.min(100, ressScore   * 4) }
+  ];
+  bars.forEach(function(b) {
+    var el  = document.getElementById(b.pb);
+    var vEl = document.getElementById(b.pv);
+    if (el)  el.style.width = b.val + '%';
+    if (vEl) vEl.textContent = Math.round(b.val / 10);
+  });
+
+  // Mettre à jour badge profil
+  var badge = document.getElementById('profil-badge');
+  var rn = document.getElementById('reco-mini-name');
+  var rp = document.getElementById('reco-mini-price');
+  var rw = document.getElementById('reco-mini-why');
+  if (score >= 70) {
+    if (badge) { badge.textContent = 'Profil 3 — Prêt à investir'; badge.className = 'profil-badge badge-green'; }
+    if (rn) rn.textContent = 'Pack Financement';
+    if (rp) rp.textContent = '1 500 € – 2 500 €';
+    if (rw) rw.textContent = 'Projet structuré, financement à monter.';
+  } else if (score >= 40) {
+    if (badge) { badge.textContent = 'Profil 2 — À accompagner'; badge.className = 'profil-badge badge-amber'; }
+    if (rn) rn.textContent = 'Coaching 5 séances';
+    if (rp) rp.textContent = '320 €';
+    if (rw) rw.textContent = 'Besoin d'accompagnement méthodologique.';
+  } else {
+    if (badge) { badge.textContent = 'Profil 1 — À structurer'; badge.className = 'profil-badge badge-red'; }
+    if (rn) rn.textContent = 'Coaching 3 séances';
+    if (rp) rp.textContent = '210 €';
+    if (rw) rw.textContent = 'Projet peu structuré, démarrage progressif.';
+  }
+};
+
+/* ── 2. SAUVEGARDE ENTRETIEN : lecture des bons éléments ─────── */
+window.sauvegarderEntretien = async function() {
+  var clientId = window.currentClientId;
+  if (!clientId) {
+    alert('Erreur : aucun client sélectionné.');
+    return;
+  }
+  // Lire le score affiché (calculé par recalc)
+  var liveEl  = document.getElementById('live-score');
+  var score   = liveEl ? parseInt(liveEl.textContent) : (window._currentEntretienScore || 0);
+  // Lire le profil affiché
+  var badgeEl = document.getElementById('profil-badge');
+  var profil  = badgeEl ? badgeEl.textContent.trim() : 'À qualifier';
+  // Lire les notes (chercher textarea ou input notes)
+  var notes   = '';
+  var notesEl = document.getElementById('entretien-notes')
+             || document.getElementById('notes-entretien')
+             || document.querySelector('textarea[placeholder*="ote"]')
+             || document.querySelector('textarea[placeholder*="synthèse"]')
+             || document.querySelector('textarea');
+  if (notesEl) notes = notesEl.value || '';
+  // Lire les chips sélectionnées pour reconstruire situation/projet
+  var onChips = [...document.querySelectorAll('.chip.on')].map(function(c) { return c.textContent.trim(); });
+  var situation  = onChips.slice(0, 3).join(', ');
+  // Inputs texte du formulaire (Nom, Email, Téléphone, Nom projet)
+  var inputs    = document.querySelectorAll('#page-entretien input.form-input');
+  var nomPrenom = inputs[0] ? inputs[0].value : '';
+  var email     = inputs[1] ? inputs[1].value : '';
+  var tel       = inputs[2] ? inputs[2].value : '';
+  var nomProjet = inputs[4] ? inputs[4].value : '';
+  var projet    = nomProjet ? ('Projet : ' + nomProjet) : '';
+
+  var tok = localStorage.getItem('simele_token') || '';
+  try {
+    var r = await fetch('/api/clients/' + clientId + '/entretien', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
+      body: JSON.stringify({
+        score: score,
+        profil: profil,
+        notes: notes,
+        situation: situation,
+        projet: projet,
+        besoins: onChips.join(', '),
+        recommandations: document.getElementById('reco-mini-name') ? document.getElementById('reco-mini-name').textContent : '',
+        prochaine_etape: ''
+      })
+    });
+    var data = await r.json();
+    if (data.success) {
+      if (typeof showToast === 'function') showToast('Entretien enregistré ! Score : ' + score + '/100', true);
+      // Mise à jour du score dans la liste clients
+      if (typeof clients !== 'undefined') {
+        var cl = clients.find(function(c) { return c.id == clientId; });
+        if (cl) { cl.score = score; cl.profil = profil; }
+      }
+      // Refresh le dossier si ouvert
+      if (typeof showPage === 'function' && typeof currentClientId !== 'undefined' && currentClientId == clientId) {
+        setTimeout(function() { if (typeof loadClient === 'function') loadClient(clientId); }, 500);
+      }
+    } else {
+      if (typeof showToast === 'function') showToast('Erreur : ' + (data.error || 'inconnue'), false);
+    }
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Erreur de connexion : ' + e.message, false);
+  }
+};
+
+/* ── 3. COACHING : navigation bloc par bloc + brouillon ─────── */
+window._coachNav = { clientId: null, seanceNum: null, currentBloc: 0 };
+
+window.renderCoachingSeance = function(clientId, num) {
+  window._coachNav = { clientId: clientId, seanceNum: num, currentBloc: 0 };
+  // Charger session existante
+  var sessions  = (typeof _coachingData !== 'undefined' && _coachingData[clientId]) ? _coachingData[clientId] : {};
+  var session   = sessions[num] || {};
+  var si        = SEANCE_DATA[num];
+  var client    = typeof getClientById === 'function' ? getClientById(clientId) : {};
+  var totalBlocs = si.blocs.length;
+
+  // Trouver le dernier bloc sauvegardé pour reprendre
+  var lastSavedBloc = 0;
+  for (var b = 0; b < totalBlocs; b++) {
+    try {
+      var bd = JSON.parse(session['bloc' + (b + 1)] || '{}');
+      if (Object.keys(bd).length > 0) lastSavedBloc = b;
+    } catch(e) {}
+  }
+  window._coachNav.currentBloc = Math.min(lastSavedBloc, totalBlocs - 1);
+  window._renderBlocCoaching();
+};
+
+window._renderBlocCoaching = function() {
+  var nav       = window._coachNav;
+  var clientId  = nav.clientId;
+  var num       = nav.seanceNum;
+  var blocIdx   = nav.currentBloc;
+  var si        = SEANCE_DATA[num];
+  var totalBlocs = si.blocs.length;
+  var bloc      = si.blocs[blocIdx];
+  var sessions  = (typeof _coachingData !== 'undefined' && _coachingData[clientId]) ? _coachingData[clientId] : {};
+  var session   = sessions[num] || {};
+  var client    = typeof getClientById === 'function' ? getClientById(clientId) : {};
+  var el        = document.getElementById('coaching-content');
+  if (!el) return;
+
+  function savedBloc(n) { try { return JSON.parse(session['bloc' + n] || '{}'); } catch(e) { return {}; } }
+
+  // Statut de la séance
+  var statutOpts = '<option value="en_cours"' + (!session.statut || session.statut === 'en_cours' ? ' selected' : '') + '>En cours</option>'
+    + '<option value="terminee"' + (session.statut === 'terminee' ? ' selected' : '') + '>Terminée</option>';
+
+  // Barre de progression
+  var progressPct = Math.round(((blocIdx + 1) / totalBlocs) * 100);
+  var progressDots = '';
+  for (var i = 0; i < totalBlocs; i++) {
+    var dotColor = i < blocIdx ? '#2ecc71' : i === blocIdx ? si.couleur : '#e0e0e0';
+    var dotBorder = i === blocIdx ? '3px solid ' + si.couleur : 'none';
+    var dotSize   = i === blocIdx ? '16px' : '12px';
+    progressDots += '<div style="width:' + dotSize + ';height:' + dotSize + ';border-radius:50%;background:' + dotColor + ';border:' + dotBorder + ';transition:all 0.3s;flex-shrink:0"></div>';
+    if (i < totalBlocs - 1) progressDots += '<div style="flex:1;height:2px;background:' + (i < blocIdx ? '#2ecc71' : '#e0e0e0') + ';margin:auto"></div>';
+  }
+
+  // Questions du bloc courant
+  var savedData  = savedBloc(blocIdx + 1);
+  var questionsHTML = '';
+  for (var qi = 0; qi < bloc.q.length; qi++) {
+    var savedVal = savedData['q' + qi] || '';
+    questionsHTML += '<div style="margin-bottom:14px">'
+      + '<label style="display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px">' + (qi + 1) + '. ' + bloc.q[qi] + '</label>'
+      + '<textarea id="coach_b' + (blocIdx+1) + '_q' + qi + '" style="width:100%;min-height:70px;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;transition:border 0.2s" placeholder="Réponse..." onfocus="this.style.borderColor='' + si.couleur + ''" onblur="this.style.borderColor='#e0e0e0'">' + savedVal + '</textarea>'
+      + '</div>';
+  }
+
+  // Synthèse (sur dernier bloc seulement)
+  var syntheseHTML = '';
+  if (blocIdx === totalBlocs - 1) {
+    syntheseHTML = '<div style="background:#f0f4f8;border-radius:10px;padding:16px;margin-top:20px;border:1px solid #d0d9e8">'
+      + '<div style="font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:12px">📋 Synthèse coach (usage interne)</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+    var synths = [['pts_cles','synthese_points_cles','Points clés'],['risques','synthese_risques','Risques identifiés'],['opportunites','synthese_opportunites','Opportunités'],['next','synthese_prochaines_etapes','Prochaines étapes']];
+    synths.forEach(function(sf) {
+      syntheseHTML += '<div><label style="display:block;font-size:11px;font-weight:700;color:#1b2d5b;margin-bottom:4px">' + sf[2] + '</label>'
+        + '<textarea id="synth_' + sf[0] + '" style="width:100%;min-height:65px;padding:8px;border:1px solid #c5cae9;border-radius:6px;font-size:12px;resize:vertical;font-family:inherit">' + (session[sf[1]] || '') + '</textarea></div>';
+    });
+    syntheseHTML += '</div></div>';
+  }
+
+  // Boutons navigation
+  var prevBtn = blocIdx > 0
+    ? '<button onclick="window._saveBlocDraft(function(){window._coachNav.currentBloc--;window._renderBlocCoaching();})" style="background:#f0f4f8;color:#1b2d5b;border:1.5px solid #d0d9e8;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600">&#8592; Précédent</button>'
+    : '<div></div>';
+
+  var nextBtn = blocIdx < totalBlocs - 1
+    ? '<button onclick="window._saveBlocDraft(function(){window._coachNav.currentBloc++;window._renderBlocCoaching();})" style="background:' + si.couleur + ';color:white;border:none;border-radius:8px;padding:10px 24px;cursor:pointer;font-size:13px;font-weight:600">Suivant &#8594;</button>'
+    : '<button onclick="window._validerSeance(' + clientId + ',' + num + ')" style="background:#2ecc71;color:white;border:none;border-radius:8px;padding:10px 24px;cursor:pointer;font-size:13px;font-weight:700">✅ Valider la séance ' + num + '</button>';
+
+  var saveBtn = '<button onclick="window._saveBlocDraft(null)" style="background:white;color:#1b2d5b;border:1.5px solid #1b2d5b;border-radius:8px;padding:10px 18px;cursor:pointer;font-size:13px;font-weight:600">💾 Enregistrer brouillon</button>';
+
+  el.innerHTML = '<div style="max-width:820px;margin:0 auto;padding-bottom:20px">'
+    // En-tête retour + titre
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">'
+    + '<button onclick="renderCoachingPage()" style="background:#f0f4f8;color:#555;border:1px solid #ddd;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:12px">&#8592; Retour</button>'
+    + '<div style="flex:1"><div style="font-size:16px;font-weight:700;color:#1b2d5b">' + si.titre + '</div>'
+    + '<div style="font-size:12px;color:#999">' + si.duree + ' · ' + (client ? client.prenom + ' ' + client.nom : '') + '</div></div>'
+    + '<select id="statut-seance" style="padding:7px 12px;border-radius:8px;border:1px solid #ddd;font-size:12px">' + statutOpts + '</select>'
+    + '</div>'
+    // Barre de progression
+    + '<div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    + '<span style="font-size:12px;font-weight:700;color:' + si.couleur + '">Bloc ' + (blocIdx+1) + ' / ' + totalBlocs + '</span>'
+    + '<span style="font-size:12px;color:#999">' + progressPct + '% complété</span>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">' + progressDots + '</div>'
+    + '<div style="font-size:13px;font-weight:600;color:#1b2d5b">' + bloc.t + '</div>'
+    + '</div>'
+    // Bloc courant
+    + '<div style="background:white;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-left:4px solid ' + si.couleur + '">'
+    + questionsHTML
+    + '</div>'
+    // Synthèse (dernier bloc)
+    + syntheseHTML
+    // Navigation
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding:14px 0;border-top:1px solid #eee">'
+    + prevBtn
+    + saveBtn
+    + nextBtn
+    + '</div>'
+    + '</div>';
+};
+
+window._saveBlocDraft = async function(callback) {
+  var nav      = window._coachNav;
+  var clientId = nav.clientId;
+  var num      = nav.seanceNum;
+  var blocIdx  = nav.currentBloc;
+  var si       = SEANCE_DATA[num];
+  var statEl   = document.getElementById('statut-seance');
+
+  // Collecter les réponses du bloc courant
+  var blocData = {};
+  for (var qi = 0; qi < si.blocs[blocIdx].q.length; qi++) {
+    var textarea = document.getElementById('coach_b' + (blocIdx+1) + '_q' + qi);
+    if (textarea) blocData['q' + qi] = textarea.value;
+  }
+
+  // Construire payload
+  var payload = { statut: statEl ? statEl.value : 'en_cours' };
+  payload['bloc' + (blocIdx + 1)] = blocData;
+
+  // Synthèse si dernier bloc
+  var totalBlocs = si.blocs.length;
+  if (blocIdx === totalBlocs - 1) {
+    [['pts_cles','synthese_points_cles'],['risques','synthese_risques'],['opportunites','synthese_opportunites'],['next','synthese_prochaines_etapes']].forEach(function(sf) {
+      var el2 = document.getElementById('synth_' + sf[0]);
+      payload[sf[1]] = el2 ? el2.value : '';
+    });
+  }
+
+  try {
+    var resp = await (typeof API !== 'undefined' ? API.post('/coaching/' + clientId + '/seance/' + num, payload) : null);
+    if (resp && resp.session) {
+      if (!window._coachingData) window._coachingData = {};
+      if (!window._coachingData[clientId]) window._coachingData[clientId] = {};
+      // Fusionner avec données existantes
+      var existing = window._coachingData[clientId][num] || {};
+      Object.assign(existing, resp.session);
+      window._coachingData[clientId][num] = existing;
+      if (typeof showToast === 'function') showToast('Brouillon enregistré ✓', true);
+    }
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Erreur enregistrement', false);
+  }
+  if (typeof callback === 'function') callback();
+};
+
+window._validerSeance = async function(clientId, num) {
+  await window._saveBlocDraft(null);
+  // Changer le statut à "terminee"
+  var statEl = document.getElementById('statut-seance');
+  if (statEl) statEl.value = 'terminee';
+  await window._saveBlocDraft(null);
+  if (typeof showToast === 'function') showToast('Séance ' + num + ' validée ! Fiche en préparation...', true);
+  // Retour à la page coaching
+  setTimeout(function() {
+    if (typeof renderCoachingPage === 'function') renderCoachingPage();
+  }, 1500);
+};
