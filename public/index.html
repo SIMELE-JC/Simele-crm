@@ -599,51 +599,52 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
 
     <!-- ===== PROGRAMME ===== -->
     <div id="page-programme" style="display:none">
-      <div class="g2">
+  <div style="max-width:900px;margin:0 auto">
+    <div style="background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
         <div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span class="badge badge-navy">Coaching stratégique — 3 séances</span><span style="font-size:12px;color:var(--gray500)" id="prog-client-label"></span></div>
-          <div class="prog-card">
-            <div class="prog-header"><div class="prog-num">1</div><div class="prog-title">Structuration du projet & environnement</div><div class="prog-dur">2h30–3h</div></div>
-            <div class="prog-point">Analyse du projet et simplification</div>
-            <div class="prog-point">Identification de la cible client et positionnement de l'offre</div>
-            <div class="prog-point">Présentation des statuts juridiques et choix du régime adapté</div>
-            <div class="prog-point">Démarches de création (immatriculation, délais, obligations URSSAF)</div>
-            <div class="prog-result"><span class="badge badge-green">Résultat attendu</span><span style="font-size:11px;color:var(--gray600)">Projet clair · Orientation juridique · Vision lancement</span></div>
-          </div>
-          <div class="prog-card">
-            <div class="prog-header"><div class="prog-num">2</div><div class="prog-title">Stratégie & dispositifs d'aide</div><div class="prog-dur">2h30–3h</div></div>
-            <div class="prog-point">Identification des besoins financiers et estimation des coûts</div>
-            <div class="prog-point">Analyse des dispositifs adaptés à la situation du client</div>
-            <div class="prog-point">Stratégie de lancement progressive et plan d'action</div>
-            <div class="prog-point">Conseils pratiques, orientation et mise en relation</div>
-            <div class="prog-result"><span class="badge badge-green">Résultat attendu</span><span style="font-size:11px;color:var(--gray600)">Stratégie optimisée · Aides identifiées · Plan d'action</span></div>
-          </div>
-          <div class="prog-card">
-            <div class="prog-header"><div class="prog-num">3</div><div class="prog-title">Structuration financière & projection</div><div class="prog-dur">2h30–3h</div></div>
-            <div class="prog-point">Présentation des aides à la création et conditions d'éligibilité</div>
-            <div class="prog-point">Introduction au prévisionnel financier sur 3 ans</div>
-            <div class="prog-point">Structuration des prix et marges</div>
-            <div class="prog-point">Préparation aux demandes de financement bancaire</div>
-            <div class="prog-result"><span class="badge badge-green">Résultat attendu</span><span style="font-size:11px;color:var(--gray600)">Vision financière claire · Projet structuré et crédible</span></div>
-          </div>
+          <label style="font-size:12px;font-weight:700;color:#1b2d5b;display:block;margin-bottom:6px">&#128100; Client</label>
+          <select id="prog-client-select" onchange="window.updateProgramme()" style="width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px;color:#1b2d5b;font-weight:600;cursor:pointer">
+            <option value="">-- Selectionner un client --</option>
+          </select>
         </div>
         <div>
-          <div class="card" style="margin-bottom:12px">
-            <div class="card-title">Suivi des séances</div>
-            <div class="timeline-item"><div class="tl-left"><div class="tl-dot" style="background:var(--green)"></div><div class="tl-line"></div></div><div class="tl-body"><div class="tl-date">15/03/2026 · 2h45</div><div class="tl-title">Séance 1 — Structuration</div><div class="tl-text">Activité définie. Statut SAS retenu. Démarches URSSAF planifiées.</div></div></div>
-            <div class="timeline-item"><div class="tl-left"><div class="tl-dot" style="background:var(--amber)"></div><div class="tl-line"></div></div><div class="tl-body"><div class="tl-date">22/03/2026 · 3h00</div><div class="tl-title">Séance 2 — Stratégie & aides</div><div class="tl-text">LADOM identifié, dossier NACRE à préparer, plan de lancement J+60.</div></div></div>
-            <div class="timeline-item" style="padding-bottom:0"><div class="tl-left"><div class="tl-dot" style="background:var(--gray300)"></div></div><div class="tl-body"><div class="tl-date">02/04/2026 · Planifiée</div><div class="tl-title">Séance 3 — Financement</div><div class="tl-text" style="color:var(--gray400)">En attente. Prévisionnel à préparer avant le RDV.</div></div></div>
-          </div>
-          <div class="card">
-            <div class="card-title">Bénéfices du coaching</div>
-            <div class="prog-point">Gain de temps sur les démarches administratives</div>
-            <div class="prog-point">Éviter les erreurs coûteuses dès le démarrage</div>
-            <div class="prog-point">Prendre les bonnes décisions stratégiques</div>
-            <div class="prog-point">Sécuriser son lancement dans des conditions optimales</div>
-          </div>
+          <label style="font-size:12px;font-weight:700;color:#1b2d5b;display:block;margin-bottom:6px">&#127963; Service / Programme</label>
+          <select id="prog-service-select" onchange="window.updateProgramme()" style="width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px;color:#1b2d5b;font-weight:600;cursor:pointer">
+            <option value="">-- Choisir un service --</option>
+            <optgroup label="Coaching entrepreneurial">
+              <option value="coaching3">Coaching strategique - 3 seances (210 EUR)</option>
+              <option value="coaching5">Coaching strategique - 5 seances (320 EUR)</option>
+            </optgroup>
+            <optgroup label="Prestations de conseil">
+              <option value="diag">Diagnostic de projet (80 EUR)</option>
+              <option value="bp">Business plan complet (450 EUR)</option>
+              <option value="prev">Previsionnel financier 3 ans (350 EUR)</option>
+              <option value="fin">Dossier de financement (Sur devis)</option>
+              <option value="sub">Dossier de subvention (Sur devis)</option>
+              <option value="mandat">Mandat d'accompagnement (Sur devis)</option>
+            </optgroup>
+            <optgroup label="Packs complets">
+              <option value="pack_essentiel">Pack Essentiel Creation (590 EUR)</option>
+              <option value="pack_financement">Pack Financement (890 EUR)</option>
+              <option value="pack_global">Pack Global (1 290 EUR)</option>
+            </optgroup>
+          </select>
         </div>
+        <button onclick="window.imprimerProgramme()" style="background:#c9a96e;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:14px;font-weight:700;white-space:nowrap">
+          &#128196; Imprimer la fiche
+        </button>
       </div>
     </div>
+    <div id="programme-content">
+      <div style="text-align:center;padding:60px;color:#999">
+        <div style="font-size:48px;margin-bottom:16px">&#127963;</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Selectionnez un client et un service</div>
+        <div style="font-size:13px">La fiche personnalisee s'affichera ici</div>
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- ===== DOCUMENTS ===== -->
     <div id="page-docs" style="display:none">
@@ -681,11 +682,14 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
       <div>
         <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Type</label>
         <select id="doc-type" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box">
-          <option value="document">Document general</option>
+          <option value="fiche">Fiche / CR / Rapport</option>
           <option value="devis">Devis</option>
           <option value="contrat">Contrat</option>
-          <option value="facture">Facture</option>
-          <option value="rapport">Rapport / CR</option>
+          <option value="identite">Justificatif d'identite</option>
+          <option value="siege">Justificatif de siege social</option>
+          <option value="activite">Justificatif d'activite</option>
+          <option value="gestion">Document de gestion diverse</option>
+          <option value="autre">Autre document</option>
         </select>
       </div>
     </div>
