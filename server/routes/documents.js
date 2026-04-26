@@ -77,9 +77,14 @@ router.get('/:id/download', requireAuth, function(req, res) {
 // PUT modifier visibilité ou nom
 router.put('/:id', requireAuth, function(req, res) {
   try {
-    const { nom, visible_client } = req.body;
-    db.prepare('UPDATE client_documents SET nom=?, visible_client=? WHERE id=?')
-      .run(nom, visible_client ? 1 : 0, req.params.id);
+    const { nom, visible_client, type } = req.body;
+    const doc = db.prepare('SELECT * FROM client_documents WHERE id=?').get(req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Document introuvable' });
+    const newNom = nom !== undefined ? nom : doc.nom;
+    const newType = type !== undefined ? type : doc.type;
+    const newVis = visible_client !== undefined ? (visible_client ? 1 : 0) : doc.visible_client;
+    db.prepare('UPDATE client_documents SET nom=?, type=?, visible_client=? WHERE id=?')
+      .run(newNom, newType, newVis, req.params.id);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
