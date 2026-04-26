@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const db = require('../db');
+const { db } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 
 // Répertoire de stockage sur le volume Railway
