@@ -1639,46 +1639,145 @@ function buildDocHTML(tplId, client) {
     <div style="font-size:.82rem;color:#6b7280">20 lotissement Tolbiac 1, 97114 Trois-Rivières · ccs.guadeloupe@outlook.fr</div></div>
   </div>`;
 
-  const contratBase = (seances, prix) => `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 32px;color:#1f2937;font-size:14px;line-height:1.6}
-  h1{font-size:1.5rem;color:#1a365d;text-align:center;margin-bottom:8px}h2{font-size:1rem;color:#1a365d;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin-top:24px}
-  .parties{background:#f9fafb;padding:16px;border-radius:8px;margin:20px 0}.field{border-bottom:1px solid #374151;display:inline-block;min-width:200px}
-  .sign-box{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}.sign-area{border-top:1px solid #374151;padding-top:8px;min-height:80px}
-  @media print{body{margin:0}}</style></head><body>
-  ${header}
-  <h1>Contrat de prestation de services</h1>
-  <div style="text-align:center;color:#6b7280;margin-bottom:24px">Coaching stratégique — ${seances} séances</div>
-  <h2>Entre les soussignés</h2>
-  <div class="parties"><strong>Cabinet de Conseils SIMELE</strong><br>
-  Représenté par Jean-Christophe Simele<br>SIRET : 92787546800039<br>
-  Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières<br>
-  <em>Ci-après dénommé "Le Prestataire"</em></div>
-  <div class="parties">Nom / Prénom : <strong>${prenom} ${nom}</strong><br>
-  Email : ${email} · Tél : ${tel}<br>Adresse : ${adresse}<br>
-  <em>Ci-après dénommé "Le Client"</em></div>
-  <h2>Article 1 – Objet du contrat</h2>
-  <p>Le présent contrat a pour objet la réalisation d'une prestation d'accompagnement à la création et à la structuration de projet entrepreneurial. Le prestataire s'engage à accompagner le client dans le cadre d'un coaching comprenant <strong>${seances} séances</strong>, visant à structurer, sécuriser et optimiser son projet.</p>
-  <h2>Article 2 – Description de la prestation</h2>
-  <p>La prestation comprend : un accompagnement en <strong>${seances} séances</strong>, une durée estimée de 2h30 à 3h par séance, des échanges personnalisés adaptés au projet du client.</p>
-  <p>Projet du client : ${projet}</p>
-  <h2>Article 3 – Engagement du prestataire</h2>
-  <p>Le prestataire s'engage à fournir un accompagnement professionnel et personnalisé, apporter des conseils adaptés à la situation du client, et mettre en oeuvre tous les moyens nécessaires. Le prestataire est tenu à une obligation de moyens et non de résultat.</p>
-  <h2>Article 4 – Engagement du client</h2>
-  <p>Le client s'engage à fournir des informations sincères et complètes, être actif et impliqué dans la démarche, et respecter les rendez-vous fixés.</p>
-  <h2>Article 5 – Tarifs et modalités de paiement</h2>
-  <p>Le montant de la prestation est fixé à : <strong>${prix}</strong><br>
-  ☐ Paiement comptant &nbsp;&nbsp; ☐ Paiement en plusieurs fois</p>
-  <h2>Article 6 – Annulation / Report</h2>
-  <p>Toute séance annulée moins de 24h à l'avance pourra être considérée comme due. Un report peut être envisagé d'un commun accord.</p>
-  <h2>Article 7 – Confidentialité</h2>
-  <p>Les parties s'engagent à une stricte confidentialité concernant les informations personnelles du client, les données liées au projet, et les méthodes et outils du prestataire.</p>
-  <h2>Article 8 – Acceptation</h2>
-  <p>Fait à Trois-Rivières, le ${today}</p>
-  <div class="sign-box">
-    <div class="sign-area"><strong>Signature du Client</strong><br><em>(Lu et approuvé)</em></div>
-    <div class="sign-area"><strong>Signature du Prestataire</strong><br>Jean-Christophe Simele</div>
-  </div></body></html>`;
+  const contratBase = (seances, prix, client) => {
+  const c = client || {};
+  const prenom = c.prenom || '_______________';
+  const nom = c.nom || '_______________';
+  const adresse = c.adresse || '_______________';
+  const today = new Date().toLocaleDateString('fr-FR');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Contrat de Prestation de Services</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 780px; margin: 40px auto; padding: 0 40px; color: #1a1a1a; font-size: 13px; line-height: 1.7; }
+  .header { display: flex; align-items: center; gap: 24px; border-bottom: 2px solid #1a365d; padding-bottom: 16px; margin-bottom: 24px; }
+  .logo-box { width: 80px; height: 80px; border: 2px solid #1a365d; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; font-size: 10px; color: #1a365d; font-weight: bold; }
+  .logo-cs { font-size: 22px; font-weight: bold; }
+  .title { flex: 1; text-align: center; }
+  .title h1 { font-size: 22px; color: #1a365d; margin: 0; }
+  .parties-block { margin: 20px 0; }
+  .partie { margin-bottom: 12px; }
+  .underline { border-bottom: 1px solid #333; display: inline-block; min-width: 200px; }
+  .field-line { margin: 6px 0; }
+  h2 { font-size: 14px; font-weight: bold; color: #1a365d; margin-top: 20px; margin-bottom: 8px; text-transform: uppercase; }
+  ul { margin: 6px 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; }
+  .sig-box h3 { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+  .sig-area { height: 80px; border-bottom: 1px solid #333; margin-top: 12px; }
+  .sig-info { font-size: 11px; color: #555; margin-top: 8px; }
+  @media print { body { margin: 20px; } }
+</style>
+</head><body>
+<div class="header">
+  <div class="logo-box"><div class="logo-cs">CS</div><div>CABINET DE<br>CONSEILS SIMELE</div></div>
+  <div class="title"><h1>Contrat de prestation de<br>services</h1></div>
+</div>
 
+<p><strong>Entre les soussignés :</strong></p>
+
+<div class="parties-block">
+  <div class="partie">
+    <strong>Cabinet de Conseils SIMELE</strong><br>
+    Représenté par Jean-Christophe Simele<br>
+    SIRET : 92787546800039<br>
+    Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières<br>
+    <em>Ci-après dénommé : <strong>"Le Prestataire"</strong></em>
+  </div>
+  <p><strong>Et :</strong></p>
+  <div class="partie">
+    <span class="field-line">Nom / Prénom : <strong>${prenom} ${nom}</strong></span><br>
+    <span class="field-line">Adresse : <span class="underline">${adresse}</span></span><br>
+    <em>Ci-après dénommé : <strong>"Le Client"</strong></em>
+  </div>
+</div>
+
+<h2>Article 1 - Objet du contrat</h2>
+<p>Le présent contrat a pour objet la réalisation d’une prestation d’accompagnement à la création et à la structuration de projet entrepreneurial.</p>
+<p>Le prestataire s’engage à accompagner le client dans le cadre d’un coaching comprenant plusieurs séances, visant à structurer, sécuriser et optimiser son projet.</p>
+
+<h2>Article 2 - Description de la prestation</h2>
+<p>La prestation comprend :</p>
+<ul>
+  <li>Un accompagnement en <strong>${seances} séances</strong></li>
+  <li>Une durée estimée de <strong>2h30 à 3h par séance</strong></li>
+  <li>Des échanges personnalisés adaptés au projet du client</li>
+</ul>
+<p>Les thématiques abordées incluent notamment :</p>
+<ul>
+  <li>Structuration du projet</li>
+  <li>Environnement juridique et administratif</li>
+  <li>Dispositifs d’aide</li>
+  <li>Structuration financière</li>
+</ul>
+
+<h2>Article 3 - Engagement du prestataire</h2>
+<p>Le prestataire s’engage à :</p>
+<ul>
+  <li>Fournir un accompagnement professionnel et personnalisé</li>
+  <li>Apporter des conseils adaptés à la situation du client</li>
+  <li>Mettre en œuvre tous les moyens nécessaires à la bonne réalisation de la prestation</li>
+</ul>
+<p>Le prestataire est tenu à une obligation de moyens et non de résultat.</p>
+
+<h2>Article 4 - Engagement du client</h2>
+<p>Le client s’engage à :</p>
+<ul>
+  <li>Fournir des informations sincères et complètes</li>
+  <li>Être actif et impliqué dans la démarche</li>
+  <li>Respecter les rendez-vous fixés</li>
+</ul>
+
+<h2>Article 5 - Tarifs et modalités de paiement</h2>
+<p>Le montant de la prestation est fixé à : <strong>${prix}</strong></p>
+<p>Les modalités de paiement sont définies comme suit :</p>
+<p>□ Paiement comptant &nbsp;&nbsp; □ Paiement en plusieurs fois (à préciser)</p>
+<p><em>Toute prestation commencée est due.</em></p>
+
+<h2>Article 6 - Annulation / Report</h2>
+<ul>
+  <li>Toute séance annulée moins de 24h à l’avance pourra être considérée comme due</li>
+  <li>Un report peut être envisagé d’un commun accord</li>
+</ul>
+
+<h2>Article 7 - Confidentialité</h2>
+<p>Les parties s’engagent à une stricte confidentialité concernant l’ensemble des informations échangées dans le cadre de la prestation. Cela inclut notamment :</p>
+<ul>
+  <li>Les informations personnelles du client</li>
+  <li>Les données liées au projet</li>
+  <li>Les méthodes, outils et documents du prestataire</li>
+</ul>
+<p>Aucune information ne pourra être divulguée à un tiers sans accord préalable écrit. Cette obligation reste valable après la fin de la prestation.</p>
+
+<h2>Article 8 - Propriété intellectuelle</h2>
+<p>Les supports, outils, méthodes et documents transmis dans le cadre de l’accompagnement restent la propriété exclusive du prestataire. Le client s’engage à ne pas les diffuser, reproduire ou exploiter sans autorisation.</p>
+
+<h2>Article 9 - Responsabilité</h2>
+<p>Le client reste seul responsable des décisions prises concernant son projet. Le prestataire ne pourra être tenu responsable des résultats obtenus suite à la mise en œuvre des conseils.</p>
+
+<h2>Article 10 - Acceptation</h2>
+<p>Le présent contrat prend effet à compter de sa signature par les deux parties.</p>
+<p><strong>Fait à :</strong> <span class="underline">Trois-Rivières</span> &nbsp;&nbsp; <strong>Le :</strong> <span class="underline">${today}</span></p>
+
+<div class="signatures">
+  <div class="sig-box">
+    <h3>Signature du client</h3>
+    <p style="font-size:11px;font-style:italic">(Précédée de la mention "Lu et approuvé")</p>
+    <p>Signature :</p>
+    <div class="sig-area"></div>
+  </div>
+  <div class="sig-box">
+    <h3>Signature du prestataire</h3>
+    <div class="sig-area"></div>
+    <div class="sig-info">
+      Cabinet de Conseils SIMELE<br>
+      20 lotissement Tolbiac 1<br>
+      97114 Trois-Rivières<br>
+      SIRET : 92787546800039
+    </div>
+  </div>
+</div>
+</body></html>`;
+}
   const templates = {
     contrat3: () => contratBase('3', '210€'),
     contrat5: () => contratBase('5', '320€'),
