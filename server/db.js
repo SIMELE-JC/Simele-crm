@@ -172,17 +172,10 @@ try {
     notes       TEXT    DEFAULT '',
     created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
   )`);
-} catch(e) { console.log('rdv table:', e.message); }
 
-// Colonne mot_de_passe_provisoire dans portal_inscriptions
-try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mot_de_passe_provisoire TEXT"); } catch(e) {}
-try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mdp_envoi_at TEXT"); } catch(e) {}
-try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN acces_actif INTEGER DEFAULT 0"); } catch(e) {}
-
-
-// Table coaching sessions
-try {
-  db.exec(`CREATE TABLE IF NOT EXISTS coaching_sessions (
+  // Table coaching sessions
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS coaching_sessions (
     id                         INTEGER PRIMARY KEY AUTOINCREMENT,
     client_id                  INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
     seance_number              INTEGER NOT NULL CHECK(seance_number IN (1,2,3)),
@@ -201,6 +194,13 @@ try {
     updated_at                 TEXT    NOT NULL DEFAULT (datetime('now')),
     UNIQUE(client_id, seance_number)
   )`);
-} catch(e) { console.log('coaching_sessions:', e.message); }
+  } catch(e) { console.log('coaching_sessions:', e.message); }
+} catch(e) { console.log('rdv table:', e.message); }
+
+// Colonne mot_de_passe_provisoire dans portal_inscriptions
+try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mot_de_passe_provisoire TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mdp_envoi_at TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN acces_actif INTEGER DEFAULT 0"); } catch(e) {}
+
 
 module.exports = { db, initDB };
