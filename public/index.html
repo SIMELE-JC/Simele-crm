@@ -3226,5 +3226,31 @@ async function updateChecklist(clientId, key, idx, checked) {
 <div id="page-coaching" style="display:none">
   <div id="coaching-content" style="padding:20px;max-width:960px;margin:0 auto"></div>
 </div>
+<script src="/crm-extensions.js">
+/* Programme: peupler le select clients */
+(function() {
+  var _spOrig = window.showPage;
+  window.showPage = function(id, clientId) {
+    if (typeof _spOrig === 'function') _spOrig(id, clientId);
+    if (id === 'programme') {
+      setTimeout(function() {
+        var sel = document.getElementById('prog-client-select');
+        if (sel && typeof clients !== 'undefined' && clients.length && sel.options.length <= 1) {
+          clients.forEach(function(c) {
+            var o = document.createElement('option');
+            o.value = c.id; o.textContent = c.prenom + ' ' + c.nom;
+            sel.appendChild(o);
+          });
+        }
+        if (sel && typeof currentClientId !== 'undefined' && currentClientId) {
+          sel.value = currentClientId;
+          if (typeof window.updateProgramme === 'function') window.updateProgramme();
+        }
+      }, 350);
+    }
+  };
+})();
+
+</script>
 </body>
 </html>
