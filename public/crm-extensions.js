@@ -1199,3 +1199,251 @@ window.sauvegarderEntretienComplet = async function(brouillon) {
     else alert('Erreur: ' + e.message);
   }
 };
+
+/* ================================================================
+   ENTRETIEN & SCORING — Corrections complètes
+   ================================================================ */
+
+/* ----- Pré-remplir le formulaire depuis les données client ----- */
+window._preRemplirEntretien = function(clientId) {
+  if (!clientId) return;
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  if (!client) return;
+
+  /* Stocker le clientId dans le formulaire */
+  window._entretienClientId = clientId;
+
+  /* Mettre à jour le titre de la page */
+  var titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = 'Entretien — ' + client.prenom + ' ' + client.nom;
+  var subEl = document.getElementById('page-sub');
+  if (subEl) subEl.textContent = client.prestation || 'Entretien initial';
+
+  /* Pré-remplir les champs texte */
+  var nomEl = document.getElementById('ent-nom-prenom');
+  if (nomEl && !nomEl.value) nomEl.value = client.prenom + ' ' + client.nom;
+
+  var emailEl = document.getElementById('ent-email');
+  if (emailEl && !emailEl.value) emailEl.value = client.email || '';
+
+  var telEl = document.getElementById('ent-tel');
+  if (telEl && !telEl.value) telEl.value = client.tel || '';
+
+  var projetEl = document.getElementById('ent-projet');
+  if (projetEl && !projetEl.value) projetEl.value = client.projet || '';
+
+  var statutSel = document.getElementById('ent-statut');
+  if (statutSel && client.statut) {
+    for (var i = 0; i < statutSel.options.length; i++) {
+      if (statutSel.options[i].text === client.statut) { statutSel.selectedIndex = i; break; }
+    }
+  }
+
+  /* Pré-remplir notes si existantes */
+  var notesEl = document.getElementById('ent-notes');
+  if (notesEl && !notesEl.value && client.notes) notesEl.value = client.notes;
+
+  /* Recalculer le score */
+  if (typeof recalc === 'function') setTimeout(recalc, 200);
+};
+
+/* ----- Lire la valeur sélectionnée d'un groupe de chips ----- */
+window._lireChip = function(containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return '';
+  var active = el.querySelector('.chip.on');
+  return active ? active.textContent.trim() : '';
+};
+
+/* ----- Lire tous les chips pour calculer le score ----- */
+window._calculerScoreEntretien = function() {
+  var score = 0;
+
+  /* Section B — Clarté (max 30) */
+  var vision = window._lireChip('ent-vision');
+  var cible  = window._lireChip('ent-cible');
+  var offre  = window._lireChip('ent-offre');
+  if (vision === 'Claire') score += 10; else if (vision === 'Moyenne') score += 5;
+  if (cible  === 'Oui')   score += 10; else if (cible  === 'Partielle') score += 5;
+  if (offre  === 'Oui')   score += 10;
+
+  /* Section C — Capacité (max 25) */
+  var comp  = window._lireChip('ent-competences');
+  var exp   = window._lireChip('ent-experience');
+  var auto  = window._lireChip('ent-autonomie');
+  if (comp === 'Bon')    score += 10; else if (comp === 'Moyen') score += 5;
+  if (exp  === 'Oui')   score += 10;
+  if (auto === 'Forte') score += 5;  else if (auto === 'Moyenne') score += 2;
+
+  /* Section D — Ressources (max 20) */
+  var budget = parseInt(document.getElementById('ent-budget')?.value || '0');
+  var fin    = window._lireChip('ent-financement');
+  if (budget >= 10000) score += 10; else if (budget >= 3000) score += 5; else if (budget >= 500) score += 2;
+  if (fin === 'Oui')     score += 10; else if (fin === 'Possible') score += 5;
+
+  /* Section E — Motivation (max 25) */
+  var engagement = window._lireChip('ent-engagement');
+  var urgence    = window._lireChip('ent-urgence');
+  var capacite   = window._lireChip('ent-capacite');
+  var engNum = parseInt(engagement) || 3;
+  score += Math.round(engNum * 2); /* max 10 */
+  if (urgence  === 'Forte')  score += 8; else if (urgence  === 'Moyenne') score += 4;
+  if (capacite === 'Oui')    score += 7; else if (capacite === 'Hésitant') score += 3;
+
+  return Math.min(100, Math.max(0, score));
+};
+
+/* ----- Déterminer le profil selon le score ----- */
+window._profilDepuisScore = function(score) {
+  if (score >= 80) return 'Profil 4 — Prêt à lancer';
+  if (score >= 60) return 'Profil 3 — Bien engagé';
+  if (score >= 40) return 'Profil 2 — À accompagner';
+  return 'Profil 1 — À structurer';
+};
+
+/* ----- Générer la fiche d'entretien HTML ----- */
+window._genererFicheEntretien = function(client, score, profil, data) {
+  var today = new Date().toLocaleDateString('fr-FR');
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fiche entretien — ' + client.prenom + ' ' + client.nom + '</title>'
+    + '<style>body{font-family:Arial,sans-serif;max-width:780px;margin:30px auto;padding:0 30px;font-size:13px;color:#1a1a1a;line-height:1.6}'
+    + 'h1{font-size:20px;color:#1b2d5b;margin-bottom:4px}h2{font-size:14px;font-weight:700;color:#1b2d5b;border-bottom:2px solid #1b2d5b;padding-bottom:4px;margin-top:20px}'
+    + '.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:2px solid #c9a96e;margin-bottom:20px}'
+    + '.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#1b2d5b;color:white}'
+    + '.score-box{background:#f0f4f8;border-left:4px solid #1b2d5b;padding:12px 16px;border-radius:6px;margin:16px 0}'
+    + '.score-num{font-size:36px;font-weight:700;color:#1b2d5b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}'
+    + '.field{background:#f8f9fa;border-radius:6px;padding:10px 12px}.field-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#999;margin-bottom:4px}'
+    + '.field-val{font-size:13px;color:#1a1a1a;font-weight:500}'
+    + '.notes-box{background:#f8f9fa;border-radius:6px;padding:12px;margin:8px 0;white-space:pre-wrap}'
+    + '.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e0e0e0;font-size:11px;color:#999;display:flex;justify-content:space-between}'
+    + '@media print{body{margin:15px}}</style></head><body>'
+    + '<div class="header"><div>'
+    + '<div style="font-size:11px;color:#c9a96e;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Cabinet de Conseils SIMELE</div>'
+    + '<h1>Fiche d\'entretien initial</h1>'
+    + '<div style="font-size:13px;color:#666">' + client.prenom + ' ' + client.nom + ' · ' + today + '</div>'
+    + '</div><div style="text-align:right"><div class="score-num">' + score + '</div><div style="font-size:11px;color:#999">/100</div>'
+    + '<div class="badge" style="margin-top:6px;background:' + (score>=80?'#2ecc71':score>=60?'#f39c12':score>=40?'#e67e22':'#e74c3c') + '">' + profil + '</div>'
+    + '</div></div>'
+    + '<h2>Informations client</h2>'
+    + '<div class="grid">'
+    + '<div class="field"><div class="field-label">Nom / Prénom</div><div class="field-val">' + (data.nomPrenom || client.prenom + ' ' + client.nom) + '</div></div>'
+    + '<div class="field"><div class="field-label">Email</div><div class="field-val">' + (data.email || client.email || '—') + '</div></div>'
+    + '<div class="field"><div class="field-label">Téléphone</div><div class="field-val">' + (data.tel || client.tel || '—') + '</div></div>'
+    + '<div class="field"><div class="field-label">Statut professionnel</div><div class="field-val">' + (data.statut || client.statut || '—') + '</div></div>'
+    + '<div class="field"><div class="field-label">Projet</div><div class="field-val">' + (data.projet || client.projet || '—') + '</div></div>'
+    + '<div class="field"><div class="field-label">Prestation recommandée</div><div class="field-val">' + (data.prestation || client.prestation || '—') + '</div></div>'
+    + '</div>'
+    + '<h2>Scoring détaillé</h2>'
+    + '<div class="grid">'
+    + '<div class="field"><div class="field-label">Clarté du projet</div><div class="field-val">Vision : ' + (data.vision||'—') + ' · Cible : ' + (data.cible||'—') + ' · Offre : ' + (data.offre||'—') + '</div></div>'
+    + '<div class="field"><div class="field-label">Capacité du porteur</div><div class="field-val">Compétences : ' + (data.competences||'—') + ' · Autonomie : ' + (data.autonomie||'—') + '</div></div>'
+    + '<div class="field"><div class="field-label">Ressources</div><div class="field-val">Budget : ' + (data.budget||'0') + '€ · Financement : ' + (data.financement||'—') + '</div></div>'
+    + '<div class="field"><div class="field-label">Motivation</div><div class="field-val">Engagement : ' + (data.engagement||'—') + '/5 · Urgence : ' + (data.urgence||'—') + '</div></div>'
+    + '</div>'
+    + (data.notes ? '<h2>Observations du coach</h2><div class="notes-box">' + data.notes + '</div>' : '')
+    + (data.recommandations ? '<h2>Recommandations</h2><div class="notes-box">' + data.recommandations + '</div>' : '')
+    + (data.prochaineEtape ? '<h2>Prochaine étape</h2><div class="notes-box">' + data.prochaineEtape + '</div>' : '')
+    + '<div class="footer"><div>Cabinet de Conseils SIMELE · Jean-Christophe Simele · Trois-Rivières, Guadeloupe</div><div>Entretien réalisé le ' + today + '</div></div>'
+    + '</body></html>';
+};
+
+/* ----- Sauvegarder l'entretien complet ----- */
+window.sauvegarderEntretienComplet = async function(brouillon) {
+  var clientId = window._entretienClientId || window.currentClientId;
+  if (!clientId) { alert('Erreur : aucun client sélectionné.\nRetournez sur le dossier client et cliquez sur "Entretien".'); return; }
+
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  var score = window._calculerScoreEntretien();
+  var profil = window._profilDepuisScore(score);
+
+  /* Collecter toutes les données du formulaire */
+  var data = {
+    nomPrenom:    document.getElementById('ent-nom-prenom')?.value || '',
+    email:        document.getElementById('ent-email')?.value || '',
+    tel:          document.getElementById('ent-tel')?.value || '',
+    statut:       document.getElementById('ent-statut')?.value || '',
+    projet:       document.getElementById('ent-projet')?.value || '',
+    budget:       document.getElementById('ent-budget')?.value || '0',
+    apport:       document.getElementById('ent-apport')?.value || '0',
+    notes:        document.getElementById('ent-notes')?.value || '',
+    recommandations: document.getElementById('ent-recommandations')?.value || '',
+    prochaineEtape: document.getElementById('ent-prochaine-etape')?.value || '',
+    vision:       window._lireChip('ent-vision'),
+    cible:        window._lireChip('ent-cible'),
+    offre:        window._lireChip('ent-offre'),
+    competences:  window._lireChip('ent-competences'),
+    experience:   window._lireChip('ent-experience'),
+    autonomie:    window._lireChip('ent-autonomie'),
+    financement:  window._lireChip('ent-financement'),
+    engagement:   window._lireChip('ent-engagement'),
+    urgence:      window._lireChip('ent-urgence'),
+    capacite:     window._lireChip('ent-capacite'),
+    stade:        window._lireChip('ent-stade'),
+    prestation:   document.getElementById('reco-mini-name')?.textContent || ''
+  };
+
+  var tok = localStorage.getItem('simele_token') || '';
+
+  /* 1. Sauvegarder le score sur le client */
+  try {
+    var r = await fetch('/api/clients/' + clientId + '/entretien', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body: JSON.stringify({
+        score: score,
+        profil: profil,
+        notes: data.notes,
+        situation: data.statut,
+        projet: data.projet,
+        besoins: data.recommandations,
+        recommandations: data.recommandations,
+        prochaine_etape: data.prochaineEtape
+      })
+    });
+    var resp = await r.json();
+    if (!resp.success) throw new Error(resp.error || 'Erreur sauvegarde');
+
+    /* Mettre à jour clients[] en mémoire */
+    if (typeof clients !== 'undefined') {
+      var idx = clients.findIndex(function(c){return c.id==clientId;});
+      if (idx>-1) { clients[idx].score=score; clients[idx].profil=profil; }
+    }
+  } catch(e) {
+    alert('Erreur lors de la sauvegarde : ' + e.message); return;
+  }
+
+  /* 2. Générer et enregistrer la fiche si validation finale */
+  if (!brouillon && client) {
+    var ficheHTML = window._genererFicheEntretien(client, score, profil, data);
+    var today = new Date().toISOString().slice(0,10);
+    var ficheNom = 'Fiche_entretien_' + client.nom + '_' + today + '.html';
+    var blob = new Blob([ficheHTML], {type:'text/html'});
+    var file = new File([blob], ficheNom, {type:'text/html'});
+    var fd = new FormData();
+    fd.append('fichier', file, ficheNom);
+    fd.append('type', 'fiche');
+    fd.append('nom', ficheNom);
+    fd.append('visible_client', '0');
+    try {
+      var r2 = await fetch('/api/documents/client/' + clientId, {
+        method:'POST', headers:{'Authorization':'Bearer '+tok}, body: fd
+      });
+      var dr = await r2.json();
+      if (dr.success) {
+        if (typeof showToast==='function') showToast('Fiche entretien enregistrée dans le dossier !', true);
+      }
+    } catch(e2) { console.warn('Fiche non sauvegardée:', e2); }
+
+    /* Retour au dossier client */
+    setTimeout(function() {
+      if (typeof showPage==='function') showPage('dossier', clientId);
+    }, 800);
+    if (typeof showToast==='function') {
+      showToast('✅ Entretien validé — Score ' + score + '/100 · ' + profil, true);
+    } else {
+      alert('✅ Entretien validé !\nScore : ' + score + '/100\nProfil : ' + profil + '\nFiche générée et enregistrée dans le dossier.');
+    }
+  } else if (brouillon) {
+    if (typeof showToast==='function') showToast('💾 Brouillon sauvegardé — Score ' + score + '/100', true);
+    else alert('💾 Brouillon sauvegardé. Score : ' + score + '/100');
+  }
+};

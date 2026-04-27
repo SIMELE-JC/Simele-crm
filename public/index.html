@@ -519,13 +519,13 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
           <div class="form-section">
             <div class="form-sec-title"><span class="sec-badge">A</span> Identité & projet</div>
             <div class="form-grid-3">
-              <div class="form-group"><div class="form-label">Nom / Prénom</div><input class="form-input" placeholder="Ex: René Lézin"></div>
-              <div class="form-group"><div class="form-label">Email</div><input class="form-input" type="email" placeholder="email@..."></div>
-              <div class="form-group"><div class="form-label">Téléphone</div><input class="form-input" placeholder="0690 00 00 00"></div>
+              <div class="form-group"><div class="form-label">Nom / Prénom</div><input class="form-input" id="ent-nom-prenom" placeholder="Ex: René Lézin"></div>
+              <div class="form-group"><div class="form-label">Email</div><input class="form-input" id="ent-email" type="email" placeholder="email@..."></div>
+              <div class="form-group"><div class="form-label">Téléphone</div><input class="form-input" id="ent-tel" placeholder="0690 00 00 00"></div>
               <div class="form-group"><div class="form-label">Statut professionnel</div>
-                <select class="form-select"><option>Salarié(e)</option><option>Demandeur d'emploi</option><option>Déjà entrepreneur</option><option>Étudiant(e)</option></select>
+                <select class="form-select" id="ent-statut"><option>Salarié(e)</option><option>Demandeur d'emploi</option><option>Déjà entrepreneur</option><option>Étudiant(e)</option></select>
               </div>
-              <div class="form-group"><div class="form-label">Nom du projet</div><input class="form-input" placeholder="Ex: Restaurant créole..."></div>
+              <div class="form-group"><div class="form-label">Nom du projet</div><input class="form-input" id="ent-projet" placeholder="Ex: Restaurant créole..."></div>
               <div class="form-group"><div class="form-label">Stade d'avancement</div>
                 <div class="chips">
                   <div class="chip" onclick="toggleChip(this,true)">Idée</div>
@@ -538,34 +538,43 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
           <div class="form-section">
             <div class="form-sec-title"><span class="sec-badge">B</span> Clarté du projet</div>
             <div class="form-grid-3">
-              <div class="form-group"><div class="form-label">Vision</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Floue</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyenne</div><div class="chip" onclick="toggleChip(this,true);recalc()">Claire</div></div></div>
-              <div class="form-group"><div class="form-label">Cible définie</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Partielle</div><div class="chip" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
-              <div class="form-group"><div class="form-label">Offre définie</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
+              <div class="form-group"><div class="form-label">Vision</div><div class="chips" id="ent-vision"><div class="chip" onclick="toggleChip(this,true);recalc()">Floue</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyenne</div><div class="chip" onclick="toggleChip(this,true);recalc()">Claire</div></div></div>
+              <div class="form-group"><div class="form-label">Cible définie</div><div class="chips" id="ent-cible"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Partielle</div><div class="chip" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
+              <div class="form-group"><div class="form-label">Offre définie</div><div class="chips" id="ent-offre"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
             </div>
           </div>
           <div class="form-section">
             <div class="form-sec-title"><span class="sec-badge">C</span> Capacité du porteur</div>
             <div class="form-grid-3">
-              <div class="form-group"><div class="form-label">Compétences</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Faible</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyen</div><div class="chip" onclick="toggleChip(this,true);recalc()">Bon</div></div></div>
-              <div class="form-group"><div class="form-label">Expérience domaine</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
-              <div class="form-group"><div class="form-label">Autonomie</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Faible</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyenne</div><div class="chip" onclick="toggleChip(this,true);recalc()">Forte</div></div></div>
+              <div class="form-group"><div class="form-label">Compétences</div><div class="chips" id="ent-competences"><div class="chip" onclick="toggleChip(this,true);recalc()">Faible</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyen</div><div class="chip" onclick="toggleChip(this,true);recalc()">Bon</div></div></div>
+              <div class="form-group"><div class="form-label">Expérience domaine</div><div class="chips" id="ent-experience"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
+              <div class="form-group"><div class="form-label">Autonomie</div><div class="chips" id="ent-autonomie"><div class="chip" onclick="toggleChip(this,true);recalc()">Faible</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyenne</div><div class="chip" onclick="toggleChip(this,true);recalc()">Forte</div></div></div>
             </div>
           </div>
           <div class="form-section">
             <div class="form-sec-title"><span class="sec-badge">D</span> Ressources & financement</div>
             <div class="form-grid-3">
-              <div class="form-group"><div class="form-label">Budget disponible (€)</div><input class="form-input" type="number" placeholder="0" oninput="recalc()"></div>
-              <div class="form-group"><div class="form-label">Apport personnel (€)</div><input class="form-input" type="number" placeholder="0"></div>
-              <div class="form-group"><div class="form-label">Accès financement</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Possible</div><div class="chip" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
+              <div class="form-group"><div class="form-label">Budget disponible (€)</div><input class="form-input" id="ent-budget" type="number" placeholder="0" oninput="recalc()"></div>
+              <div class="form-group"><div class="form-label">Apport personnel (€)</div><input class="form-input" id="ent-apport" type="number" placeholder="0"></div>
+              <div class="form-group"><div class="form-label">Accès financement</div><div class="chips" id="ent-financement"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Possible</div><div class="chip" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
             </div>
           </div>
           <div class="form-section">
             <div class="form-sec-title"><span class="sec-badge">E</span> Motivation & engagement</div>
             <div class="form-grid-3">
-              <div class="form-group"><div class="form-label">Niveau d'engagement (1→5)</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">1</div><div class="chip" onclick="toggleChip(this,true);recalc()">2</div><div class="chip on" onclick="toggleChip(this,true);recalc()">3</div><div class="chip" onclick="toggleChip(this,true);recalc()">4</div><div class="chip" onclick="toggleChip(this,true);recalc()">5</div></div></div>
-              <div class="form-group"><div class="form-label">Urgence du projet</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Faible</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyenne</div><div class="chip" onclick="toggleChip(this,true);recalc()">Forte</div></div></div>
-              <div class="form-group"><div class="form-label">Capacité à investir</div><div class="chips"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip" onclick="toggleChip(this,true);recalc()">Hésitant</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
+              <div class="form-group"><div class="form-label">Niveau d'engagement (1→5)</div><div class="chips" id="ent-engagement"><div class="chip" onclick="toggleChip(this,true);recalc()">1</div><div class="chip" onclick="toggleChip(this,true);recalc()">2</div><div class="chip on" onclick="toggleChip(this,true);recalc()">3</div><div class="chip" onclick="toggleChip(this,true);recalc()">4</div><div class="chip" onclick="toggleChip(this,true);recalc()">5</div></div></div>
+              <div class="form-group"><div class="form-label">Urgence du projet</div><div class="chips" id="ent-urgence"><div class="chip" onclick="toggleChip(this,true);recalc()">Faible</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Moyenne</div><div class="chip" onclick="toggleChip(this,true);recalc()">Forte</div></div></div>
+              <div class="form-group"><div class="form-label">Capacité à investir</div><div class="chips" id="ent-capacite"><div class="chip" onclick="toggleChip(this,true);recalc()">Non</div><div class="chip" onclick="toggleChip(this,true);recalc()">Hésitant</div><div class="chip on" onclick="toggleChip(this,true);recalc()">Oui</div></div></div>
             </div>
+          </div>
+          <div class="form-section">
+            <div class="form-sec-title"><span class="sec-badge">F</span> Notes & synthèse coach</div>
+            <div class="form-group"><div class="form-label">Observations</div>
+              <textarea class="form-input" id="ent-notes" rows="3" placeholder="Points clés de l'entretien, observations importantes..." style="resize:vertical"></textarea></div>
+            <div class="form-group"><div class="form-label">Recommandations</div>
+              <textarea class="form-input" id="ent-recommandations" rows="2" placeholder="Recommandations pour la suite..." style="resize:vertical"></textarea></div>
+            <div class="form-group"><div class="form-label">Prochaine étape</div>
+              <input class="form-input" id="ent-prochaine-etape" placeholder="Ex: RDV coaching séance 1 dans 15 jours..."></div>
           </div>
           <div style="display:flex;gap:9px">
             <button class="btn btn-primary" onclick="recalc()">Calculer le score IA</button>
@@ -1507,7 +1516,7 @@ function renderDossier(clientId) {
       <div>
         <div class="tabs">
           <div class="tab on">Projet</div>
-          <div class="tab" onclick="showPage('entretien')">Entretien</div>
+          <div class="tab" onclick="showPage('entretien', currentClientId)">Entretien</div>
           <div class="tab" onclick="showPage('programme')">Programme</div>
           <div class="tab" onclick="showPage('docs')">Documents</div>
           <div class="tab" onclick="showPage('coaching')">&#127919; Coaching</div>
