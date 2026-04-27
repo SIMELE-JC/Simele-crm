@@ -959,44 +959,103 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
 </div>
     <!-- ===== IA ===== -->
     <div id="page-ia" style="display:none">
-      <div class="ia-layout">
-        <div class="chat-box">
-          <div class="chat-head">
-            <div class="ai-dot"></div>
-            <div style="font-size:13px;font-weight:600;color:var(--gray800)">IA SIMELE — Assistante métier</div>
-            <span class="badge badge-gold" style="margin-left:auto">Active</span>
-          </div>
-          <div class="chat-msgs" id="chat-messages">
-            <div class="msg msg-ai">Bonjour JC ! Je suis votre assistante SIMELE. Je connais l'ensemble de vos services, vos trames d'entretien, vos modèles de contrats et votre grille de scoring. Comment puis-je vous aider ?</div>
-          </div>
-          <div class="chat-input-row">
-            <input class="chat-input" id="chat-inp" placeholder="Posez une question à votre assistante IA..." onkeydown="if(event.key==='Enter')sendMsg()">
-            <button class="btn btn-primary btn-sm" onclick="sendMsg()">Envoyer</button>
-          </div>
-        </div>
-        <div>
-          <div class="card" style="margin-bottom:12px">
-            <div class="card-title">Actions rapides</div>
-            <div class="sugg-item" id="sugg-1" onclick="sendPrompt(this.dataset.msg)">Générer plan d'accompagnement ↗</div>
-            <div class="sugg-item" onclick="sendPrompt('Quels financements disponibles en Guadeloupe pour une création d\'entreprise ?')">Financements disponibles ↗</div>
-            <div class="sugg-item" id="sugg-relance" onclick="sendPrompt(this.dataset.msg)">Email de suivi client ↗</div>
-            <div class="sugg-item" onclick="sendPrompt('Quels clients sont à relancer cette semaine ?')">Clients à relancer ↗</div>
-            <div class="sugg-item" onclick="sendPrompt('Analyse les incohérences dans les dossiers en cours')">Analyser incohérences dossiers ↗</div>
-          </div>
-          <div class="card">
-            <div class="card-title">Stats IA du mois</div>
-            <div class="kpi-mini-grid">
-              <div class="kpi-mini"><div class="kpi-mini-val">12</div><div class="kpi-mini-lbl">Analyses</div></div>
-              <div class="kpi-mini"><div class="kpi-mini-val">5</div><div class="kpi-mini-lbl">Docs rédigés</div></div>
-              <div class="kpi-mini"><div class="kpi-mini-val">3</div><div class="kpi-mini-lbl">Alertes</div></div>
-              <div class="kpi-mini"><div class="kpi-mini-val">94%</div><div class="kpi-mini-lbl">Pertinence</div></div>
-            </div>
-          </div>
-        </div>
+<style>
+.ia-wrap { display:flex; gap:16px; height:calc(100vh - 110px); overflow:hidden; }
+.ia-chat { flex:1; display:flex; flex-direction:column; background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); overflow:hidden; }
+.ia-header { padding:14px 18px; border-bottom:1px solid #e8eaed; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.ia-dot { width:9px; height:9px; border-radius:50%; background:#2ecc71; box-shadow:0 0 6px #2ecc71; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.ia-status-off { background:#e74c3c; box-shadow:0 0 6px #e74c3c; animation:none; }
+.ia-msgs { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.ia-msg { max-width:85%; padding:11px 14px; border-radius:12px; font-size:13px; line-height:1.6; white-space:pre-wrap; }
+.ia-msg-user { align-self:flex-end; background:#1b2d5b; color:white; border-radius:12px 12px 3px 12px; }
+.ia-msg-ai { align-self:flex-start; background:#f0f4f8; color:#1a1a1a; border-radius:12px 12px 12px 3px; border:1px solid #e0e0e0; }
+.ia-msg-ai.thinking { opacity:0.6; font-style:italic; }
+.ia-msg-save { margin-top:8px; }
+.ia-msg-save button { background:#c9a96e; color:white; border:none; border-radius:6px; padding:5px 12px; font-size:11px; cursor:pointer; }
+.ia-input-area { padding:12px 16px; border-top:1px solid #e8eaed; flex-shrink:0; }
+.ia-input-row { display:flex; gap:8px; align-items:flex-end; }
+.ia-textarea { flex:1; border:1px solid #ddd; border-radius:8px; padding:10px 12px; font-size:13px; font-family:inherit; resize:none; min-height:44px; max-height:120px; outline:none; line-height:1.5; }
+.ia-textarea:focus { border-color:#1b2d5b; }
+.ia-send { background:#1b2d5b; color:white; border:none; border-radius:8px; padding:10px 18px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; }
+.ia-send:disabled { opacity:0.5; cursor:not-allowed; }
+.ia-side { width:240px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; }
+.ia-card { background:white; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.ia-card-title { font-size:11px; font-weight:700; text-transform:uppercase; color:#999; letter-spacing:0.5px; margin-bottom:10px; }
+.ia-action { padding:8px 10px; border-radius:7px; font-size:12px; color:#1b2d5b; cursor:pointer; border:1px solid #e0e0e0; margin-bottom:6px; display:flex; align-items:center; gap:6px; transition:all 0.15s; }
+.ia-action:hover { background:#f0f4f8; border-color:#1b2d5b; }
+.ia-action:last-child { margin-bottom:0; }
+.ia-setting { margin-bottom:10px; }
+.ia-setting label { font-size:11px; color:#666; display:block; margin-bottom:4px; font-weight:600; }
+.ia-setting input, .ia-setting select { width:100%; padding:6px 8px; border:1px solid #ddd; border-radius:6px; font-size:12px; box-sizing:border-box; }
+.ia-ctx { background:#f8f9fa; border-radius:7px; padding:8px 10px; font-size:11px; color:#555; line-height:1.5; }
+.ia-ctx strong { color:#1b2d5b; }
+.ia-test-btn { width:100%; padding:7px; background:#f0f4f8; border:1px solid #ddd; border-radius:6px; font-size:12px; cursor:pointer; color:#1b2d5b; font-weight:600; margin-top:8px; }
+.ia-test-btn:hover { background:#e8edf2; }
+</style>
+
+<div class="ia-wrap">
+  <!-- CHAT PRINCIPAL -->
+  <div class="ia-chat">
+    <div class="ia-header">
+      <div class="ai-dot" id="ia-dot"></div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1b2d5b">IA Assistante SIMELE</div>
+        <div style="font-size:11px;color:#999" id="ia-status-txt">Vérification de la connexion Ollama...</div>
+      </div>
+      <button onclick="window.viderChatIA()" style="margin-left:auto;background:none;border:none;color:#999;cursor:pointer;font-size:11px;">Effacer ↺</button>
+    </div>
+    <div class="ia-msgs" id="ia-messages">
+      <div class="ia-msg ia-msg-ai">👋 Bonjour Jean-Christophe ! Je suis votre assistante IA SIMELE connectée à Ollama.<br><br>Je peux vous aider à :<br>• Rédiger des comptes rendus de séances de coaching<br>• Analyser le profil d'un client<br>• Suggérer une organisation de documents<br>• Générer des fiches personnalisées<br><br>Ouvrez d'abord un dossier client pour que j'aie son contexte, puis posez-moi votre question !</div>
+    </div>
+    <div class="ia-input-area">
+      <div class="ia-input-row">
+        <textarea class="ia-textarea" id="ia-input" placeholder="Posez votre question... (Entrée pour envoyer, Shift+Entrée pour aller à la ligne)" rows="1" onkeydown="window.iaKeyDown(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+        <button class="ia-send" id="ia-send-btn" onclick="window.envoyerMessageIA()">Envoyer</button>
       </div>
     </div>
+  </div>
 
-  
+  <!-- PANNEAU LATERAL -->
+  <div class="ia-side">
+
+    <!-- CONFIGURATION OLLAMA -->
+    <div class="ia-card">
+      <div class="ia-card-title">⚙️ Configuration Ollama</div>
+      <div class="ia-setting">
+        <label>URL Ollama</label>
+        <input type="text" id="ollama-url" value="http://localhost:11434" oninput="window.sauvegarderConfigIA()">
+      </div>
+      <div class="ia-setting">
+        <label>Modèle</label>
+        <input type="text" id="ollama-model" value="llama3" placeholder="ex: llama3, mistral, phi4..." oninput="window.sauvegarderConfigIA()">
+      </div>
+      <button class="ia-test-btn" onclick="window.testerConnexionOllama()">🔌 Tester la connexion</button>
+    </div>
+
+    <!-- CONTEXTE CLIENT ACTIF -->
+    <div class="ia-card">
+      <div class="ia-card-title">👤 Contexte client actif</div>
+      <div class="ia-ctx" id="ia-context-display">Aucun client sélectionné.<br>Ouvrez un dossier client pour charger son contexte.</div>
+      <button class="ia-test-btn" onclick="window.chargerContexteClientIA()" style="margin-top:8px;">🔄 Recharger le contexte</button>
+    </div>
+
+    <!-- ACTIONS RAPIDES -->
+    <div class="ia-card">
+      <div class="ia-card-title">⚡ Actions rapides</div>
+      <div class="ia-action" onclick="window.actionRapideIA('cr_seance')">📝 Rédiger un CR de séance</div>
+      <div class="ia-action" onclick="window.actionRapideIA('fiche_client')">📋 Générer une fiche client</div>
+      <div class="ia-action" onclick="window.actionRapideIA('analyse_profil')">🔍 Analyser le profil client</div>
+      <div class="ia-action" onclick="window.actionRapideIA('plan_accompagnement')">🗺️ Plan d'accompagnement</div>
+      <div class="ia-action" onclick="window.actionRapideIA('orga_docs')">📁 Organiser les documents</div>
+      <div class="ia-action" onclick="window.actionRapideIA('financements')">💰 Financements disponibles</div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+
 <div id="page-coaching" style="display:none">
   <div id="coaching-content" style="padding:0"></div>
 </div>

@@ -581,3 +581,314 @@ window.sauvegarderEntretien = async function() {
     if (typeof showToast === "function") showToast("Erreur de connexion: " + e.message, false);
   }
 };
+
+/* ================================================================
+   IA ASSISTANTE OLLAMA — Integration complete
+   ================================================================ */
+
+window._iaConfig = {
+  url: localStorage.getItem('ollama_url') || 'http://localhost:11434',
+  model: localStorage.getItem('ollama_model') || 'llama3',
+  connected: false
+};
+window._iaHistory = [];
+window._iaClientContext = null;
+
+/* ----- Initialisation ---- */
+window.initIA = function() {
+  /* Restaurer config */
+  var urlEl = document.getElementById('ollama-url');
+  var modelEl = document.getElementById('ollama-model');
+  if (urlEl) urlEl.value = window._iaConfig.url;
+  if (modelEl) modelEl.value = window._iaConfig.model;
+  /* Tester connexion auto */
+  window.testerConnexionOllama(true);
+  /* Charger contexte si client actif */
+  window.chargerContexteClientIA();
+};
+
+window.sauvegarderConfigIA = function() {
+  var url = document.getElementById('ollama-url');
+  var model = document.getElementById('ollama-model');
+  if (url) { window._iaConfig.url = url.value; localStorage.setItem('ollama_url', url.value); }
+  if (model) { window._iaConfig.model = model.value; localStorage.setItem('ollama_model', model.value); }
+};
+
+/* ----- Test connexion Ollama ---- */
+window.testerConnexionOllama = async function(silent) {
+  var dot = document.getElementById('ia-dot');
+  var txt = document.getElementById('ia-status-txt');
+  try {
+    var url = window._iaConfig.url;
+    var r = await fetch(url + '/api/tags', { signal: AbortSignal.timeout(4000) });
+    if (r.ok) {
+      var data = await r.json();
+      var models = data.models ? data.models.map(function(m){return m.name;}) : [];
+      window._iaConfig.connected = true;
+      if (dot) { dot.classList.remove('ia-status-off'); }
+      if (txt) txt.textContent = 'Connecté — ' + models.length + ' modèle(s) disponible(s)';
+      if (!silent) {
+        window.ajouterMessageIA('assistant', '✅ Connexion Ollama réussie !\n\nModèles disponibles : ' + (models.join(', ') || 'aucun trouvé') + '\n\nModèle actif : ' + window._iaConfig.model);
+      }
+      /* Mettre à jour le select si on a des modèles */
+      return models;
+    } else {
+      throw new Error('HTTP ' + r.status);
+    }
+  } catch(e) {
+    window._iaConfig.connected = false;
+    if (dot) dot.classList.add('ia-status-off');
+    if (txt) txt.textContent = 'Ollama non connecté — vérifiez la configuration';
+    if (!silent) {
+      window.ajouterMessageIA('assistant', '❌ Impossible de contacter Ollama à ' + window._iaConfig.url + '\n\n**Pour activer Ollama avec CORS :**\n\nOuvrez un Terminal et tapez :\n```\nOLLAMA_ORIGINS=* ollama serve\n```\n\nOu configurez via launchctl :\n```\nlaunchctl setenv OLLAMA_ORIGINS "*"\n```\nPuis redémarrez Ollama.');
+    }
+  }
+};
+
+/* ----- Contexte client ---- */
+window.chargerContexteClientIA = async function() {
+  var display = document.getElementById('ia-context-display');
+  var clientId = window.currentClientId || window._currentDocsClientId;
+  if (!clientId) {
+    window._iaClientContext = null;
+    if (display) display.innerHTML = 'Aucun client sélectionné.<br>Ouvrez un dossier client.';
+    return;
+  }
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  if (!client) { if (display) display.innerHTML = 'Client introuvable.'; return; }
+
+  /* Charger données enrichies */
+  var tok = localStorage.getItem('simele_token') || '';
+  var ctx = { client: client, entretien: null, coaching: [], documents: [] };
+
+  try {
+    var r = await fetch('/api/clients/' + clientId + '/entretien', { headers: {'Authorization':'Bearer '+tok} });
+    if (r.ok) ctx.entretien = await r.json();
+  } catch(e) {}
+
+  try {
+    var r2 = await fetch('/api/coaching/' + clientId, { headers: {'Authorization':'Bearer '+tok} });
+    if (r2.ok) ctx.coaching = await r2.json();
+  } catch(e) {}
+
+  try {
+    var r3 = await fetch('/api/documents/client/' + clientId, { headers: {'Authorization':'Bearer '+tok} });
+    if (r3.ok) ctx.documents = await r3.json();
+  } catch(e) {}
+
+  window._iaClientContext = ctx;
+
+  if (display) {
+    var seancesDone = ctx.coaching.filter(function(s){return s.statut==='terminee';}).length;
+    display.innerHTML = '<strong>' + client.prenom + ' ' + client.nom + '</strong><br>'
+      + '📋 ' + (client.prestation || 'Prestation non définie') + '<br>'
+      + '⭐ Score : ' + (ctx.entretien ? ctx.entretien.score || 0 : 0) + '/100<br>'
+      + '🎯 Séances : ' + seancesDone + '/' + ctx.coaching.length + ' terminées<br>'
+      + '📁 Documents : ' + (Array.isArray(ctx.documents) ? ctx.documents.length : 0);
+  }
+};
+
+/* ----- Construire le prompt système ---- */
+window._construireSystemPrompt = function() {
+  var base = 'Tu es l\'assistante IA du Cabinet de Conseils SIMELE, dirigé par Jean-Christophe Simele, consultant en création d\'entreprise basé à Trois-Rivières, Guadeloupe.\n\nTes rôles :\n- Aider à rédiger des comptes rendus de séances de coaching entrepreneurial\n- Analyser les profils clients et leur progression\n- Générer des fiches d\'accompagnement personnalisées\n- Suggérer une organisation des documents clients\n- Répondre aux questions sur les dispositifs d\'aide à la création d\'entreprise (ACRE, NACRE, LADOM, ARCE, aides région Guadeloupe)\n\nTu communiques toujours en français. Tes réponses sont professionnelles, structurées et orientées action.\nQuand tu rédiges un compte rendu ou une fiche, tu utilises un format clair avec des sections numérotées.';
+
+  var ctx = window._iaClientContext;
+  if (!ctx || !ctx.client) return base;
+
+  var c = ctx.client;
+  var contextStr = '\n\n--- CONTEXTE CLIENT ACTIF ---\n';
+  contextStr += 'Nom : ' + c.prenom + ' ' + c.nom + '\n';
+  contextStr += 'Statut : ' + (c.statut || 'Non précisé') + '\n';
+  contextStr += 'Prestation : ' + (c.prestation || 'Non définie') + '\n';
+  contextStr += 'Projet : ' + (c.projet || 'Non renseigné') + '\n';
+  contextStr += 'Notes : ' + (c.notes || 'Aucune') + '\n';
+
+  if (ctx.entretien) {
+    contextStr += '\n-- Entretien initial --\n';
+    contextStr += 'Score : ' + (ctx.entretien.score || 0) + '/100\n';
+    contextStr += 'Profil : ' + (ctx.entretien.profil || 'À qualifier') + '\n';
+    if (ctx.entretien.notes) contextStr += 'Notes entretien : ' + ctx.entretien.notes + '\n';
+  }
+
+  if (ctx.coaching && ctx.coaching.length > 0) {
+    contextStr += '\n-- Séances de coaching --\n';
+    ctx.coaching.forEach(function(s) {
+      contextStr += 'Séance ' + s.seance_number + ' : ' + (s.statut || 'en_cours') + '\n';
+      if (s.synthese_points_cles) contextStr += '  Points clés : ' + s.synthese_points_cles + '\n';
+      if (s.synthese_prochaines_etapes) contextStr += '  Prochaines étapes : ' + s.synthese_prochaines_etapes + '\n';
+    });
+  }
+
+  if (ctx.documents && ctx.documents.length > 0) {
+    contextStr += '\n-- Documents dans le dossier --\n';
+    ctx.documents.forEach(function(d) {
+      contextStr += '- ' + d.nom + ' (' + (d.type || 'document') + ')\n';
+    });
+  }
+
+  return base + contextStr;
+};
+
+/* ----- Envoyer un message ---- */
+window.envoyerMessageIA = async function() {
+  var input = document.getElementById('ia-input');
+  var btn = document.getElementById('ia-send-btn');
+  if (!input || !input.value.trim()) return;
+  var userMsg = input.value.trim();
+  input.value = '';
+  input.style.height = 'auto';
+
+  window.ajouterMessageIA('user', userMsg);
+  window._iaHistory.push({ role: 'user', content: userMsg });
+
+  if (!window._iaConfig.connected) {
+    window.ajouterMessageIA('assistant', '⚠️ Ollama n\'est pas connecté. Cliquez sur "Tester la connexion" dans le panneau de configuration.');
+    return;
+  }
+
+  /* Indicateur de chargement */
+  var loadingId = 'loading-' + Date.now();
+  window.ajouterMessageIA('assistant', '⏳ En train de réfléchir...', loadingId, true);
+  if (btn) btn.disabled = true;
+
+  try {
+    var systemPrompt = window._construireSystemPrompt();
+    var messages = [{ role: 'system', content: systemPrompt }]
+      .concat(window._iaHistory.slice(-10)); /* Garder les 10 derniers messages */
+
+    var r = await fetch(window._iaConfig.url + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: window._iaConfig.model,
+        messages: messages,
+        stream: false,
+        options: { temperature: 0.7, num_ctx: 4096 }
+      }),
+      signal: AbortSignal.timeout(60000)
+    });
+
+    if (!r.ok) throw new Error('Erreur Ollama : HTTP ' + r.status);
+    var data = await r.json();
+    var reply = data.message ? data.message.content : (data.response || 'Pas de réponse');
+
+    /* Supprimer le message de chargement */
+    var loadEl = document.getElementById(loadingId);
+    if (loadEl) loadEl.remove();
+
+    window._iaHistory.push({ role: 'assistant', content: reply });
+    window.ajouterMessageIA('assistant', reply, null, false, true);
+
+  } catch(e) {
+    var loadEl2 = document.getElementById(loadingId);
+    if (loadEl2) loadEl2.remove();
+    window.ajouterMessageIA('assistant', '❌ Erreur : ' + e.message + '\n\nVérifiez qu\'Ollama est bien lancé avec CORS activé.');
+  }
+
+  if (btn) btn.disabled = false;
+};
+
+/* ----- Afficher un message dans le chat ---- */
+window.ajouterMessageIA = function(role, text, id, thinking, withSave) {
+  var msgs = document.getElementById('ia-messages');
+  if (!msgs) return;
+  var div = document.createElement('div');
+  div.className = 'ia-msg ' + (role === 'user' ? 'ia-msg-user' : 'ia-msg-ai') + (thinking ? ' thinking' : '');
+  if (id) div.id = id;
+  div.textContent = text;
+  
+  /* Bouton sauvegarder dans dossier */
+  if (withSave && window._iaClientContext && window._iaClientContext.client) {
+    var saveDiv = document.createElement('div');
+    saveDiv.className = 'ia-msg-save';
+    var saveBtn = document.createElement('button');
+    saveBtn.textContent = '💾 Sauvegarder dans le dossier client';
+    var capturedText = text;
+    var capturedClientId = window._iaClientContext.client.id;
+    saveBtn.onclick = function() { window.sauvegarderReponseIA(capturedText, capturedClientId); };
+    saveDiv.appendChild(saveBtn);
+    div.appendChild(saveDiv);
+  }
+  
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+};
+
+/* ----- Sauvegarder réponse IA dans le dossier ---- */
+window.sauvegarderReponseIA = function(text, clientId) {
+  var nom = 'CR_IA_' + new Date().toISOString().slice(0,10) + '.txt';
+  var blob = new Blob([text], {type:'text/plain'});
+  var file = new File([blob], nom, {type:'text/plain'});
+  var fd = new FormData();
+  fd.append('fichier', file, nom);
+  fd.append('type', 'fiche');
+  fd.append('nom', nom);
+  fd.append('visible_client', '0');
+  var tok = localStorage.getItem('simele_token') || '';
+  fetch('/api/documents/client/' + clientId, {method:'POST', headers:{'Authorization':'Bearer '+tok}, body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if (d.success) {
+        if (typeof showToast==='function') showToast('Sauvegardé dans le dossier !', true);
+      } else {
+        if (typeof showToast==='function') showToast('Erreur : ' + (d.error||''), false);
+      }
+    });
+};
+
+/* ----- Actions rapides ---- */
+window.actionRapideIA = function(action) {
+  var ctx = window._iaClientContext;
+  var clientNom = ctx && ctx.client ? ctx.client.prenom + ' ' + ctx.client.nom : 'le client actif';
+  var seanceNum = 1;
+  if (ctx && ctx.coaching) {
+    var enCours = ctx.coaching.find(function(s){return s.statut==='en_cours';});
+    if (enCours) seanceNum = enCours.seance_number;
+  }
+  
+  var prompts = {
+    cr_seance: 'Rédige un compte rendu professionnel de la séance ' + seanceNum + ' de coaching pour ' + clientNom + '. Utilise le contexte disponible. Structure le CR avec : Objectifs de la séance, Points abordés, Décisions prises, Prochaines étapes, Observations du coach.',
+    fiche_client: 'Génère une fiche de synthèse complète et professionnelle pour ' + clientNom + '. Inclus : Profil entrepreneur, Projet et son avancement, Points forts, Points de vigilance, Recommandations pour la suite.',
+    analyse_profil: 'Analyse en détail le profil entrepreneurial de ' + clientNom + ' sur la base de toutes les données disponibles. Évalue : la solidité du projet, la motivation, les compétences identifiées, les risques, et donne une recommandation sur la suite de l\'accompagnement.',
+    plan_accompagnement: 'Propose un plan d\'accompagnement personnalisé et structuré pour ' + clientNom + ' en tenant compte de son profil, son projet, et ses besoins identifiés lors des séances.',
+    orga_docs: 'Analyse les documents présents dans le dossier de ' + clientNom + ' et propose une organisation optimale. Identifie les documents manquants importants et suggère un ordre de priorité pour les obtenir.',
+    financements: 'Liste et explique tous les dispositifs de financement et d\'aide à la création d\'entreprise disponibles pour ' + clientNom + ' en Guadeloupe (ACRE, NACRE, LADOM, ARCE, aides régionales, microcrédits...). Précise les conditions d\'éligibilité et les démarches.'
+  };
+  
+  var prompt = prompts[action] || 'Comment puis-je aider ' + clientNom + ' ?';
+  var input = document.getElementById('ia-input');
+  if (input) {
+    input.value = prompt;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    input.focus();
+  }
+};
+
+/* ----- Touche Entrée ---- */
+window.iaKeyDown = function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    window.envoyerMessageIA();
+  }
+};
+
+/* ----- Vider le chat ---- */
+window.viderChatIA = function() {
+  var msgs = document.getElementById('ia-messages');
+  if (msgs) {
+    msgs.innerHTML = '<div class="ia-msg ia-msg-ai">Chat effacé. Comment puis-je vous aider ?</div>';
+  }
+  window._iaHistory = [];
+};
+
+/* ----- Charger le contexte quand on ouvre l\'onglet IA ---- */
+(function() {
+  var origShowPage = window.showPage;
+  window.showPage = function(id, clientId) {
+    if (typeof origShowPage === 'function') origShowPage(id, clientId);
+    if (id === 'ia') {
+      setTimeout(function() { window.initIA(); }, 200);
+    }
+  };
+})();
