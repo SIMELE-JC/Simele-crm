@@ -594,6 +594,12 @@ window._iaConfig = {
 window._iaHistory = [];
 window._iaClientContext = null;
 
+/* Restore history from localStorage on load */
+try {
+  var _savedHist = localStorage.getItem('simele_ia_history');
+  if (_savedHist) window._iaHistory = JSON.parse(_savedHist).slice(-50);
+} catch(e) {}
+
 /* ----- Initialisation ---- */
 window.initIA = function() {
   /* Restaurer config */
@@ -605,6 +611,8 @@ window.initIA = function() {
   window.testerConnexionOllama(true);
   /* Charger contexte si client actif */
   window.chargerContexteClientIA();
+  /* Restaurer les messages precedents */
+  window._restaurerMessagesIA();
 };
 
 window.sauvegarderConfigIA = function() {
@@ -812,6 +820,8 @@ window.ajouterMessageIA = function(role, text, id, thinking, withSave) {
   
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+  /* Auto-save messages to localStorage */
+  window._sauvegarderHistoriqueIA();
 };
 
 /* ----- Sauvegarder réponse IA dans le dossier ---- */
@@ -874,12 +884,60 @@ window.iaKeyDown = function(e) {
 };
 
 /* ----- Vider le chat ---- */
+
+/* ----- Sauvegarde auto de l'historique ---- */
+window._sauvegarderHistoriqueIA = function() {
+  try {
+    /* Save history array */
+    localStorage.setItem('simele_ia_history', JSON.stringify(window._iaHistory.slice(-50)));
+    /* Save rendered messages HTML */
+    var msgs = document.getElementById('ia-messages');
+    if (msgs) {
+      /* Save only text content of messages (not save buttons) */
+      var msgData = [];
+      msgs.querySelectorAll('.ia-msg').forEach(function(el) {
+        msgData.push({
+          role: el.classList.contains('ia-msg-user') ? 'user' : 'ai',
+          text: el.childNodes[0] ? el.childNodes[0].textContent || el.textContent : el.textContent,
+          ts: Date.now()
+        });
+      });
+      localStorage.setItem('simele_ia_messages', JSON.stringify(msgData.slice(-30)));
+    }
+  } catch(e) {}
+};
+
+/* ----- Restaurer les messages affiches au chargement ---- */
+window._restaurerMessagesIA = function() {
+  var msgs = document.getElementById('ia-messages');
+  if (!msgs) return;
+  try {
+    var saved = localStorage.getItem('simele_ia_messages');
+    if (!saved) return;
+    var msgData = JSON.parse(saved);
+    if (!msgData || !msgData.length) return;
+    /* Clear default welcome message and restore saved ones */
+    msgs.innerHTML = '';
+    msgData.forEach(function(m) {
+      var div = document.createElement('div');
+      div.className = 'ia-msg ' + (m.role === 'user' ? 'ia-msg-user' : 'ia-msg-ai');
+      div.textContent = m.text;
+      msgs.appendChild(div);
+    });
+    msgs.scrollTop = msgs.scrollHeight;
+    console.log('IA: ' + msgData.length + ' messages restaures');
+  } catch(e) {}
+};
+
 window.viderChatIA = function() {
+  if (!confirm('Effacer toutes les conversations ? Cette action est irreversible.')) return;
   var msgs = document.getElementById('ia-messages');
   if (msgs) {
     msgs.innerHTML = '<div class="ia-msg ia-msg-ai">Chat effacé. Comment puis-je vous aider ?</div>';
   }
   window._iaHistory = [];
+  localStorage.removeItem('simele_ia_history');
+  localStorage.removeItem('simele_ia_messages');
 };
 
 /* ----- Charger le contexte quand on ouvre l\'onglet IA ---- */
