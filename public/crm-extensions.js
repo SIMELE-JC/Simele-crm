@@ -1029,8 +1029,12 @@ window._confirmerEnvoiAcces = async function(clientId) {
 
     if (data.success) {
       /* Afficher le succès avec le MDP provisoire pour que JC puisse le noter */
-      result.innerHTML = '<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:14px;margin-bottom:16px">'
-        + '<div style="font-size:13px;font-weight:700;color:#2e7d32;margin-bottom:8px">✅ ' + data.message + '</div>'
+      var bgColor = data.emailSent === false ? '#fff8e1' : '#e8f5e9';
+      var bdColor = data.emailSent === false ? '#ffe082' : '#a5d6a7';
+      var txtColor = data.emailSent === false ? '#f57f17' : '#2e7d32';
+      var icon = data.emailSent === false ? '⚠️' : '✅';
+      result.innerHTML = '<div style="background:'+bgColor+';border:1px solid '+bdColor+';border-radius:8px;padding:14px;margin-bottom:16px">'
+        + '<div style="font-size:13px;font-weight:700;color:'+txtColor+';margin-bottom:8px">' + icon + ' ' + data.message + '</div>'
         + '<div style="font-size:12px;color:#444;margin-bottom:6px">Identifiants envoyés :</div>'
         + '<div style="background:white;border:1px solid #c8e6c9;border-radius:6px;padding:10px;font-family:monospace">'
         + '<div>📧 Email : <strong>' + data.email + '</strong></div>'
@@ -1039,7 +1043,7 @@ window._confirmerEnvoiAcces = async function(clientId) {
         + '</div>'
         + '<div style="font-size:11px;color:#666;margin-top:8px">Le client peut se connecter sur <strong>ccsguadeloupe.fr</strong> avec ces identifiants.</div>'
         + '</div>';
-      if (btn) { btn.disabled = true; btn.textContent = '✅ Envoyé !'; }
+      if (btn) { btn.disabled = true; btn.textContent = data.emailSent === false ? '⚠️ Accès créé (email non envoyé)' : '✅ Envoyé !'; }
       /* Update main button */
       var mainBtn = document.getElementById('btn-espace-client');
       if (mainBtn) { mainBtn.style.background='rgba(46,204,113,0.15)'; mainBtn.style.borderColor='#2ecc71'; mainBtn.style.color='#27ae60'; mainBtn.textContent='✅ Accès actif'; }

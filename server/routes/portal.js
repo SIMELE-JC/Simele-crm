@@ -11,16 +11,24 @@ const nodemailer = require('nodemailer');
 const JWT_SECRET = process.env.JWT_SECRET || 'simele_secret_dev_changeme';
 
 async function sendEmailClient(destinataire, prenom, email, tempPassword) {
+  // Supports both naming conventions (EMAIL_* and SMTP_*)
+  const smtpUser = process.env.EMAIL_FROM || process.env.SMTP_USER || 'ccs.espace-client@outlook.fr';
+  const smtpPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS || '';
+  const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.office365.com';
+  const smtpPort = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587');
+
+  console.log('[EMAIL] Tentative envoi vers', destinataire, '| user:', smtpUser, '| host:', smtpHost, '| port:', smtpPort);
+
   try {
     const transporter = nodemailer.createTransport({
-      host: 'smtp.office365.com',
-      port: 587,
-      secure: false,
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
       auth: {
-        user: process.env.SMTP_USER || 'ccs.guadeloupe@outlook.fr',
-        pass: process.env.SMTP_PASS
+        user: smtpUser,
+        pass: smtpPass
       },
-      tls: { ciphers: 'SSLv3' }
+      tls: { rejectUnauthorized: false }
     });
     const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
       <div style="background:#1a365d;padding:20px;border-radius:8px 8px 0 0;text-align:center">
@@ -44,14 +52,16 @@ async function sendEmailClient(destinataire, prenom, email, tempPassword) {
       </div>
     </div>`;
     await transporter.sendMail({
-      from: '"Cabinet SIMELE" <ccs.guadeloupe@outlook.fr>',
+      from: '"Cabinet SIMELE" <' + smtpUser + '>',
       to: destinataire,
       subject: 'Activation de votre espace client sécurisé',
       html: html
     });
-    console.log('Email envoyé à', destinataire);
+    console.log('[EMAIL] ✅ Envoyé avec succès à', destinataire);
+    return { success: true };
   } catch(e) {
-    console.error('Erreur email:', e.message);
+    console.error('[EMAIL] ❌ Erreur:', e.message, '| code:', e.code);
+    throw new Error('Échec envoi email: ' + e.message);
   }
 }
 
@@ -205,14 +215,25 @@ router.post('/envoyer-acces/:clientId', requireAdmin, async (req, res) => {
       insc = { id: result.lastInsertRowid };
     }
 
-    // Send the email
-    await sendEmailClient(client.email, client.prenom, client.email, tempPassword);
+    // Send the email - catch failure separately to report it
+    let emailOk = false, emailErr = '';
+    try {
+      await sendEmailClient(client.email, client.prenom, client.email, tempPassword);
+      emailOk = true;
+    } catch(emailError) {
+      emailErr = emailError.message;
+      console.error('[PORTAL] Email non envoyé:', emailErr);
+    }
 
     res.json({
+      emailSent: emailOk,
+      emailError: emailErr || null,
       success: true,
-      message: 'Accès créé et email envoyé à ' + client.email,
+      message: emailOk
+        ? 'Accès créé et email envoyé à ' + client.email
+        : 'Accès créé mais email non envoyé (' + emailErr + '). Transmettez le mot de passe manuellement.',
       email: client.email,
-      mdp_provisoire: tempPassword  // returned so admin can see/copy it
+      mdp_provisoire: tempPassword
     });
   } catch(e) {
     console.error('envoyer-acces:', e);
