@@ -315,10 +315,10 @@ window.renderCoachingSeance = function(clientId, num) {
     var statut = session.statut || "en_cours";
     var pct = Math.round(((bIdx+1)/totalBlocs)*100);
 
-    var html = "<div style='max-width:800px;margin:0 auto;padding-bottom:40px'>";
+    var html = "<div style='max-width:800px;margin:0 auto;padding-bottom:60px'>";
 
     /* Header sticky */
-    html += "<div style='position:sticky;top:0;z-index:10;background:white;padding:12px 0 10px;border-bottom:1px solid #e0e0e0;margin-bottom:20px'>";
+    html += "<div style='position:relative;background:white;padding:12px 0 10px;border-bottom:2px solid #1b2d5b;margin-bottom:20px'>";
     html += "<div style='display:flex;align-items:center;gap:10px;margin-bottom:8px'>";
     html += "<button onclick='renderCoachingPage()' style='background:#f0f4f8;border:1px solid #ddd;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;color:#666'>&#8592; Retour</button>";
     html += "<div style='flex:1'><div style='font-size:16px;font-weight:700;color:#1b2d5b'>"+si.titre+"</div>";
@@ -349,7 +349,7 @@ window.renderCoachingSeance = function(clientId, num) {
       var savedVal = savedData["q"+qi] || "";
       html += "<div style='margin-bottom:16px'>";
       html += "<label style='display:block;font-size:13px;font-weight:600;color:#333;margin-bottom:6px'>"+(qi+1)+". "+bloc.q[qi]+"</label>";
-      html += "<textarea id='b"+(bIdx+1)+"_q"+qi+"' rows='3' style='width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.5' placeholder='Votre reponse...'>" + savedVal + "</textarea>";
+      html += "<textarea id='b"+(bIdx+1)+"_q"+qi+"' rows='2' style='width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.5' placeholder='Votre reponse...'>" + savedVal + "</textarea>";
       html += "</div>";
     }
     html += "</div>";
@@ -386,6 +386,8 @@ window.renderCoachingSeance = function(clientId, num) {
     html += "</div>"; /* end max-width */
     el.innerHTML = html;
     el.scrollTop = 0;
+  var mc = document.querySelector('.content') || document.getElementById('main-content');
+  if (mc) mc.scrollTop = 0;
   }
 
   renderBloc(blocIdx);
