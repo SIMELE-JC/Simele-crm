@@ -11,59 +11,86 @@ const nodemailer = require('nodemailer');
 const JWT_SECRET = process.env.JWT_SECRET || 'simele_secret_dev_changeme';
 
 async function sendEmailClient(destinataire, prenom, email, tempPassword) {
-  // Supports both naming conventions (EMAIL_* and SMTP_*)
-  const smtpUser = process.env.EMAIL_FROM || process.env.SMTP_USER || 'ccs.espace-client@outlook.fr';
+  // Auto-detect email provider from env vars
+  const smtpUser = process.env.EMAIL_FROM || process.env.SMTP_USER || '';
   const smtpPass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASS || '';
-  const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.office365.com';
+  const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || '';
   const smtpPort = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587');
+  const apiKey   = process.env.BREVO_API_KEY || process.env.SENDGRID_API_KEY || '';
 
-  console.log('[EMAIL] Tentative envoi vers', destinataire, '| user:', smtpUser, '| host:', smtpHost, '| port:', smtpPort);
+  console.log('[EMAIL] Provider:', apiKey ? 'API (Brevo/SendGrid)' : 'SMTP', '| to:', destinataire);
 
-  try {
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass
-      },
-      tls: { rejectUnauthorized: false }
-    });
-    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
-      <div style="background:#1a365d;padding:20px;border-radius:8px 8px 0 0;text-align:center">
-        <h1 style="color:#fff;margin:0;font-size:1.4rem">Cabinet de Conseils SIMELE</h1>
+  const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+    <div style="background:#1a365d;padding:20px;border-radius:8px 8px 0 0;text-align:center">
+      <h1 style="color:#fff;margin:0;font-size:1.4rem">Cabinet de Conseils SIMELE</h1>
+    </div>
+    <div style="background:#fff;padding:30px;border:1px solid #e8ecf4;border-top:none;border-radius:0 0 8px 8px">
+      <p style="font-size:1rem;color:#374151">Bonjour <strong>${prenom}</strong>,</p>
+      <p style="color:#374151">Votre espace client a bien été activé sur <strong>ccsguadeloupe.fr</strong>.</p>
+      <p style="color:#374151">Accédez-y avec vos identifiants provisoires :</p>
+      <div style="background:#f0f4ff;border-left:4px solid #1a365d;padding:16px 20px;border-radius:4px;margin:20px 0">
+        <p style="margin:0 0 8px;color:#374151">🔐 <strong>Identifiant :</strong> ${email}</p>
+        <p style="margin:0;color:#374151">🔐 <strong>Mot de passe :</strong> <span style="font-family:monospace;background:#e8ecf4;padding:2px 8px;border-radius:4px">${tempPassword}</span></p>
       </div>
-      <div style="background:#fff;padding:30px;border:1px solid #e8ecf4;border-top:none;border-radius:0 0 8px 8px">
-        <p style="font-size:1rem;color:#374151">Bonjour <strong>${prenom}</strong>,</p>
-        <p style="color:#374151">Votre espace client a bien été activé.</p>
-        <p style="color:#374151">Vous pouvez désormais y accéder à l'aide des identifiants provisoires suivants :</p>
-        <div style="background:#f0f4ff;border-left:4px solid #1a365d;padding:16px 20px;border-radius:4px;margin:20px 0">
-          <p style="margin:0 0 8px;color:#374151">🔐 <strong>Identifiant :</strong> ${email}</p>
-          <p style="margin:0;color:#374151">🔐 <strong>Mot de passe :</strong> <span style="font-family:monospace;background:#e8ecf4;padding:2px 8px;border-radius:4px">${tempPassword}</span></p>
-        </div>
-        <p style="color:#374151">Pour des raisons de sécurité, nous vous invitons à modifier votre mot de passe lors de votre première connexion.</p>
-        <p style="color:#374151">Cet espace sécurisé vous permettra de centraliser vos documents et de suivre l'avancement de votre projet.</p>
-        <div style="text-align:center;margin:24px 0">
-          <a href="https://www.ccsguadeloupe.fr" style="background:#1a365d;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold">Accéder à mon espace</a>
-        </div>
-        <p style="color:#6b7280;font-size:.9rem">Nous restons à votre disposition pour toute question.</p>
-        <p style="color:#6b7280;font-size:.9rem;margin:0"><strong>Cabinet de Conseils SIMELE</strong><br>Trois-Rivières, Guadeloupe<br>ccs.guadeloupe@outlook.fr</p>
+      <p style="color:#374151">Pour votre sécurité, changez ce mot de passe dès votre première connexion.</p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="https://www.ccsguadeloupe.fr" style="background:#1a365d;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold">Accéder à mon espace client</a>
       </div>
-    </div>`;
-    await transporter.sendMail({
-      from: '"Cabinet SIMELE" <' + smtpUser + '>',
-      to: destinataire,
-      subject: 'Activation de votre espace client sécurisé',
-      html: html
+      <p style="color:#6b7280;font-size:.9rem">Cabinet de Conseils SIMELE · Trois-Rivières, Guadeloupe</p>
+    </div>
+  </div>`;
+
+  // === OPTION A: Brevo/SendGrid HTTP API (no SMTP auth needed) ===
+  if (apiKey) {
+    const isBrevo = !!process.env.BREVO_API_KEY;
+    const endpoint = isBrevo
+      ? 'https://api.brevo.com/v3/smtp/email'
+      : 'https://api.sendgrid.com/v3/mail/send';
+    const headers = isBrevo
+      ? { 'api-key': apiKey, 'Content-Type': 'application/json' }
+      : { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' };
+    const body = isBrevo ? JSON.stringify({
+      sender: { name: 'Cabinet SIMELE', email: smtpUser || 'no-reply@ccsguadeloupe.fr' },
+      to: [{ email: destinataire, name: prenom }],
+      subject: 'Activation de votre espace client sécurisé — Cabinet SIMELE',
+      htmlContent: html
+    }) : JSON.stringify({
+      personalizations: [{ to: [{ email: destinataire }] }],
+      from: { email: smtpUser || 'no-reply@ccsguadeloupe.fr', name: 'Cabinet SIMELE' },
+      subject: 'Activation de votre espace client sécurisé — Cabinet SIMELE',
+      content: [{ type: 'text/html', value: html }]
     });
-    console.log('[EMAIL] ✅ Envoyé avec succès à', destinataire);
+    const res = await fetch(endpoint, { method: 'POST', headers, body });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error('API email error ' + res.status + ': ' + err.slice(0, 200));
+    }
+    console.log('[EMAIL] ✅ Envoyé via API à', destinataire);
     return { success: true };
-  } catch(e) {
-    console.error('[EMAIL] ❌ Erreur:', e.message, '| code:', e.code);
-    throw new Error('Échec envoi email: ' + e.message);
   }
+
+  // === OPTION B: SMTP classique (Gmail app password, OVH, etc.) ===
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    throw new Error('Email non configuré. Ajoutez BREVO_API_KEY ou EMAIL_HOST/EMAIL_FROM/EMAIL_PASSWORD dans Railway.');
+  }
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: { user: smtpUser, pass: smtpPass },
+    tls: { rejectUnauthorized: false }
+  });
+  await transporter.sendMail({
+    from: '"Cabinet SIMELE" <' + smtpUser + '>',
+    to: destinataire,
+    subject: 'Activation de votre espace client sécurisé — Cabinet SIMELE',
+    html: html
+  });
+  console.log('[EMAIL] ✅ Envoyé via SMTP à', destinataire);
+  return { success: true };
 }
+
+
 
 function requireAdmin(req, res, next) {
   const header = req.headers.authorization;
