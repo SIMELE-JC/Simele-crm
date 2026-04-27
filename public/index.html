@@ -569,8 +569,8 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
           </div>
           <div style="display:flex;gap:9px">
             <button class="btn btn-primary" onclick="recalc()">Calculer le score IA</button>
-            <button class="btn">Sauvegarder brouillon</button>
-            <button class="btn btn-gold" onclick="showPage('dossier')">Valider → Créer dossier</button>
+            <button class="btn" onclick="window.sauvegarderEntretienComplet(true)">💾 Sauvegarder brouillon</button>
+            <button class="btn btn-gold" onclick="window.sauvegarderEntretienComplet(false)">✅ Valider & enregistrer</button>
           </div>
         </div>
         <div>
@@ -1265,6 +1265,7 @@ function showPage(id, clientId=null) {
   if(id==='ia') updateIASuggestions();
   if(id==='nouveaux-clients') loadNouveauxClients();
   if(id==='coaching') { renderCoachingPage(); return; }
+  if(id==='entretien') { window._entretienClientId = clientId || currentClientId; setTimeout(function(){ window._preRemplirEntretien(window._entretienClientId); }, 100); }
   if(id==='programme') {
     const c = getClientById(currentClientId);
     const lbl = document.getElementById('prog-client-label');
@@ -1499,7 +1500,7 @@ function renderDossier(clientId) {
             <div class="crit-row"><span class="crit-name">Motivation</span><div class="crit-bar-wrap"><div class="crit-bar" style="width:${Math.min(100,c.score+12)}%;background:var(--green)"></div></div><span class="crit-val">${Math.round(Math.min(100,c.score+12)/10)}</span></div>
             <div class="crit-row"><span class="crit-name">Budget</span><div class="crit-bar-wrap"><div class="crit-bar" style="width:${Math.max(0,c.score-15)}%;background:var(--amber)"></div></div><span class="crit-val">${Math.max(0,Math.round((c.score-15)/10))}</span></div>
             <div class="crit-row"><span class="crit-name">Capacité</span><div class="crit-bar-wrap"><div class="crit-bar" style="width:${c.score}%;background:var(--green)"></div></div><span class="crit-val">${Math.round(c.score/10)}</span></div>
-          `:`<div style="text-align:center;font-size:11px;color:var(--gray400);padding:10px 0">Entretien non encore réalisé.<br><button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="showPage('entretien')">Démarrer l'entretien</button></div>`}
+          `:`<div style="text-align:center;font-size:11px;color:var(--gray400);padding:10px 0">Entretien non encore réalisé.<br><button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="window.ouvrirEntretien(currentClientId)">Démarrer l'entretien</button></div>`}
         </div>
       </div>
 
@@ -1522,13 +1523,13 @@ function renderDossier(clientId) {
             <button class="btn-ghost-white" onclick="ouvrirContrat(window.currentClient && window.currentClient.id)">Générer contrat</button>
             <button class="btn-ghost-white" onclick="ouvrirDevis(window.currentClient && window.currentClient.id)">Générer devis</button>
             <button class="btn-ghost-white" onclick="showPage('programme')">Voir programme</button>
-            <button class="btn-ghost-white" onclick="envoyerAccesClient(window.currentClient && window.currentClient.id)" style="background:rgba(184,150,46,0.18);border-color:rgba(184,150,46,0.4);color:var(--g)" id="btn-espace-client">🔗 Espace client</button>
+            <button class="btn-ghost-white" onclick="envoyerAccesClient(currentClientId)" style="background:rgba(184,150,46,0.18);border-color:rgba(184,150,46,0.4);color:var(--g)" id="btn-espace-client">🔗 Espace client</button>
             <button class="btn btn-gold btn-sm" style="margin-left:auto">Valider prestation</button>
           </div>
         </div>`:`
         <div style="background:var(--gray50);border:1px dashed var(--gray300);border-radius:var(--radius-lg);padding:20px;margin-bottom:13px;text-align:center">
           <div style="font-size:13px;color:var(--gray500);margin-bottom:10px">Aucun entretien réalisé pour ce client.</div>
-          <button class="btn btn-primary" onclick="showPage('entretien')">Démarrer l'entretien & scoring</button>
+          <button class="btn btn-primary" onclick="window.ouvrirEntretien(currentClientId)">Démarrer l'entretien & scoring</button>
         </div>`}
 
         <div class="card" style="margin-bottom:12px">

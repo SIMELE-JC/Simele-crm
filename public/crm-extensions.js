@@ -1052,3 +1052,150 @@ window._confirmerEnvoiAcces = async function(clientId) {
     if (btn) { btn.disabled = false; btn.textContent = 'Réessayer'; }
   }
 };
+
+/* ================================================================
+   ENTRETIEN — Fix complet : ouverture, pré-remplissage, sauvegarde
+   ================================================================ */
+
+/* Ouvrir l'entretien depuis un dossier client */
+window.ouvrirEntretien = function(clientId) {
+  if (!clientId) { alert("Veuillez d'abord ouvrir un dossier client."); return; }
+  window._entretienClientId = clientId;
+  showPage('entretien', clientId);
+};
+
+/* Pré-remplir le formulaire d'entretien avec les données du client */
+window._preRemplirEntretien = function(clientId) {
+  if (!clientId) return;
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  if (!client) return;
+
+  /* Afficher le nom du client en haut de l'entretien */
+  var banner = document.getElementById('entretien-client-banner');
+  if (!banner) {
+    var entPage = document.getElementById('page-entretien');
+    if (entPage) {
+      var b = document.createElement('div');
+      b.id = 'entretien-client-banner';
+      b.style.cssText = 'background:#1b2d5b;color:white;padding:10px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;flex-shrink:0';
+      b.innerHTML = '📋 Entretien en cours pour : <strong style="color:#c9a96e">' + client.prenom + ' ' + client.nom + '</strong>'
+        + '<span style="margin-left:auto;font-size:11px;opacity:0.7">' + (client.prestation||'') + '</span>';
+      entPage.insertBefore(b, entPage.firstChild);
+    }
+  } else {
+    banner.innerHTML = '📋 Entretien en cours pour : <strong style="color:#c9a96e">' + client.prenom + ' ' + client.nom + '</strong>'
+      + '<span style="margin-left:auto;font-size:11px;opacity:0.7">' + (client.prestation||'') + '</span>';
+  }
+
+  /* Pré-remplir les champs texte de l'entretien */
+  var inputs = document.querySelectorAll('#page-entretien input[type="text"], #page-entretien input:not([type])');
+  inputs.forEach(function(inp) {
+    var ph = inp.placeholder || '';
+    if (!inp.value) {
+      if (ph.includes('Nom') || ph.includes('nom') || ph.includes('René')) inp.value = client.prenom + ' ' + client.nom;
+      else if (ph.includes('email') || ph.includes('Email')) inp.value = client.email || '';
+      else if (ph.includes('Téléphone') || ph.includes('tel') || ph.includes('06')) inp.value = client.tel || '';
+      else if (ph.includes('projet') || ph.includes('Projet') || ph.includes('coiffure')) inp.value = client.projet || '';
+    }
+  });
+
+  /* Pré-sélectionner le statut */
+  var statuts = document.querySelectorAll('#page-entretien select');
+  statuts.forEach(function(sel) {
+    if (client.statut) {
+      for (var i=0; i<sel.options.length; i++) {
+        if (sel.options[i].text.toLowerCase().includes(client.statut.toLowerCase())) {
+          sel.selectedIndex = i; break;
+        }
+      }
+    }
+  });
+
+  /* Charger entretien existant si déjà fait */
+  var tok = localStorage.getItem('simele_token') || '';
+  fetch('/api/clients/' + clientId + '/entretien', {headers:{'Authorization':'Bearer '+tok}})
+    .then(function(r){return r.json();})
+    .then(function(data) {
+      if (data && data.score) {
+        /* Restaurer le score précédent */
+        var liveScore = document.getElementById('live-score');
+        if (liveScore) liveScore.textContent = data.score;
+        if (typeof window._updateScoreBars === 'function') window._updateScoreBars(data.score);
+        if (typeof showToast === 'function') showToast('Entretien existant chargé (score: '+data.score+'/100)', true);
+      }
+    }).catch(function(){});
+};
+
+/* Sauvegarder l'entretien et mettre à jour le dossier client */
+window.sauvegarderEntretienComplet = async function(brouillon) {
+  var clientId = window._entretienClientId || window.currentClientId;
+  if (!clientId) { alert("Client non identifié. Fermez et rouvrez l'entretien depuis un dossier client."); return; }
+
+  /* Lire le score depuis live-score */
+  var liveScoreEl = document.getElementById('live-score');
+  var score = liveScoreEl ? parseInt(liveScoreEl.textContent || '0') : 0;
+  if (isNaN(score) || score === 0) {
+    /* Essayer de calculer depuis les barres */
+    var vals = ['pv-cl','pv-fa','pv-mo','pv-re'].map(function(id) {
+      var el = document.getElementById(id);
+      return el ? parseInt(el.textContent||'0') : 0;
+    });
+    score = vals.reduce(function(a,b){return a+b;}, 0);
+  }
+
+  /* Déterminer le profil en fonction du score */
+  var profil = 'À qualifier';
+  if (score >= 80) profil = 'Profil 4 — Très motivé et structuré';
+  else if (score >= 60) profil = 'Profil 3 — Engagé, projet solide';
+  else if (score >= 40) profil = 'Profil 2 — En développement';
+  else if (score >= 20) profil = 'Profil 1 — À structurer';
+  
+  /* Lire le badge profil si défini dans l'UI */
+  var badgeEl = document.getElementById('profil-badge');
+  if (badgeEl && badgeEl.textContent.trim() && badgeEl.textContent.trim() !== '—') {
+    profil = badgeEl.textContent.trim();
+  }
+
+  /* Lire les notes et données du formulaire */
+  var notes = '';
+  var textareas = document.querySelectorAll('#page-entretien textarea');
+  textareas.forEach(function(ta) { if(ta.value.trim()) notes += ta.value.trim() + '\n'; });
+  
+  var tok = localStorage.getItem('simele_token') || '';
+  try {
+    var r = await fetch('/api/clients/' + clientId + '/entretien', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body: JSON.stringify({score: score, profil: profil, notes: notes.trim(), statut: brouillon ? 'brouillon' : 'valide'})
+    });
+    var data = await r.json();
+    if (data.success || data.id || r.ok) {
+      if (typeof showToast === 'function') {
+        showToast(brouillon ? '💾 Brouillon enregistré (score: '+score+'/100)' : '✅ Entretien validé ! Score: '+score+'/100 → dossier mis à jour', true);
+      }
+      if (!brouillon) {
+        /* Retourner au dossier et le rafraîchir */
+        setTimeout(function(){
+          showPage('dossier', clientId);
+        }, 800);
+      }
+    } else {
+      /* API /api/clients/:id/entretien n'existe peut-être pas — essayer /api/entretien */
+      var r2 = await fetch('/api/entretien', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','Authorization':'Bearer '+tok},
+        body: JSON.stringify({client_id: clientId, score: score, profil: profil, notes: notes.trim()})
+      });
+      var data2 = await r2.json();
+      if (data2.success || data2.id) {
+        if (typeof showToast === 'function') showToast(brouillon ? '💾 Brouillon enregistré' : '✅ Entretien validé !', true);
+        if (!brouillon) setTimeout(function(){ showPage('dossier', clientId); }, 800);
+      } else {
+        if (typeof showToast === 'function') showToast('Erreur: ' + (data2.error||data.error||'API introuvable'), false);
+      }
+    }
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Erreur réseau: ' + e.message, false);
+    else alert('Erreur: ' + e.message);
+  }
+};
