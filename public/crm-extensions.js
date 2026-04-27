@@ -1451,3 +1451,489 @@ window.sauvegarderEntretienComplet = async function(brouillon) {
     else alert('💾 Brouillon sauvegardé. Score : ' + score + '/100');
   }
 };
+
+/* ================================================================
+   ONGLET CONTRAT — Formulaire pré-rempli + génération HTML
+   Templates: Coaching 3/5 séances, Mandat d'accompagnement
+   ================================================================ */
+
+/* ── Détecter le type de contrat selon la prestation ── */
+window._detecterTypeContrat = function(prestation) {
+  if (!prestation) return 'coaching3';
+  var p = prestation.toLowerCase();
+  if (p.includes('5 s')) return 'coaching5';
+  if (p.includes('3 s') || p.includes('coaching')) return 'coaching3';
+  if (p.includes('mandat') || p.includes('accompagnement')) return 'mandat';
+  if (p.includes('business') || p.includes('plan')) return 'mandat';
+  if (p.includes('prévisionnel') || p.includes('previsionnel')) return 'mandat';
+  if (p.includes('financement') || p.includes('subvention')) return 'mandat';
+  if (p.includes('pack')) return 'mandat';
+  return 'coaching3';
+};
+
+/* ── Extraire le montant depuis la prestation ── */
+window._extracterMontant = function(prestation) {
+  if (!prestation) return '';
+  // Match (210€), (450€), (1500–2500€) etc.
+  var m = prestation.match(/\((\d+)/);
+  if (m) return m[1];
+  // Match standalone numbers
+  var m2 = prestation.match(/(\d{3,4})/);
+  if (m2) return m2[1];
+  return '';
+};
+
+/* ── Ouvrir l'onglet Contrat ── */
+window.ouvrirContratTab = function(clientId) {
+  if (!clientId) { alert("Veuillez d'abord ouvrir un dossier client."); return; }
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  if (!client) { alert("Client introuvable."); return; }
+
+  var typeContrat = window._detecterTypeContrat(client.prestation);
+  var montantBase = window._extracterMontant(client.prestation);
+  var today = new Date().toLocaleDateString('fr-FR');
+
+  /* Choisir les tabs du bon bloc de contenu */
+  var coachingContent = document.getElementById('coaching-content');
+  if (coachingContent) {
+    // Réutiliser le conteneur coaching pour afficher le formulaire contrat
+    document.querySelectorAll('[id^="page-"]').forEach(function(el){ el.style.display='none'; });
+    document.getElementById('page-coaching').style.display = 'block';
+
+    /* Changer l'onglet actif visuellement */
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
+    var tabs = document.querySelectorAll('.tab');
+    for (var i=0; i<tabs.length; i++) {
+      if (tabs[i].textContent.includes('Contrat')) { tabs[i].classList.add('on'); break; }
+    }
+
+    /* Render le formulaire */
+    window._renderFormulaireContrat(client, typeContrat, montantBase, today);
+  }
+};
+
+/* ── Rendre le formulaire de contrat ── */
+window._renderFormulaireContrat = function(client, typeContrat, montantBase, today) {
+  var el = document.getElementById('coaching-content');
+  if (!el) return;
+
+  var isCoaching = typeContrat === 'coaching3' || typeContrat === 'coaching5';
+  var nbSeances = typeContrat === 'coaching5' ? '5' : '3';
+  var montantDefaut = montantBase || (typeContrat === 'coaching5' ? '320' : '210');
+
+  var prixOptions = {
+    coaching3: [{l:'Coaching 3 séances – standard',v:'210'},{l:'Coaching 3 séances – réduit',v:'157.5'},{l:'Personnalisé',v:''}],
+    coaching5: [{l:'Coaching 5 séances – standard',v:'320'},{l:'Coaching 5 séances – réduit',v:'240'},{l:'Personnalisé',v:''}],
+    mandat:    [{l:'Business plan',v:'450'},{l:'Prévisionnel 3 ans',v:'350'},{l:'Dossier financement',v:'Sur devis'},{l:'Dossier subvention',v:'Sur devis'},{l:'Pack Essentiel',v:'590'},{l:'Pack Financement',v:'890'},{l:'Pack Global',v:'1290'},{l:'Personnalisé',v:''}]
+  };
+
+  var html = "<div style='max-width:860px;margin:0 auto;padding:0 0 60px'>";
+
+  /* Header */
+  html += "<div style='background:#1b2d5b;color:white;padding:14px 20px;border-radius:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center'>";
+  html += "<div><div style='font-size:16px;font-weight:700'>📄 Génération de contrat</div>";
+  html += "<div style='font-size:12px;opacity:0.8;margin-top:2px'>" + client.prenom + " " + client.nom + " — " + (client.prestation||'Prestation non définie') + "</div></div>";
+  html += "<button onclick='renderCoachingPage()' style='background:rgba(255,255,255,0.15);border:none;color:white;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:12px'>← Retour coaching</button>";
+  html += "</div>";
+
+  /* Type de contrat */
+  html += "<div style='background:white;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)'>";
+  html += "<div style='font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:14px;border-bottom:1px solid #e0e0e0;padding-bottom:8px'>📋 Type de contrat</div>";
+  html += "<div style='display:flex;gap:10px;flex-wrap:wrap'>";
+  [['coaching3','🎯 Coaching 3 séances'],['coaching5','🎯 Coaching 5 séances'],['mandat','📝 Mandat d\'accompagnement']].forEach(function(opt){
+    var active = typeContrat === opt[0];
+    html += "<button onclick='window._changerTypeContrat(\""+opt[0]+"\","+client.id+")' style='padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid "+(active?"#1b2d5b":"#e0e0e0")+";background:"+(active?"#1b2d5b":"white")+";color:"+(active?"white":"#1b2d5b")+"'>"+opt[1]+"</button>";
+  });
+  html += "</div></div>";
+
+  /* Informations client */
+  html += "<div style='background:white;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)'>";
+  html += "<div style='font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:14px;border-bottom:1px solid #e0e0e0;padding-bottom:8px'>👤 Informations client</div>";
+  html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>NOM COMPLET</label><input id='ct-nom' value='" + (client.prenom+' '+client.nom).replace(/'/g,"&#39;") + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>EMAIL</label><input id='ct-email' value='" + (client.email||'').replace(/'/g,"&#39;") + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>ADRESSE LIGNE 1</label><input id='ct-adr1' value='" + (client.adresse||'').split(',')[0].trim().replace(/'/g,"&#39;") + "' placeholder='N°, rue...' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>ADRESSE LIGNE 2 (CP, Ville)</label><input id='ct-adr2' value='" + ((client.adresse||'').split(',').slice(1).join(',').trim()||'').replace(/'/g,"&#39;") + "' placeholder='97xxx Ville' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "</div></div>";
+
+  /* Prestation & Prix */
+  html += "<div style='background:white;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)'>";
+  html += "<div style='font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:14px;border-bottom:1px solid #e0e0e0;padding-bottom:8px'>💶 Prestation & Prix</div>";
+  html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>";
+
+  /* Quick price select */
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>PRESTATION</label>";
+  html += "<select id='ct-prix-sel' onchange='window._majPrix()' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'>";
+  (prixOptions[typeContrat]||prixOptions.coaching3).forEach(function(o){
+    html += "<option value='"+o.v+"'>"+o.l+"</option>";
+  });
+  html += "</select></div>";
+
+  /* Montant TTC */
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>MONTANT (€)</label>";
+  html += "<input id='ct-montant' type='number' value='" + montantDefaut + "' oninput='window._calcReduction()' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+
+  /* Réduction */
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>RÉDUCTION (%)</label>";
+  html += "<input id='ct-reduc' type='number' value='0' min='0' max='100' oninput='window._calcReduction()' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+
+  /* Montant final */
+  html += "<div><label style='font-size:11px;font-weight:700;color:#c9a96e;display:block;margin-bottom:4px'>MONTANT FINAL APRÈS RÉDUCTION</label>";
+  html += "<div id='ct-final' style='padding:9px 12px;background:#f8f9fa;border:2px solid #c9a96e;border-radius:7px;font-size:16px;font-weight:700;color:#1b2d5b'>" + montantDefaut + " €</div></div>";
+
+  /* Modalité paiement */
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>MODALITÉ PAIEMENT</label>";
+  html += "<select id='ct-modalite' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'>";
+  html += "<option>Paiement comptant</option><option>Paiement en 2 fois</option><option>Paiement en 3 fois</option><option>Acompte 30%</option>";
+  html += "</select></div>";
+  html += "</div>"; /* end grid */
+
+  /* Champs spécifiques mandat */
+  if (!isCoaching) {
+    html += "<div style='margin-top:14px'>";
+    html += "<div style='font-size:12px;font-weight:700;color:#1b2d5b;margin-bottom:8px'>TYPE DE MISSION</div>";
+    html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
+    ['Business plan','Prévisionnel financier','Dossier de financement','Dossier de subvention','Pack','Autre'].forEach(function(t){
+      var id = 'ct-chk-'+t.replace(/\s/g,'-').toLowerCase();
+      html += "<label style='display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:#f0f4f8;padding:6px 12px;border-radius:6px;border:1px solid #e0e0e0'>"
+        + "<input type='checkbox' id='"+id+"' value='"+t+"'> "+t+"</label>";
+    });
+    html += "</div>";
+    html += "<div style='margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px'>";
+    html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>DATE DÉBUT</label><input id='ct-datedeb' type='date' value='" + new Date().toISOString().slice(0,10) + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+    html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>DURÉE ESTIMÉE</label><input id='ct-duree' value='6 semaines' placeholder='ex: 6 semaines' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+    html += "</div></div>";
+  }
+  html += "</div>"; /* end prestation card */
+
+  /* Signature */
+  html += "<div style='background:white;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)'>";
+  html += "<div style='font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:14px;border-bottom:1px solid #e0e0e0;padding-bottom:8px'>✍️ Signature</div>";
+  html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>LIEU</label><input id='ct-lieu' value='Trois-Rivières' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>DATE</label><input id='ct-date' type='date' value='" + new Date().toISOString().slice(0,10) + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "</div></div>";
+
+  /* Boutons action */
+  html += "<div style='display:flex;gap:12px;justify-content:center;padding:20px 0'>";
+  html += "<button onclick='window._aperçuContrat(\"" + typeContrat + "\"," + client.id + ")' style='background:#1b2d5b;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer'>👁️ Aperçu &amp; Impression</button>";
+  html += "<button onclick='window._genererEtSauvegarderContrat(\"" + typeContrat + "\"," + client.id + ")' style='background:#c9a96e;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer'>💾 Générer &amp; Sauvegarder dans le dossier</button>";
+  html += "</div>";
+  html += "</div>"; /* end wrapper */
+
+  el.innerHTML = html;
+
+  /* Sélectionner le prix correspondant à la prestation */
+  var sel = document.getElementById('ct-prix-sel');
+  if (sel && montantDefaut) {
+    for (var i=0; i<sel.options.length; i++) {
+      if (sel.options[i].value === montantDefaut) { sel.selectedIndex = i; break; }
+    }
+  }
+  window._currentContratType = typeContrat;
+  window._currentContratClientId = client.id;
+};
+
+/* ── Changer type de contrat ── */
+window._changerTypeContrat = function(type, clientId) {
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  if (!client) return;
+  window._renderFormulaireContrat(client, type, '', new Date().toLocaleDateString('fr-FR'));
+};
+
+/* ── Maj prix depuis le select ── */
+window._majPrix = function() {
+  var sel = document.getElementById('ct-prix-sel');
+  var montantEl = document.getElementById('ct-montant');
+  if (sel && montantEl && sel.value) { montantEl.value = sel.value; }
+  window._calcReduction();
+};
+
+/* ── Calcul montant avec réduction ── */
+window._calcReduction = function() {
+  var montant = parseFloat(document.getElementById('ct-montant')?.value || 0);
+  var reduc = parseFloat(document.getElementById('ct-reduc')?.value || 0);
+  if (isNaN(montant)) montant = 0;
+  if (isNaN(reduc)) reduc = 0;
+  var final = montant * (1 - reduc/100);
+  var finalEl = document.getElementById('ct-final');
+  if (finalEl) {
+    finalEl.textContent = final.toFixed(2).replace('.00','') + ' €';
+    finalEl.style.color = reduc > 0 ? '#c9a96e' : '#1b2d5b';
+  }
+};
+
+/* ── Collecter les données du formulaire ── */
+window._collecterDonneesContrat = function() {
+  var nom = document.getElementById('ct-nom')?.value || '';
+  var adr1 = document.getElementById('ct-adr1')?.value || '';
+  var adr2 = document.getElementById('ct-adr2')?.value || '';
+  var montantEl = document.getElementById('ct-montant');
+  var reducEl = document.getElementById('ct-reduc');
+  var montant = parseFloat(montantEl?.value || 0);
+  var reduc = parseFloat(reducEl?.value || 0);
+  var final = (montant * (1 - reduc/100)).toFixed(2).replace('.00','');
+  var modalite = document.getElementById('ct-modalite')?.value || 'Paiement comptant';
+  var lieu = document.getElementById('ct-lieu')?.value || 'Trois-Rivières';
+  var dateEl = document.getElementById('ct-date');
+  var dateVal = dateEl?.value || '';
+  var dateFormatted = dateVal ? new Date(dateVal).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+
+  /* Mandat specifics */
+  var types = [];
+  ['business-plan','prévisionnel-financier','dossier-de-financement','dossier-de-subvention','pack','autre'].forEach(function(t){
+    var el = document.getElementById('ct-chk-'+t);
+    if (el && el.checked) types.push(el.value);
+  });
+  var dateDeb = document.getElementById('ct-datedeb')?.value || '';
+  var dateDebFmt = dateDeb ? new Date(dateDeb).toLocaleDateString('fr-FR') : '';
+  var duree = document.getElementById('ct-duree')?.value || '6 semaines';
+
+  return {
+    nom_client: nom,
+    adresse_client_ligne1: adr1,
+    adresse_client_ligne2: adr2,
+    montant_prestation: final,
+    modalite_paiement: modalite,
+    lieu_signature: lieu,
+    date_signature: dateFormatted,
+    nb_seances: window._currentContratType === 'coaching5' ? '5' : '3',
+    /* Mandat */
+    type_prestation: types.join(', ') || 'À préciser',
+    date_debut_mission: dateDebFmt,
+    duree_estimee: duree,
+    date_fin_mission: '',
+    checkbox_business_plan: types.includes('Business plan') ? '☑' : '☐',
+    checkbox_previsionnel: types.includes('Prévisionnel financier') ? '☑' : '☐',
+    checkbox_financement: types.includes('Dossier de financement') ? '☑' : '☐',
+    checkbox_subvention: types.includes('Dossier de subvention') ? '☑' : '☐',
+    checkbox_pack: types.includes('Pack') ? '☑' : '☐',
+    checkbox_autre: types.includes('Autre') ? '☑' : '☐',
+    checkbox_comptant: modalite === 'Paiement comptant' ? '☑' : '☐',
+    checkbox_plusieurs_fois: modalite.includes('fois') ? '☑' : '☐',
+    checkbox_acompte: modalite.includes('Acompte') ? '☑' : '☐',
+    checkbox_success_fee: '☐',
+    qualite_prestataire: 'Le prestataire agit en qualité de conseil uniquement',
+    mandat_representation: '☐', mandat_transmission: '☐', mandat_echanges: '☐',
+    nb_fois_paiement: modalite.includes('2 fois') ? '2' : modalite.includes('3 fois') ? '3' : '',
+    acompte_pct: modalite.includes('Acompte') ? '30' : '',
+    acompte_eur: modalite.includes('Acompte') ? (montant*0.3).toFixed(0) : '',
+    success_fee_pct: '', detail_pack: '', detail_autre: ''
+  };
+};
+
+/* ── Générer le HTML du contrat depuis le template ── */
+window._genererHTMLContrat = function(type, vars) {
+  var today = new Date().toLocaleDateString('fr-FR');
+
+  /* Template coaching */
+  var coachingTemplate = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Contrat de prestation</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;background:#fff}
+    .page{width:210mm;min-height:297mm;margin:0 auto;padding:20mm;background:#fff}
+    @media print{body{margin:0}.page{width:100%;padding:15mm}}
+    .header-block{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:16px}
+    .logo{width:64px;height:64px;border:2px solid #1F3864;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:7pt;color:#1F3864;font-weight:bold;text-align:center;padding:4px}
+    .logo .big{font-size:18pt}
+    h1{font-size:22pt;font-weight:bold;color:#1F3864;text-align:center;flex:1}
+    hr{border:none;border-top:1.5px solid #ccc;margin:14px 0}
+    h2{font-size:13pt;font-weight:bold;color:#1F3864;margin-top:20px;margin-bottom:8px;text-transform:uppercase}
+    p{margin-bottom:8px;line-height:1.5}
+    ul{margin-left:28px;margin-bottom:8px}
+    ul li{margin-bottom:4px;line-height:1.5;list-style-type:disc}
+    .sig-block{margin-top:32px;display:flex;justify-content:space-between}
+    .sig-col{width:45%}
+    .sig-line{border-bottom:1px solid #000;height:40px;margin-top:30px}
+    .sig-hint{font-style:italic;font-size:9pt;color:#555;margin-top:4px}
+  </style></head><body><div class="page">
+    <div class="header-block">
+      <div class="logo"><span class="big">CS</span><span>CABINET DE<br>CONSEILS SIMELE</span></div>
+      <h1>Contrat de prestation de<br>services</h1>
+    </div><hr>
+    <p><strong>Entre les soussignés :</strong></p>
+    <p><strong>Cabinet de Conseils SIMELE</strong><br>Représenté par Jean-Christophe Simele<br>SIRET : 92787546800039<br>Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières</p>
+    <p>Ci-après dénommé : <strong>« Le Prestataire »</strong></p>
+    <p><strong>Et :</strong></p>
+    <p>Nom / Prénom : <strong>{{nom_client}}</strong><br>Adresse : {{adresse_client_ligne1}}<br>{{adresse_client_ligne2}}</p>
+    <p>Ci-après dénommé : <strong>« Le Client »</strong></p><hr>
+    <h2>Article 1 – Objet du contrat</h2>
+    <p>Le présent contrat a pour objet la réalisation d'une prestation d'accompagnement à la création et à la structuration de projet entrepreneurial.</p>
+    <p>Le prestataire s'engage à accompagner le client dans le cadre d'un coaching comprenant plusieurs séances, visant à structurer, sécuriser et optimiser son projet.</p>
+    <h2>Article 2 – Description de la prestation</h2>
+    <ul><li>Un accompagnement en <strong>{{nb_seances}} séances</strong></li><li>Une durée estimée de <strong>2h30 à 3h par séance</strong></li><li>Des échanges personnalisés adaptés au projet du client</li></ul>
+    <p>Les thématiques abordées incluent notamment :</p>
+    <ul><li>Structuration du projet</li><li>Environnement juridique et administratif</li><li>Dispositifs d'aide</li><li>Structuration financière</li></ul>
+    <h2>Article 3 – Engagement du prestataire</h2>
+    <ul><li>Fournir un accompagnement professionnel et personnalisé</li><li>Apporter des conseils adaptés à la situation du client</li><li>Mettre en œuvre tous les moyens nécessaires à la bonne réalisation de la prestation</li></ul>
+    <p>Le prestataire est tenu à une obligation de moyens et non de résultat.</p>
+    <h2>Article 4 – Engagement du client</h2>
+    <ul><li>Fournir des informations sincères et complètes</li><li>Être actif et impliqué dans la démarche</li><li>Respecter les rendez-vous fixés</li></ul>
+    <h2>Article 5 – Tarifs et modalités de paiement</h2>
+    <p>Le montant de la prestation est fixé à : <strong>{{montant_prestation}} €</strong></p>
+    <p>Modalité : {{modalite_paiement}}</p>
+    <p>Toute prestation commencée est due.</p>
+    <h2>Article 6 – Annulation / Report</h2>
+    <ul><li>Toute séance annulée moins de 24h à l'avance pourra être considérée comme due</li><li>Un report peut être envisagé d'un commun accord</li></ul>
+    <h2>Article 7 – Confidentialité</h2>
+    <p>Les parties s'engagent à une stricte confidentialité concernant l'ensemble des informations échangées dans le cadre de la prestation. Cela inclut notamment : les informations personnelles du client, les données liées au projet, les méthodes, outils et documents du prestataire. Aucune information ne pourra être divulguée à un tiers sans accord préalable écrit. Cette obligation reste valable après la fin de la prestation.</p>
+    <h2>Article 8 – Propriété intellectuelle</h2>
+    <p>Les supports, outils, méthodes et documents transmis restent la propriété exclusive du prestataire. Le client s'engage à ne pas les diffuser, reproduire ou exploiter sans autorisation.</p>
+    <h2>Article 9 – Responsabilité</h2>
+    <p>Le client reste seul responsable des décisions prises concernant son projet. Le prestataire ne pourra être tenu responsable des résultats obtenus suite à la mise en œuvre des conseils.</p>
+    <h2>Article 10 – Acceptation</h2>
+    <p>Le présent contrat prend effet à compter de sa signature par les deux parties.</p>
+    <p>Fait à : {{lieu_signature}} &nbsp;&nbsp; Le : {{date_signature}}</p>
+    <div class="sig-block">
+      <div class="sig-col"><p><strong>Signature du client</strong></p><p class="sig-hint">(Précédée de la mention « Lu et approuvé »)</p><div class="sig-line"></div></div>
+      <div class="sig-col"><p><strong>Signature du prestataire</strong></p><p class="sig-hint">&nbsp;</p><div class="sig-line"></div></div>
+    </div>
+  </div></body></html>`;
+
+  /* Template mandat */
+  var mandatTemplate = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Contrat mandat</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;background:#fff}
+    .page{width:210mm;min-height:297mm;margin:0 auto;padding:20mm;background:#fff}
+    @media print{body{margin:0}.page{width:100%;padding:15mm}}
+    .header-block{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:16px}
+    .logo{width:64px;height:64px;border:2px solid #1F3864;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:7pt;color:#1F3864;font-weight:bold;text-align:center;padding:4px}
+    .logo .big{font-size:18pt}h1{font-size:22pt;font-weight:bold;color:#1F3864;text-align:center;flex:1}
+    hr{border:none;border-top:1.5px solid #ccc;margin:14px 0}
+    h2{font-size:13pt;font-weight:bold;color:#1F3864;margin-top:20px;margin-bottom:8px;text-transform:uppercase}
+    p{margin-bottom:8px;line-height:1.5}ul{margin-left:28px;margin-bottom:8px}ul li{margin-bottom:4px;line-height:1.5;list-style-type:disc}
+    .sig-block{margin-top:32px;display:flex;justify-content:space-between}.sig-col{width:45%}
+    .sig-line{border-bottom:1px solid #000;height:40px;margin-top:30px}.sig-hint{font-style:italic;font-size:9pt;color:#555;margin-top:4px}
+  </style></head><body><div class="page">
+    <div class="header-block">
+      <div class="logo"><span class="big">CS</span><span>CABINET DE<br>CONSEILS SIMELE</span></div>
+      <h1>Contrat de prestation de<br>services</h1>
+    </div><hr>
+    <p><strong>Entre les soussignés :</strong></p>
+    <p><strong>Cabinet de Conseils SIMELE</strong><br>Représenté par Jean-Christophe Simele<br>SIRET : 92787546800039<br>Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières</p>
+    <p>Ci-après dénommé : <strong>« Le Prestataire »</strong></p>
+    <p><strong>Et :</strong></p>
+    <p>Nom / Prénom : <strong>{{nom_client}}</strong><br>Adresse : {{adresse_client_ligne1}}<br>{{adresse_client_ligne2}}</p>
+    <p>Ci-après dénommé : <strong>« Le Client »</strong></p><hr>
+    <h2>Article 1 – Objet du contrat</h2>
+    <p>Le présent contrat a pour objet la réalisation de la prestation suivante : <strong>{{type_prestation}}</strong></p>
+    <p>{{checkbox_business_plan}} Business plan &nbsp; {{checkbox_previsionnel}} Prévisionnel financier &nbsp; {{checkbox_financement}} Dossier de financement &nbsp; {{checkbox_subvention}} Dossier de subvention &nbsp; {{checkbox_pack}} Pack : {{detail_pack}} &nbsp; {{checkbox_autre}} Autre : {{detail_autre}}</p>
+    <p>Le prestataire est mandaté pour accompagner le client dans la structuration, la préparation et/ou la réalisation de son projet entrepreneurial.</p>
+    <h2>Article 2 – Nature de la mission</h2>
+    <ul><li>Collecter et analyser les informations du client</li><li>Rédiger des documents (business plan, dossiers de financement, etc.)</li><li>Effectuer des démarches administratives</li><li>Être en relation avec des organismes tiers (banques, partenaires, etc.)</li></ul>
+    <p>{{qualite_prestataire}}</p>
+    <h2>Article 3 – Durée de la mission</h2>
+    <p>La mission débute le : {{date_debut_mission}}</p>
+    <p>Durée estimée : {{duree_estimee}}</p>
+    <h2>Article 4 – Engagement du prestataire</h2>
+    <ul><li>Réaliser la prestation avec diligence et professionnalisme</li><li>Mettre en œuvre les moyens nécessaires à la mission</li><li>Informer le client de l'avancement</li></ul>
+    <h2>Article 5 – Engagement du client</h2>
+    <ul><li>Fournir des informations exactes, complètes et à jour</li><li>Transmettre les documents nécessaires</li><li>Être disponible pour les échanges</li><li>Valider les éléments transmis</li></ul>
+    <h2>Article 6 – Tarifs et modalités de paiement</h2>
+    <p>Montant de la prestation : <strong>{{montant_prestation}} €</strong></p>
+    <p>{{checkbox_comptant}} Paiement comptant &nbsp; {{checkbox_plusieurs_fois}} Paiement en {{nb_fois_paiement}} fois &nbsp; {{checkbox_acompte}} Acompte {{acompte_pct}}% soit {{acompte_eur}} €</p>
+    <h2>Article 7 – Confidentialité</h2>
+    <p>Les parties s'engagent à une stricte confidentialité. Cette obligation reste valable après la fin du contrat.</p>
+    <h2>Article 8 – Mandat</h2>
+    <p>{{mandat_representation}} Représenter le client auprès d'organismes &nbsp; {{mandat_transmission}} Transmettre des documents en son nom &nbsp; {{mandat_echanges}} Échanger avec des partenaires</p>
+    <h2>Article 9 – Propriété intellectuelle</h2>
+    <p>Les documents produits restent la propriété du prestataire jusqu'au paiement intégral.</p>
+    <h2>Article 10 – Responsabilité</h2>
+    <p>Le client reste seul responsable des décisions prises. Le prestataire ne garantit pas l'obtention de financements.</p>
+    <h2>Article 11 – Annulation / Résiliation</h2>
+    <p>En cas d'annulation, l'acompte reste dû et les prestations réalisées sont facturées.</p>
+    <h2>Article 12 – Acceptation</h2>
+    <p>Le présent contrat prend effet à signature.</p>
+    <p>Fait à : {{lieu_signature}} &nbsp;&nbsp; Le : {{date_signature}}</p>
+    <div class="sig-block">
+      <div class="sig-col"><p><strong>Signature du client</strong></p><p class="sig-hint">(Précédée de la mention « Lu et approuvé »)</p><div class="sig-line"></div></div>
+      <div class="sig-col"><p><strong>Signature du prestataire</strong></p><p class="sig-hint">&nbsp;</p><div class="sig-line"></div></div>
+    </div>
+  </div></body></html>`;
+
+  var template = (type === 'mandat') ? mandatTemplate : coachingTemplate;
+
+  /* Remplacer les variables {{...}} */
+  Object.keys(vars).forEach(function(k) {
+    var re = new RegExp('\\{\\{' + k + '\\}\\}', 'g');
+    template = template.replace(re, vars[k] || '');
+  });
+  /* Nettoyer les variables non remplacées */
+  template = template.replace(/\{\{[^}]+\}\}/g, '');
+  return template;
+};
+
+/* ── Aperçu du contrat dans une modale ── */
+window._aperçuContrat = function(type, clientId) {
+  var vars = window._collecterDonneesContrat();
+  var html = window._genererHTMLContrat(type || window._currentContratType, vars);
+  window._currentContratHTML = html;
+  window._currentContratClientId = clientId || window._currentContratClientId;
+  window._currentContratClient = typeof getClientById === 'function' ? getClientById(window._currentContratClientId) : {};
+
+  var old = document.getElementById('modal-contrat-preview');
+  if (old) old.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'modal-contrat-preview';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:white;border-radius:12px;width:100%;max-width:880px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4)';
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:14px 20px;background:#1b2d5b;color:white;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
+  var client = window._currentContratClient || {};
+  hdr.innerHTML = '<div><div style="font-size:15px;font-weight:700">Aperçu du contrat</div><div style="font-size:12px;opacity:0.8">' + (client.prenom||'') + ' ' + (client.nom||'') + ' — ' + (type==='mandat'?'Mandat d\'accompagnement':type==='coaching5'?'Coaching 5 séances':'Coaching 3 séances') + '</div></div>';
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:10px';
+  var bPrint = document.createElement('button');
+  bPrint.style.cssText = 'background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600';
+  bPrint.innerHTML = '🖨️ Imprimer';
+  bPrint.onclick = function(){ window.printContrat(); };
+  var bSave = document.createElement('button');
+  bSave.style.cssText = 'background:#c9a96e;color:white;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600';
+  bSave.innerHTML = '💾 Enregistrer dans le dossier';
+  bSave.onclick = function(){ window._genererEtSauvegarderContrat(type, window._currentContratClientId); };
+  var bClose = document.createElement('button');
+  bClose.style.cssText = 'background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;font-size:18px;line-height:1';
+  bClose.innerHTML = '✕';
+  bClose.onclick = function(){ window.fermerModalContrat(); };
+  btnRow.appendChild(bPrint); btnRow.appendChild(bSave); btnRow.appendChild(bClose);
+  hdr.appendChild(btnRow); box.appendChild(hdr);
+  var body = document.createElement('div');
+  body.style.cssText = 'flex:1;overflow-y:auto';
+  var iframe = document.createElement('iframe');
+  iframe.id = 'contrat-iframe';
+  iframe.style.cssText = 'width:100%;height:650px;border:none';
+  body.appendChild(iframe); box.appendChild(body); modal.appendChild(box);
+  document.body.appendChild(modal);
+  iframe.srcdoc = html;
+};
+
+/* ── Générer et sauvegarder le contrat ── */
+window._genererEtSauvegarderContrat = function(type, clientId) {
+  var cId = clientId || window._currentContratClientId;
+  var vars = window._collecterDonneesContrat();
+  var html = window._currentContratHTML || window._genererHTMLContrat(type || window._currentContratType, vars);
+  var client = typeof getClientById === 'function' ? getClientById(cId) : {};
+  var nom = client ? (client.nom||'client') : 'client';
+  var typeLabel = (type==='mandat') ? 'Mandat' : (type==='coaching5' ? 'Coaching5' : 'Coaching3');
+  var fname = 'Contrat_' + typeLabel + '_' + nom + '_' + new Date().toISOString().slice(0,10) + '.html';
+
+  var blob = new Blob([html], {type:'text/html'});
+  var file = new File([blob], fname, {type:'text/html'});
+  var fd = new FormData();
+  fd.append('fichier', file, fname);
+  fd.append('type', 'contrat');
+  fd.append('nom', fname);
+  fd.append('visible_client', '1');
+
+  var tok = localStorage.getItem('simele_token') || '';
+  fetch('/api/documents/client/' + cId, {method:'POST', headers:{'Authorization':'Bearer '+tok}, body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if (d.success) {
+        if (typeof showToast === 'function') showToast('✅ Contrat enregistré dans le dossier !', true);
+        window.fermerModalContrat();
+      } else {
+        if (typeof showToast === 'function') showToast('Erreur: ' + (d.error||''), false);
+      }
+    }).catch(function(e){ if (typeof showToast === 'function') showToast('Erreur réseau: '+e.message, false); });
+};
