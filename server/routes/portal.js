@@ -160,6 +160,80 @@ router.post('/rejeter/:id', requireAdmin, (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+
+/* ---------------------------------------------------------------
+   POST /api/portal/envoyer-acces/:clientId
+   Crée ou réinitialise l'accès espace client et envoie l'email
+   ---------------------------------------------------------------*/
+router.post('/envoyer-acces/:clientId', requireAdmin, async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    // Load client data
+    const client = db.prepare('SELECT * FROM clients WHERE id=?').get(clientId);
+    if (!client) return res.status(404).json({ error: 'Client introuvable' });
+    if (!client.email) return res.status(400).json({ error: 'Ce client n\'a pas d\'email renseigné. Ajoutez-le d\'abord dans sa fiche.' });
+
+    // Generate a secure temp password (8 chars: letters + digits)
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let tempPassword = '';
+    for (let i = 0; i < 8; i++) tempPassword += chars[Math.floor(Math.random() * chars.length)];
+    const hash = await bcrypt.hash(tempPassword, 10);
+    const emailLower = client.email.trim().toLowerCase();
+
+    // Check if inscription already exists for this client
+    let insc = db.prepare('SELECT * FROM portal_inscriptions WHERE client_id=?').get(clientId)
+              || db.prepare('SELECT * FROM portal_inscriptions WHERE email=?').get(emailLower);
+
+    if (insc) {
+      // Update existing: reset password, set actif
+      db.prepare(`UPDATE portal_inscriptions
+        SET password_hash=?, mot_de_passe_provisoire=?, statut='valide', acces_actif=1,
+            client_id=?, validated_at=datetime('now'), mdp_envoi_at=datetime('now')
+        WHERE id=?`).run(hash, tempPassword, clientId, insc.id);
+    } else {
+      // Create new inscription from client data
+      const result = db.prepare(`INSERT INTO portal_inscriptions
+        (nom, prenom, email, tel, situation_fam, projet, prestation,
+         statut, identifiant, password_hash, mot_de_passe_provisoire,
+         client_id, acces_actif, validated_at, mdp_envoi_at)
+        VALUES (?,?,?,?,?,?,?,'valide',?,?,?,?,1,datetime('now'),datetime('now'))`)
+        .run(
+          client.nom||'', client.prenom||'', emailLower,
+          client.tel||'', client.statut||'', client.projet||'', client.prestation||'',
+          emailLower, hash, tempPassword, clientId
+        );
+      insc = { id: result.lastInsertRowid };
+    }
+
+    // Send the email
+    await sendEmailClient(client.email, client.prenom, client.email, tempPassword);
+
+    res.json({
+      success: true,
+      message: 'Accès créé et email envoyé à ' + client.email,
+      email: client.email,
+      mdp_provisoire: tempPassword  // returned so admin can see/copy it
+    });
+  } catch(e) {
+    console.error('envoyer-acces:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ---------------------------------------------------------------
+   GET /api/portal/statut-client/:clientId
+   Vérifie si un client a déjà un accès espace client
+   ---------------------------------------------------------------*/
+router.get('/statut-client/:clientId', requireAdmin, (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const insc = db.prepare('SELECT id, statut, email, acces_actif, validated_at, mdp_envoi_at FROM portal_inscriptions WHERE client_id=?').get(clientId);
+    res.json({ hasAccess: !!insc, inscription: insc || null });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.get('/clients/:clientId/documents', requireAdmin, (req, res) => {
   try {
     const docs = db.prepare('SELECT * FROM client_documents WHERE client_id=? ORDER BY updated_at DESC').all(req.params.clientId);

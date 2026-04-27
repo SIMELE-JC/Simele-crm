@@ -950,3 +950,105 @@ window.viderChatIA = function() {
     }
   };
 })();
+
+/* ================================================================
+   ESPACE CLIENT — Envoi accès avec mot de passe provisoire
+   ================================================================ */
+window.envoyerAccesClient = async function(clientId) {
+  if (!clientId) { alert("Veuillez d'abord ouvrir un dossier client."); return; }
+  var tok = localStorage.getItem('simele_token') || '';
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  var nom = client ? (client.prenom + ' ' + client.nom) : 'ce client';
+  var email = client ? client.email : '';
+
+  /* --- Vérifier statut actuel --- */
+  var statut = null;
+  try {
+    var sr = await fetch('/api/portal/statut-client/' + clientId, {headers:{'Authorization':'Bearer '+tok}});
+    statut = await sr.json();
+  } catch(e) {}
+
+  /* --- Construire le modal --- */
+  var old = document.getElementById('modal-espace-client');
+  if (old) old.remove();
+
+  var hasAccess = statut && statut.hasAccess;
+  var lastSent = statut && statut.inscription && statut.inscription.mdp_envoi_at
+    ? statut.inscription.mdp_envoi_at.slice(0,16).replace('T',' ')
+    : null;
+
+  var modal = document.createElement('div');
+  modal.id = 'modal-espace-client';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+
+  modal.innerHTML = '<div style="background:white;border-radius:12px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">'
+    + '<div style="background:#1b2d5b;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center">'
+    + '<div><div style="font-size:15px;font-weight:700">🔗 Espace client — ' + nom + '</div>'
+    + '<div style="font-size:12px;opacity:0.8;margin-top:2px">Envoi des identifiants de connexion</div></div>'
+    + '<button onclick="document.getElementById(\'modal-espace-client\').remove()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;opacity:0.7">✕</button>'
+    + '</div>'
+    + '<div style="padding:24px">'
+    + '<div style="background:#f0f4f8;border-radius:8px;padding:14px;margin-bottom:16px">'
+    + '<div style="font-size:12px;color:#666;margin-bottom:4px">📧 Email du client</div>'
+    + '<div style="font-size:14px;font-weight:600;color:#1b2d5b">' + (email || '<span style="color:#e74c3c">Non renseigné !</span>') + '</div>'
+    + '</div>'
+    + (hasAccess
+      ? '<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#2e7d32">'
+        + '✅ Cet accès a déjà été créé' + (lastSent ? '<br><span style="font-size:11px;color:#666">Dernier envoi : ' + lastSent + '</span>' : '') + '</div>'
+      : '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#f57f17">'
+        + '⚠️ Aucun accès créé pour ce client</div>')
+    + '<p style="font-size:13px;color:#444;margin:0 0 20px">'
+    + (hasAccess
+      ? 'Cliquez sur <strong>"Renvoyer"</strong> pour générer un <strong>nouveau mot de passe provisoire</strong> et l\'envoyer par email à <strong>' + email + '</strong>.'
+      : 'Cliquez sur <strong>"Envoyer l\'accès"</strong> pour créer l\'espace client et envoyer les identifiants par email à <strong>' + (email||'...') + '</strong>.')
+    + '</p>'
+    + '<div id="ec-result"></div>'
+    + '<div style="display:flex;gap:10px;justify-content:flex-end">'
+    + '<button onclick="document.getElementById(\'modal-espace-client\').remove()" style="background:#f0f4f8;border:1px solid #ddd;border-radius:8px;padding:10px 18px;cursor:pointer;font-size:13px">Annuler</button>'
+    + '<button id="btn-envoyer-acces" onclick="window._confirmerEnvoiAcces(' + clientId + ')" style="background:#1b2d5b;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:700">'
+    + (hasAccess ? '🔄 Renvoyer un nouveau mot de passe' : '📨 Envoyer l\'accès')
+    + '</button>'
+    + '</div>'
+    + '</div></div>';
+
+  document.body.appendChild(modal);
+};
+
+window._confirmerEnvoiAcces = async function(clientId) {
+  var btn = document.getElementById('btn-envoyer-acces');
+  var result = document.getElementById('ec-result');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi en cours...'; }
+
+  var tok = localStorage.getItem('simele_token') || '';
+  try {
+    var r = await fetch('/api/portal/envoyer-acces/' + clientId, {
+      method: 'POST',
+      headers: {'Authorization':'Bearer '+tok, 'Content-Type':'application/json'}
+    });
+    var data = await r.json();
+
+    if (data.success) {
+      /* Afficher le succès avec le MDP provisoire pour que JC puisse le noter */
+      result.innerHTML = '<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:14px;margin-bottom:16px">'
+        + '<div style="font-size:13px;font-weight:700;color:#2e7d32;margin-bottom:8px">✅ ' + data.message + '</div>'
+        + '<div style="font-size:12px;color:#444;margin-bottom:6px">Identifiants envoyés :</div>'
+        + '<div style="background:white;border:1px solid #c8e6c9;border-radius:6px;padding:10px;font-family:monospace">'
+        + '<div>📧 Email : <strong>' + data.email + '</strong></div>'
+        + '<div style="margin-top:4px">🔐 Mot de passe : <strong style="background:#f0f0f0;padding:2px 8px;border-radius:4px">' + data.mdp_provisoire + '</strong>'
+        + ' <button onclick="navigator.clipboard.writeText(\'' + data.mdp_provisoire + '\')" style="background:none;border:none;cursor:pointer;font-size:11px;color:#666">📋 copier</button></div>'
+        + '</div>'
+        + '<div style="font-size:11px;color:#666;margin-top:8px">Le client peut se connecter sur <strong>ccsguadeloupe.fr</strong> avec ces identifiants.</div>'
+        + '</div>';
+      if (btn) { btn.disabled = true; btn.textContent = '✅ Envoyé !'; }
+      /* Update main button */
+      var mainBtn = document.getElementById('btn-espace-client');
+      if (mainBtn) { mainBtn.style.background='rgba(46,204,113,0.15)'; mainBtn.style.borderColor='#2ecc71'; mainBtn.style.color='#27ae60'; mainBtn.textContent='✅ Accès actif'; }
+    } else {
+      result.innerHTML = '<div style="background:#fdf0f0;border:1px solid #e74c3c;border-radius:8px;padding:12px;margin-bottom:12px;color:#e74c3c;font-size:13px">❌ ' + (data.error||'Erreur inconnue') + '</div>';
+      if (btn) { btn.disabled = false; btn.textContent = 'Réessayer'; }
+    }
+  } catch(e) {
+    result.innerHTML = '<div style="background:#fdf0f0;border:1px solid #e74c3c;border-radius:8px;padding:12px;margin-bottom:12px;color:#e74c3c;font-size:13px">❌ Erreur réseau: ' + e.message + '</div>';
+    if (btn) { btn.disabled = false; btn.textContent = 'Réessayer'; }
+  }
+};

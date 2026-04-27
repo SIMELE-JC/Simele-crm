@@ -1522,7 +1522,7 @@ function renderDossier(clientId) {
             <button class="btn-ghost-white" onclick="ouvrirContrat(window.currentClient && window.currentClient.id)">Générer contrat</button>
             <button class="btn-ghost-white" onclick="ouvrirDevis(window.currentClient && window.currentClient.id)">Générer devis</button>
             <button class="btn-ghost-white" onclick="showPage('programme')">Voir programme</button>
-            <button class="btn-ghost-white" onclick="ouvrirEspaceClient(window.currentClient && window.currentClient.id)" style="background:rgba(184,150,46,0.18);border-color:rgba(184,150,46,0.4);color:var(--g)">🔗 Espace client</button>
+            <button class="btn-ghost-white" onclick="envoyerAccesClient(window.currentClient && window.currentClient.id)" style="background:rgba(184,150,46,0.18);border-color:rgba(184,150,46,0.4);color:var(--g)" id="btn-espace-client">🔗 Espace client</button>
             <button class="btn btn-gold btn-sm" style="margin-left:auto">Valider prestation</button>
           </div>
         </div>`:`
