@@ -315,7 +315,7 @@ window.renderCoachingSeance = function(clientId, num) {
     var statut = session.statut || "en_cours";
     var pct = Math.round(((bIdx+1)/totalBlocs)*100);
 
-    var html = "<div style='max-width:800px;margin:0 auto;padding-bottom:60px'>";
+    var html = "<div style='max-width:800px;margin:20px auto;padding:0 20px 60px 20px'>";
 
     /* Header sticky */
     html += "<div style='position:relative;background:white;padding:12px 0 10px;border-bottom:2px solid #1b2d5b;margin-bottom:20px'>";
