@@ -2021,3 +2021,346 @@ window._genererEtSauvegarderContrat = function(type, clientId) {
       }
     }).catch(function(e){ if (typeof showToast === 'function') showToast('Erreur réseau: '+e.message, false); });
 };
+
+/* ================================================================
+   ONGLET DEVIS — Formulaire pré-rempli + génération HTML
+   ================================================================ */
+
+window.ouvrirDevisTab = function(clientId) {
+  if (!clientId) { alert("Veuillez d'abord ouvrir un dossier client."); return; }
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : null;
+  if (!client) { alert("Client introuvable."); return; }
+
+  document.querySelectorAll('[id^="page-"]').forEach(function(el){ el.style.display='none'; });
+  document.getElementById('page-coaching').style.display = 'block';
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
+  var tabs = document.querySelectorAll('.tab');
+  for (var i=0; i<tabs.length; i++) {
+    if (tabs[i].textContent.includes('Devis')) { tabs[i].classList.add('on'); break; }
+  }
+
+  window._currentDevisClientId = clientId;
+  window._currentDevisClient = client;
+  window._devisLignes = [
+    { desc: client.prestation || 'Prestation de conseil', qte: 1, pu: window._extracterMontant(client.prestation) || '' }
+  ];
+  window._renderFormulaireDevis(client);
+};
+
+window._renderFormulaireDevis = function(client) {
+  var el = document.getElementById('coaching-content');
+  if (!el) return;
+  var today = new Date().toLocaleDateString('fr-FR');
+  var devisNum = 'DEV-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
+  if (!window._devisNum) window._devisNum = devisNum;
+
+  var html = "<div style='max-width:860px;margin:0 auto;padding:0 0 60px'>";
+
+  /* Header */
+  html += "<div style='background:#1b2d5b;color:white;padding:14px 20px;border-radius:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center'>";
+  html += "<div><div style='font-size:16px;font-weight:700'>📊 Génération de devis</div>";
+  html += "<div style='font-size:12px;opacity:0.8;margin-top:2px'>" + client.prenom + " " + client.nom + " — " + (client.prestation||'') + "</div></div>";
+  html += "<button onclick='renderCoachingPage()' style='background:rgba(255,255,255,0.15);border:none;color:white;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:12px'>← Retour coaching</button>";
+  html += "</div>";
+
+  /* Infos devis */
+  html += "<div style='background:white;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)'>";
+  html += "<div style='font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:14px;border-bottom:1px solid #e0e0e0;padding-bottom:8px'>🔢 Informations du devis</div>";
+  html += "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px'>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>N° DEVIS</label><input id='dv-num' value='" + window._devisNum + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>DATE</label><input id='dv-date' type='date' value='" + new Date().toISOString().slice(0,10) + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>VALIDE JUSQU'AU</label><input id='dv-validite' type='date' value='" + new Date(Date.now()+30*86400000).toISOString().slice(0,10) + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "</div></div>";
+
+  /* Infos client */
+  html += "<div style='background:white;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)'>";
+  html += "<div style='font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:14px;border-bottom:1px solid #e0e0e0;padding-bottom:8px'>👤 Client</div>";
+  html += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px'>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>NOM COMPLET</label><input id='dv-nom' value='" + (client.prenom+' '+client.nom).replace(/'/g,"&#39;") + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>EMAIL</label><input id='dv-email' value='" + (client.email||'').replace(/'/g,"&#39;") + "' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>ADRESSE LIGNE 1</label><input id='dv-adr1' value='" + ((client.adresse||'').split(',')[0]||'').trim().replace(/'/g,"&#39;") + "' placeholder='N°, rue...' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "<div><label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>ADRESSE LIGNE 2 (CP, Ville)</label><input id='dv-adr2' value='" + ((client.adresse||'').split(',').slice(1).join(',').trim()||'').replace(/'/g,"&#39;") + "' placeholder='97xxx Ville' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box'></div>";
+  html += "</div></div>";
+
+  /* Lignes de prestation */
+  html += "<div style='background:white;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)'>";
+  html += "<div style='font-size:13px;font-weight:700;color:#1b2d5b;margin-bottom:14px;border-bottom:1px solid #e0e0e0;padding-bottom:8px;display:flex;justify-content:space-between;align-items:center'>📋 Prestations<button onclick='window._ajouterLigneDevis()' style='background:#1b2d5b;color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:600'>+ Ajouter une ligne</button></div>";
+  
+  /* En-tête tableau */
+  html += "<div style='display:grid;grid-template-columns:3fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;padding:0 4px'>";
+  html += "<div style='font-size:11px;font-weight:700;color:#666'>DESCRIPTION</div>";
+  html += "<div style='font-size:11px;font-weight:700;color:#666;text-align:center'>QTÉ</div>";
+  html += "<div style='font-size:11px;font-weight:700;color:#666;text-align:right'>P.U. (€)</div>";
+  html += "<div style='font-size:11px;font-weight:700;color:#666;text-align:right'>TOTAL</div>";
+  html += "<div></div></div>";
+  
+  /* Lignes */
+  html += "<div id='dv-lignes-container'>";
+  html += window._renderLignesDevis();
+  html += "</div>";
+  
+  /* Sous-total, réduction, total */
+  html += "<div style='margin-top:16px;border-top:1px solid #e0e0e0;padding-top:16px'>";
+  html += "<div style='display:flex;justify-content:flex-end'>";
+  html += "<div style='width:280px'>";
+  html += "<div style='display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px'><span style='color:#666'>Sous-total HT</span><span id='dv-sous-total' style='font-weight:600'>0,00 €</span></div>";
+  html += "<div style='display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;align-items:center'><span style='color:#666'>Réduction (%)</span><input id='dv-reduc' type='number' value='0' min='0' max='100' oninput='window._calcDevisTotal()' style='width:70px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:right'></div>";
+  html += "<div style='display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px'><span style='color:#666'>Remise</span><span id='dv-remise' style='color:#e74c3c'>- 0,00 €</span></div>";
+  html += "<div style='display:flex;justify-content:space-between;padding:10px 12px;background:#1b2d5b;border-radius:8px;color:white'><span style='font-weight:700;font-size:14px'>TOTAL TTC</span><span id='dv-total' style='font-weight:700;font-size:16px'>0,00 €</span></div>";
+  html += "</div></div>";
+  
+  /* Mentions */
+  html += "<div style='margin-top:14px'>";
+  html += "<label style='font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px'>MENTIONS / CONDITIONS</label>";
+  html += "<textarea id='dv-mentions' rows='3' style='width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;font-size:12px;font-family:inherit;resize:vertical;box-sizing:border-box'>Devis valable 30 jours à compter de sa date d'émission. Toute commande implique l'acceptation des présentes conditions. Un acompte de 30% sera demandé à la signature.</textarea>";
+  html += "</div></div></div>"; /* end prestations card */
+
+  /* Boutons */
+  html += "<div style='display:flex;gap:12px;justify-content:center;padding:20px 0'>";
+  html += "<button onclick='window._aperçuDevis()' style='background:#1b2d5b;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer'>👁️ Aperçu &amp; Impression</button>";
+  html += "<button onclick='window._sauvegarderDevis()' style='background:#c9a96e;color:white;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer'>💾 Générer &amp; Sauvegarder dans le dossier</button>";
+  html += "</div>";
+  html += "</div>"; /* end wrapper */
+
+  el.innerHTML = html;
+  window._calcDevisTotal();
+};
+
+/* ── Render des lignes ── */
+window._renderLignesDevis = function() {
+  var html = '';
+  (window._devisLignes || []).forEach(function(l, i) {
+    var total = (parseFloat(l.qte)||0) * (parseFloat(l.pu)||0);
+    html += "<div id='dv-ligne-" + i + "' style='display:grid;grid-template-columns:3fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center'>";
+    html += "<input value='" + (l.desc||'').replace(/'/g,"&#39;") + "' oninput=\"window._updateLigne(" + i + ",'desc',this.value)\" placeholder='Description de la prestation...' style='padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:100%;box-sizing:border-box'>";
+    html += "<input type='number' value='" + (l.qte||1) + "' min='0' step='0.5' oninput=\"window._updateLigne(" + i + ",'qte',this.value)\" style='padding:8px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;width:100%;box-sizing:border-box'>";
+    html += "<input type='number' value='" + (l.pu||'') + "' min='0' oninput=\"window._updateLigne(" + i + ",'pu',this.value)\" placeholder='0' style='padding:8px 6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:right;width:100%;box-sizing:border-box'>";
+    html += "<div style='text-align:right;font-weight:600;font-size:13px;color:#1b2d5b'>" + total.toFixed(2).replace('.',',') + " €</div>";
+    html += "<button onclick='window._supprimerLigne(" + i + ")' style='background:#fdf0f0;border:1px solid #e74c3c;color:#e74c3c;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;line-height:1'>✕</button>";
+    html += "</div>";
+  });
+  return html;
+};
+
+window._ajouterLigneDevis = function() {
+  window._devisLignes = window._devisLignes || [];
+  window._devisLignes.push({ desc: '', qte: 1, pu: '' });
+  var container = document.getElementById('dv-lignes-container');
+  if (container) container.innerHTML = window._renderLignesDevis();
+  window._calcDevisTotal();
+};
+
+window._supprimerLigne = function(idx) {
+  if (window._devisLignes && window._devisLignes.length > 1) {
+    window._devisLignes.splice(idx, 1);
+    var container = document.getElementById('dv-lignes-container');
+    if (container) container.innerHTML = window._renderLignesDevis();
+    window._calcDevisTotal();
+  }
+};
+
+window._updateLigne = function(idx, field, val) {
+  if (window._devisLignes && window._devisLignes[idx]) {
+    window._devisLignes[idx][field] = val;
+    /* Update the total cell of this line */
+    var total = (parseFloat(window._devisLignes[idx].qte)||0) * (parseFloat(window._devisLignes[idx].pu)||0);
+    var ligneEl = document.getElementById('dv-ligne-'+idx);
+    if (ligneEl) {
+      var cells = ligneEl.querySelectorAll('div');
+      if (cells[0]) cells[0].textContent = total.toFixed(2).replace('.',',') + ' €';
+    }
+    window._calcDevisTotal();
+  }
+};
+
+window._calcDevisTotal = function() {
+  var sousTotal = (window._devisLignes || []).reduce(function(acc, l) {
+    return acc + (parseFloat(l.qte)||0) * (parseFloat(l.pu)||0);
+  }, 0);
+  var reduc = parseFloat(document.getElementById('dv-reduc')?.value || 0);
+  if (isNaN(reduc)) reduc = 0;
+  var remise = sousTotal * reduc / 100;
+  var total = sousTotal - remise;
+
+  var fmt = function(n) { return n.toFixed(2).replace('.',',') + ' €'; };
+  var stEl = document.getElementById('dv-sous-total');
+  var remEl = document.getElementById('dv-remise');
+  var totEl = document.getElementById('dv-total');
+  if (stEl) stEl.textContent = fmt(sousTotal);
+  if (remEl) { remEl.textContent = '- ' + fmt(remise); remEl.style.display = reduc > 0 ? '' : 'none'; }
+  if (totEl) totEl.textContent = fmt(total);
+};
+
+/* ── Générer le HTML du devis ── */
+window._genererHTMLDevis = function() {
+  var client = window._currentDevisClient || {};
+  var dvNum = document.getElementById('dv-num')?.value || '';
+  var dvDateEl = document.getElementById('dv-date');
+  var dvDateFmt = dvDateEl?.value ? new Date(dvDateEl.value).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+  var dvValidEl = document.getElementById('dv-validite');
+  var dvValidFmt = dvValidEl?.value ? new Date(dvValidEl.value).toLocaleDateString('fr-FR') : '';
+  var nom = document.getElementById('dv-nom')?.value || (client.prenom+' '+client.nom);
+  var email = document.getElementById('dv-email')?.value || '';
+  var adr1 = document.getElementById('dv-adr1')?.value || '';
+  var adr2 = document.getElementById('dv-adr2')?.value || '';
+  var reduc = parseFloat(document.getElementById('dv-reduc')?.value || 0);
+  var mentions = document.getElementById('dv-mentions')?.value || '';
+  var lignes = window._devisLignes || [];
+
+  var sousTotal = lignes.reduce(function(a,l){ return a+(parseFloat(l.qte)||0)*(parseFloat(l.pu)||0); }, 0);
+  var remise = sousTotal * reduc / 100;
+  var total = sousTotal - remise;
+  var fmt = function(n){ return n.toFixed(2).replace('.',','); };
+  var LOGO_DATA = 'data:image/jpeg;base64,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';
+
+  var lignesHTML = lignes.map(function(l, i) {
+    var tot = (parseFloat(l.qte)||0)*(parseFloat(l.pu)||0);
+    return '<tr style="border-bottom:1px solid #f0f0f0">'
+      + '<td style="padding:10px 8px;font-size:10.5pt">' + (l.desc||'') + '</td>'
+      + '<td style="padding:10px 8px;text-align:center;font-size:10.5pt">' + (l.qte||'') + '</td>'
+      + '<td style="padding:10px 8px;text-align:right;font-size:10.5pt">' + fmt(parseFloat(l.pu)||0) + ' &euro;</td>'
+      + '<td style="padding:10px 8px;text-align:right;font-size:10.5pt;font-weight:600">' + fmt(tot) + ' &euro;</td>'
+      + '</tr>';
+  }).join('');
+
+  return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Devis ' + dvNum + '</title><style>'
+    + '* { box-sizing:border-box; margin:0; padding:0; }'
+    + 'body { font-family:Arial,Helvetica,sans-serif; font-size:11pt; color:#000; background:#fff; }'
+    + '.page { width:210mm; min-height:297mm; margin:0 auto; padding:16mm 18mm; background:#fff; }'
+    + '@media print { body{margin:0} .page{padding:12mm} @page{margin:0} }'
+    + '.header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }'
+    + '.logo-zone img { width:80px; height:80px; object-fit:contain; }'
+    + '.devis-title { text-align:right; }'
+    + '.devis-title h1 { font-size:24pt; font-weight:bold; color:#1F3864; }'
+    + '.devis-title .meta { font-size:10pt; color:#555; margin-top:6px; line-height:1.6; }'
+    + 'hr { border:none; border-top:2px solid #1F3864; margin:14px 0; }'
+    + '.parties { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px; }'
+    + '.partie-box { font-size:10pt; line-height:1.6; }'
+    + '.partie-box .label { font-size:9pt; font-weight:700; color:#1F3864; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }'
+    + 'table { width:100%; border-collapse:collapse; margin-bottom:14px; }'
+    + 'thead tr { background:#1F3864; color:white; }'
+    + 'thead th { padding:10px 8px; text-align:left; font-size:10pt; font-weight:700; }'
+    + 'thead th:nth-child(2) { text-align:center; }'
+    + 'thead th:nth-child(3),thead th:nth-child(4) { text-align:right; }'
+    + 'tbody tr:nth-child(even) { background:#f8f9fa; }'
+    + '.totals { display:flex; justify-content:flex-end; margin-top:4px; }'
+    + '.totals-box { width:240px; }'
+    + '.total-row { display:flex; justify-content:space-between; padding:5px 0; font-size:10.5pt; border-bottom:1px solid #eee; }'
+    + '.total-final { background:#1F3864; color:white; padding:10px 12px; border-radius:6px; display:flex; justify-content:space-between; margin-top:8px; font-weight:700; font-size:12pt; }'
+    + '.mentions { margin-top:18px; background:#f8f9fa; border-left:3px solid #1F3864; padding:12px 14px; font-size:9.5pt; color:#444; line-height:1.6; }'
+    + '.footer { margin-top:24px; text-align:center; font-size:9pt; color:#888; border-top:1px solid #ddd; padding-top:10px; }'
+    + '.sign-block { display:flex; justify-content:flex-end; margin-top:22px; }'
+    + '.sign-box { width:220px; text-align:center; }'
+    + '.sign-line { border-bottom:1px solid #000; height:36px; margin:10px 0 4px; }'
+    + '</style></head><body><div class="page">'
+    
+    + '<div class="header">'
+    + '<div class="logo-zone"><img src="' + LOGO_DATA + '" alt="Cabinet de Conseils SIMELE"></div>'
+    + '<div class="devis-title">'
+    + '<h1>DEVIS</h1>'
+    + '<div class="meta">'
+    + 'N° <strong>' + dvNum + '</strong><br>'
+    + 'Date : ' + dvDateFmt + '<br>'
+    + (dvValidFmt ? 'Valable jusqu\'au : ' + dvValidFmt + '<br>' : '')
+    + '</div></div></div>'
+    
+    + '<hr>'
+    
+    + '<div class="parties">'
+    + '<div class="partie-box"><div class="label">Prestataire</div>'
+    + '<strong>Cabinet de Conseils SIMELE</strong><br>'
+    + 'Jean-Christophe Simele<br>'
+    + 'SIRET : 92787546800039<br>'
+    + '20 lotissement Tolbiac 1<br>'
+    + '97114 Trois-Rivi&egrave;res<br>'
+    + 'ccs.espace-client@outlook.fr</div>'
+    + '<div class="partie-box"><div class="label">Client</div>'
+    + '<strong>' + nom + '</strong><br>'
+    + (adr1 ? adr1 + '<br>' : '') + (adr2 ? adr2 + '<br>' : '') + (email ? email : '')
+    + '</div></div>'
+    
+    + '<hr>'
+    
+    + '<table><thead><tr>'
+    + '<th>Description</th><th style="text-align:center;width:60px">Qté</th>'
+    + '<th style="text-align:right;width:100px">Prix unitaire</th>'
+    + '<th style="text-align:right;width:100px">Total HT</th>'
+    + '</tr></thead><tbody>' + lignesHTML + '</tbody></table>'
+    
+    + '<div class="totals"><div class="totals-box">'
+    + '<div class="total-row"><span>Sous-total HT</span><span>' + fmt(sousTotal) + ' &euro;</span></div>'
+    + (reduc > 0 ? '<div class="total-row" style="color:#e74c3c"><span>Remise (' + reduc + '%)</span><span>- ' + fmt(remise) + ' &euro;</span></div>' : '')
+    + '<div class="total-final"><span>TOTAL TTC</span><span>' + fmt(total) + ' &euro;</span></div>'
+    + '</div></div>'
+    
+    + (mentions ? '<div class="mentions"><strong>Conditions :</strong> ' + mentions.replace(/\n/g,'<br>') + '</div>' : '')
+    
+    + '<div class="sign-block"><div class="sign-box">'
+    + '<p style="font-size:10pt;font-style:italic">(Bon pour accord &mdash; Date et signature du client)</p>'
+    + '<div class="sign-line"></div>'
+    + '<p style="font-size:9pt;color:#555">Signature pr&eacute;c&eacute;d&eacute;e de la mention<br>« Bon pour accord »</p>'
+    + '</div></div>'
+    
+    + '<div class="footer">Cabinet de Conseils SIMELE &bull; 20 lot. Tolbiac 1, 97114 Trois-Rivi&egrave;res &bull; SIRET : 92787546800039</div>'
+    + '</div></body></html>';
+};
+
+/* ── Aperçu devis ── */
+window._aperçuDevis = function() {
+  var html = window._genererHTMLDevis();
+  window._currentDevisHTML = html;
+  var old = document.getElementById('modal-devis-preview');
+  if (old) old.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'modal-devis-preview';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:white;border-radius:12px;width:100%;max-width:880px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4)';
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:14px 20px;background:#1b2d5b;color:white;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
+  var client = window._currentDevisClient || {};
+  hdr.innerHTML = '<div><div style="font-size:15px;font-weight:700">Aperçu du devis</div><div style="font-size:12px;opacity:0.8">' + (client.prenom||'') + ' ' + (client.nom||'') + ' — ' + (document.getElementById('dv-num')?.value||'') + '</div></div>';
+  var bRow = document.createElement('div'); bRow.style.cssText = 'display:flex;gap:10px';
+  var bPrint = document.createElement('button');
+  bPrint.style.cssText = 'background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600';
+  bPrint.innerHTML = '🖨️ Imprimer'; bPrint.onclick = function(){ var ifrm=document.getElementById('devis-iframe'); if(ifrm&&ifrm.contentWindow)ifrm.contentWindow.print(); };
+  var bSave = document.createElement('button');
+  bSave.style.cssText = 'background:#c9a96e;color:white;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600';
+  bSave.innerHTML = '💾 Enregistrer dans le dossier'; bSave.onclick = function(){ window._sauvegarderDevis(); };
+  var bClose = document.createElement('button');
+  bClose.style.cssText = 'background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;font-size:18px;line-height:1';
+  bClose.innerHTML = '✕'; bClose.onclick = function(){ modal.remove(); };
+  bRow.appendChild(bPrint); bRow.appendChild(bSave); bRow.appendChild(bClose);
+  hdr.appendChild(bRow); box.appendChild(hdr);
+  var body = document.createElement('div'); body.style.cssText = 'flex:1;overflow-y:auto';
+  var iframe = document.createElement('iframe'); iframe.id = 'devis-iframe';
+  iframe.style.cssText = 'width:100%;height:650px;border:none';
+  body.appendChild(iframe); box.appendChild(body); modal.appendChild(box);
+  document.body.appendChild(modal);
+  iframe.srcdoc = html;
+};
+
+/* ── Sauvegarder dans le dossier ── */
+window._sauvegarderDevis = function() {
+  var html = window._currentDevisHTML || window._genererHTMLDevis();
+  var client = window._currentDevisClient || {};
+  var dvNum = document.getElementById('dv-num')?.value || 'DEV';
+  var fname = 'Devis_' + dvNum + '_' + (client.nom||'client') + '_' + new Date().toISOString().slice(0,10) + '.html';
+  var blob = new Blob([html], {type:'text/html'});
+  var file = new File([blob], fname, {type:'text/html'});
+  var fd = new FormData();
+  fd.append('fichier', file, fname); fd.append('type', 'devis'); fd.append('nom', fname); fd.append('visible_client', '1');
+  var tok = localStorage.getItem('simele_token') || '';
+  var cId = window._currentDevisClientId;
+  fetch('/api/documents/client/' + cId, {method:'POST', headers:{'Authorization':'Bearer '+tok}, body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if (d.success) {
+        if (typeof showToast === 'function') showToast('✅ Devis enregistré dans le dossier !', true);
+        var modal = document.getElementById('modal-devis-preview'); if(modal) modal.remove();
+        /* Générer un nouveau numéro pour le prochain devis */
+        window._devisNum = 'DEV-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
+      } else { if(typeof showToast==='function') showToast('Erreur: '+(d.error||''), false); }
+    }).catch(function(e){ if(typeof showToast==='function') showToast('Erreur réseau: '+e.message, false); });
+};
