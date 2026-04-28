@@ -1724,144 +1724,233 @@ window._collecterDonneesContrat = function() {
 
 /* ── Générer le HTML du contrat depuis le template ── */
 window._genererHTMLContrat = function(type, vars) {
-  var today = new Date().toLocaleDateString('fr-FR');
+  var isMandat = type === 'mandat';
 
-  /* Template coaching */
-  var coachingTemplate = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Contrat de prestation</title><style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;background:#fff}
-    .page{width:210mm;min-height:297mm;margin:0 auto;padding:20mm;background:#fff}
-    @media print{body{margin:0}.page{width:100%;padding:15mm}}
-    .header-block{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:16px}
-    .logo{width:64px;height:64px;border:2px solid #1F3864;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:7pt;color:#1F3864;font-weight:bold;text-align:center;padding:4px}
-    .logo .big{font-size:18pt}
-    h1{font-size:22pt;font-weight:bold;color:#1F3864;text-align:center;flex:1}
-    hr{border:none;border-top:1.5px solid #ccc;margin:14px 0}
-    h2{font-size:13pt;font-weight:bold;color:#1F3864;margin-top:20px;margin-bottom:8px;text-transform:uppercase}
-    p{margin-bottom:8px;line-height:1.5}
-    ul{margin-left:28px;margin-bottom:8px}
-    ul li{margin-bottom:4px;line-height:1.5;list-style-type:disc}
-    .sig-block{margin-top:32px;display:flex;justify-content:space-between}
-    .sig-col{width:45%}
-    .sig-line{border-bottom:1px solid #000;height:40px;margin-top:30px}
-    .sig-hint{font-style:italic;font-size:9pt;color:#555;margin-top:4px}
-  </style></head><body><div class="page">
-    <div class="header-block">
-      <div class="logo"><span class="big">CS</span><span>CABINET DE<br>CONSEILS SIMELE</span></div>
+  var STYLE = `
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #000; background: #fff; }
+      .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 18mm 18mm 18mm 18mm; background: #fff; }
+      @media print { body { margin: 0; } .page { padding: 15mm; } @page { margin: 0; } }
+      .header { display: flex; align-items: center; gap: 20px; margin-bottom: 14px; }
+      .logo { width: 70px; height: 70px; border: 2px solid #1F3864; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7pt; color: #1F3864; font-weight: bold; text-align: center; padding: 4px; flex-shrink: 0; }
+      .logo .big { font-size: 20pt; font-weight: bold; }
+      .logo .sub { font-size: 6pt; line-height: 1.2; }
+      h1 { font-size: 24pt; font-weight: bold; color: #1F3864; text-align: center; flex: 1; line-height: 1.2; }
+      hr { border: none; border-top: 1.5px solid #ccc; margin: 12px 0; }
+      h2 { font-size: 12pt; font-weight: bold; color: #1F3864; margin-top: 16px; margin-bottom: 6px; text-transform: uppercase; }
+      p { margin-bottom: 7px; line-height: 1.55; }
+      ul { margin: 4px 0 8px 24px; }
+      ul li { margin-bottom: 3px; line-height: 1.55; }
+      .field { border-bottom: 1px solid #555; display: inline-block; min-width: 180px; }
+      .parties { margin-bottom: 10px; }
+      .parties p { margin-bottom: 5px; }
+      .sig-block { margin-top: 28px; display: flex; justify-content: space-between; }
+      .sig-col { width: 46%; }
+      .sig-line { border-bottom: 1px solid #000; height: 38px; margin-top: 24px; }
+      .sig-hint { font-style: italic; font-size: 9pt; color: #555; margin-top: 4px; }
+      .checkbox-row p { margin-bottom: 4px; }
+    </style>`;
+
+  var HEADER = `
+    <div class="header">
+      <div class="logo">
+        <span class="big">CS</span>
+        <span class="sub">CABINET DE<br>CONSEILS SIMELE</span>
+      </div>
       <h1>Contrat de prestation de<br>services</h1>
-    </div><hr>
-    <p><strong>Entre les soussignés :</strong></p>
-    <p><strong>Cabinet de Conseils SIMELE</strong><br>Représenté par Jean-Christophe Simele<br>SIRET : 92787546800039<br>Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières</p>
-    <p>Ci-après dénommé : <strong>« Le Prestataire »</strong></p>
-    <p><strong>Et :</strong></p>
-    <p>Nom / Prénom : <strong>{{nom_client}}</strong><br>Adresse : {{adresse_client_ligne1}}<br>{{adresse_client_ligne2}}</p>
-    <p>Ci-après dénommé : <strong>« Le Client »</strong></p><hr>
-    <h2>Article 1 – Objet du contrat</h2>
-    <p>Le présent contrat a pour objet la réalisation d'une prestation d'accompagnement à la création et à la structuration de projet entrepreneurial.</p>
-    <p>Le prestataire s'engage à accompagner le client dans le cadre d'un coaching comprenant plusieurs séances, visant à structurer, sécuriser et optimiser son projet.</p>
-    <h2>Article 2 – Description de la prestation</h2>
-    <ul><li>Un accompagnement en <strong>{{nb_seances}} séances</strong></li><li>Une durée estimée de <strong>2h30 à 3h par séance</strong></li><li>Des échanges personnalisés adaptés au projet du client</li></ul>
-    <p>Les thématiques abordées incluent notamment :</p>
-    <ul><li>Structuration du projet</li><li>Environnement juridique et administratif</li><li>Dispositifs d'aide</li><li>Structuration financière</li></ul>
-    <h2>Article 3 – Engagement du prestataire</h2>
-    <ul><li>Fournir un accompagnement professionnel et personnalisé</li><li>Apporter des conseils adaptés à la situation du client</li><li>Mettre en œuvre tous les moyens nécessaires à la bonne réalisation de la prestation</li></ul>
-    <p>Le prestataire est tenu à une obligation de moyens et non de résultat.</p>
-    <h2>Article 4 – Engagement du client</h2>
-    <ul><li>Fournir des informations sincères et complètes</li><li>Être actif et impliqué dans la démarche</li><li>Respecter les rendez-vous fixés</li></ul>
-    <h2>Article 5 – Tarifs et modalités de paiement</h2>
-    <p>Le montant de la prestation est fixé à : <strong>{{montant_prestation}} €</strong></p>
-    <p>Modalité : {{modalite_paiement}}</p>
-    <p>Toute prestation commencée est due.</p>
-    <h2>Article 6 – Annulation / Report</h2>
-    <ul><li>Toute séance annulée moins de 24h à l'avance pourra être considérée comme due</li><li>Un report peut être envisagé d'un commun accord</li></ul>
-    <h2>Article 7 – Confidentialité</h2>
-    <p>Les parties s'engagent à une stricte confidentialité concernant l'ensemble des informations échangées dans le cadre de la prestation. Cela inclut notamment : les informations personnelles du client, les données liées au projet, les méthodes, outils et documents du prestataire. Aucune information ne pourra être divulguée à un tiers sans accord préalable écrit. Cette obligation reste valable après la fin de la prestation.</p>
-    <h2>Article 8 – Propriété intellectuelle</h2>
-    <p>Les supports, outils, méthodes et documents transmis restent la propriété exclusive du prestataire. Le client s'engage à ne pas les diffuser, reproduire ou exploiter sans autorisation.</p>
-    <h2>Article 9 – Responsabilité</h2>
-    <p>Le client reste seul responsable des décisions prises concernant son projet. Le prestataire ne pourra être tenu responsable des résultats obtenus suite à la mise en œuvre des conseils.</p>
-    <h2>Article 10 – Acceptation</h2>
-    <p>Le présent contrat prend effet à compter de sa signature par les deux parties.</p>
-    <p>Fait à : {{lieu_signature}} &nbsp;&nbsp; Le : {{date_signature}}</p>
-    <div class="sig-block">
-      <div class="sig-col"><p><strong>Signature du client</strong></p><p class="sig-hint">(Précédée de la mention « Lu et approuvé »)</p><div class="sig-line"></div></div>
-      <div class="sig-col"><p><strong>Signature du prestataire</strong></p><p class="sig-hint">&nbsp;</p><div class="sig-line"></div></div>
     </div>
-  </div></body></html>`;
+    <hr>`;
 
-  /* Template mandat */
-  var mandatTemplate = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Contrat mandat</title><style>
-    *{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;background:#fff}
-    .page{width:210mm;min-height:297mm;margin:0 auto;padding:20mm;background:#fff}
-    @media print{body{margin:0}.page{width:100%;padding:15mm}}
-    .header-block{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:16px}
-    .logo{width:64px;height:64px;border:2px solid #1F3864;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:7pt;color:#1F3864;font-weight:bold;text-align:center;padding:4px}
-    .logo .big{font-size:18pt}h1{font-size:22pt;font-weight:bold;color:#1F3864;text-align:center;flex:1}
-    hr{border:none;border-top:1.5px solid #ccc;margin:14px 0}
-    h2{font-size:13pt;font-weight:bold;color:#1F3864;margin-top:20px;margin-bottom:8px;text-transform:uppercase}
-    p{margin-bottom:8px;line-height:1.5}ul{margin-left:28px;margin-bottom:8px}ul li{margin-bottom:4px;line-height:1.5;list-style-type:disc}
-    .sig-block{margin-top:32px;display:flex;justify-content:space-between}.sig-col{width:45%}
-    .sig-line{border-bottom:1px solid #000;height:40px;margin-top:30px}.sig-hint{font-style:italic;font-size:9pt;color:#555;margin-top:4px}
-  </style></head><body><div class="page">
-    <div class="header-block">
-      <div class="logo"><span class="big">CS</span><span>CABINET DE<br>CONSEILS SIMELE</span></div>
-      <h1>Contrat de prestation de<br>services</h1>
-    </div><hr>
-    <p><strong>Entre les soussignés :</strong></p>
-    <p><strong>Cabinet de Conseils SIMELE</strong><br>Représenté par Jean-Christophe Simele<br>SIRET : 92787546800039<br>Siège : 20 lotissement Tolbiac 1, 97114 Trois-Rivières</p>
-    <p>Ci-après dénommé : <strong>« Le Prestataire »</strong></p>
-    <p><strong>Et :</strong></p>
-    <p>Nom / Prénom : <strong>{{nom_client}}</strong><br>Adresse : {{adresse_client_ligne1}}<br>{{adresse_client_ligne2}}</p>
-    <p>Ci-après dénommé : <strong>« Le Client »</strong></p><hr>
-    <h2>Article 1 – Objet du contrat</h2>
-    <p>Le présent contrat a pour objet la réalisation de la prestation suivante : <strong>{{type_prestation}}</strong></p>
-    <p>{{checkbox_business_plan}} Business plan &nbsp; {{checkbox_previsionnel}} Prévisionnel financier &nbsp; {{checkbox_financement}} Dossier de financement &nbsp; {{checkbox_subvention}} Dossier de subvention &nbsp; {{checkbox_pack}} Pack : {{detail_pack}} &nbsp; {{checkbox_autre}} Autre : {{detail_autre}}</p>
-    <p>Le prestataire est mandaté pour accompagner le client dans la structuration, la préparation et/ou la réalisation de son projet entrepreneurial.</p>
-    <h2>Article 2 – Nature de la mission</h2>
-    <ul><li>Collecter et analyser les informations du client</li><li>Rédiger des documents (business plan, dossiers de financement, etc.)</li><li>Effectuer des démarches administratives</li><li>Être en relation avec des organismes tiers (banques, partenaires, etc.)</li></ul>
-    <p>{{qualite_prestataire}}</p>
-    <h2>Article 3 – Durée de la mission</h2>
-    <p>La mission débute le : {{date_debut_mission}}</p>
-    <p>Durée estimée : {{duree_estimee}}</p>
-    <h2>Article 4 – Engagement du prestataire</h2>
-    <ul><li>Réaliser la prestation avec diligence et professionnalisme</li><li>Mettre en œuvre les moyens nécessaires à la mission</li><li>Informer le client de l'avancement</li></ul>
-    <h2>Article 5 – Engagement du client</h2>
-    <ul><li>Fournir des informations exactes, complètes et à jour</li><li>Transmettre les documents nécessaires</li><li>Être disponible pour les échanges</li><li>Valider les éléments transmis</li></ul>
-    <h2>Article 6 – Tarifs et modalités de paiement</h2>
-    <p>Montant de la prestation : <strong>{{montant_prestation}} €</strong></p>
-    <p>{{checkbox_comptant}} Paiement comptant &nbsp; {{checkbox_plusieurs_fois}} Paiement en {{nb_fois_paiement}} fois &nbsp; {{checkbox_acompte}} Acompte {{acompte_pct}}% soit {{acompte_eur}} €</p>
-    <h2>Article 7 – Confidentialité</h2>
-    <p>Les parties s'engagent à une stricte confidentialité. Cette obligation reste valable après la fin du contrat.</p>
-    <h2>Article 8 – Mandat</h2>
-    <p>{{mandat_representation}} Représenter le client auprès d'organismes &nbsp; {{mandat_transmission}} Transmettre des documents en son nom &nbsp; {{mandat_echanges}} Échanger avec des partenaires</p>
-    <h2>Article 9 – Propriété intellectuelle</h2>
-    <p>Les documents produits restent la propriété du prestataire jusqu'au paiement intégral.</p>
-    <h2>Article 10 – Responsabilité</h2>
-    <p>Le client reste seul responsable des décisions prises. Le prestataire ne garantit pas l'obtention de financements.</p>
-    <h2>Article 11 – Annulation / Résiliation</h2>
-    <p>En cas d'annulation, l'acompte reste dû et les prestations réalisées sont facturées.</p>
-    <h2>Article 12 – Acceptation</h2>
-    <p>Le présent contrat prend effet à signature.</p>
-    <p>Fait à : {{lieu_signature}} &nbsp;&nbsp; Le : {{date_signature}}</p>
-    <div class="sig-block">
-      <div class="sig-col"><p><strong>Signature du client</strong></p><p class="sig-hint">(Précédée de la mention « Lu et approuvé »)</p><div class="sig-line"></div></div>
-      <div class="sig-col"><p><strong>Signature du prestataire</strong></p><p class="sig-hint">&nbsp;</p><div class="sig-line"></div></div>
+  var PARTIES = `
+    <div class="parties">
+      <p><strong>Entre les soussign&eacute;s :</strong></p>
+      <p><br><strong>Cabinet de Conseils SIMELE</strong><br>
+      &nbsp;Repr&eacute;sent&eacute; par Jean-Christophe Simele<br>
+      &nbsp;SIRET : 92787546800039<br>
+      &nbsp;Si&egrave;ge : 20 lotissement Tolbiac 1, 97114 Trois-Rivi&egrave;res</p>
+      <p>Ci-apr&egrave;s d&eacute;nomm&eacute; : <strong>&laquo;&thinsp;Le Prestataire&thinsp;&raquo;</strong></p>
+      <p><strong>Et&thinsp;:</strong></p>
+      <p>Nom / Pr&eacute;nom : <span class="field">&nbsp;{{nom_client}}&nbsp;</span><br>
+      &nbsp;Adresse : <span class="field">&nbsp;{{adresse_client_ligne1}}&nbsp;</span><br>
+      <span class="field" style="min-width:220px">&nbsp;{{adresse_client_ligne2}}&nbsp;</span></p>
+      <p>Ci-apr&egrave;s d&eacute;nomm&eacute; : <strong>&laquo;&thinsp;Le Client&thinsp;&raquo;</strong></p>
     </div>
-  </div></body></html>`;
+    <hr>`;
 
-  var template = (type === 'mandat') ? mandatTemplate : coachingTemplate;
+  var COACHING_BODY = `
+    <h2>Article 1 &ndash; Objet du contrat</h2>
+    <p>Le pr&eacute;sent contrat a pour objet la r&eacute;alisation d&rsquo;une prestation d&rsquo;accompagnement &agrave; la cr&eacute;ation et &agrave; la structuration de projet entrepreneurial.</p>
+    <p>Le prestataire s&rsquo;engage &agrave; accompagner le client dans le cadre d&rsquo;un coaching comprenant plusieurs s&eacute;ances, visant &agrave; structurer, s&eacute;curiser et optimiser son projet.</p>
 
-  /* Remplacer les variables {{...}} */
+    <h2>Article 2 &ndash; Description de la prestation</h2>
+    <p>La prestation comprend&thinsp;:</p>
+    <ul>
+      <li>Un accompagnement en <strong>{{nb_seances}} s&eacute;ances</strong></li>
+      <li>Une dur&eacute;e estim&eacute;e de <strong>2h30 &agrave; 3h par s&eacute;ance</strong></li>
+      <li>Des &eacute;changes personnalis&eacute;s adapt&eacute;s au projet du client</li>
+    </ul>
+    <p>Les th&eacute;matiques abord&eacute;es incluent notamment&thinsp;:</p>
+    <ul>
+      <li>Structuration du projet</li>
+      <li>Environnement juridique et administratif</li>
+      <li>Dispositifs d&rsquo;aide</li>
+      <li>Structuration financi&egrave;re</li>
+    </ul>
+
+    <h2>Article 3 &ndash; Engagement du prestataire</h2>
+    <p>Le prestataire s&rsquo;engage &agrave;&thinsp;:</p>
+    <ul>
+      <li>Fournir un accompagnement professionnel et personnalis&eacute;</li>
+      <li>Apporter des conseils adapt&eacute;s &agrave; la situation du client</li>
+      <li>Mettre en &oelig;uvre tous les moyens n&eacute;cessaires &agrave; la bonne r&eacute;alisation de la prestation</li>
+    </ul>
+    <p>Le prestataire est tenu &agrave; une obligation de moyens et non de r&eacute;sultat.</p>
+
+    <h2>Article 4 &ndash; Engagement du client</h2>
+    <p>Le client s&rsquo;engage &agrave;&thinsp;:</p>
+    <ul>
+      <li>Fournir des informations sinc&egrave;res et compl&egrave;tes</li>
+      <li>&Ecirc;tre actif et impliqu&eacute; dans la d&eacute;marche</li>
+      <li>Respecter les rendez-vous fix&eacute;s</li>
+    </ul>
+
+    <h2>Article 5 &ndash; Tarifs et modalit&eacute;s de paiement</h2>
+    <p>Le montant de la prestation est fix&eacute; &agrave;&thinsp;: <span class="field">&nbsp;{{montant_prestation}}&nbsp;</span> &euro;</p>
+    <p>Les modalit&eacute;s de paiement sont d&eacute;finies comme suit&thinsp;:</p>
+    <p>&#9744; Paiement comptant &nbsp;&nbsp; &#9744; Paiement en plusieurs fois (&agrave; pr&eacute;ciser)</p>
+    <p><em>Toute prestation commenc&eacute;e est due.</em></p>
+
+    <h2>Article 6 &ndash; Annulation / Report</h2>
+    <ul>
+      <li>Toute s&eacute;ance annul&eacute;e moins de 24h &agrave; l&rsquo;avance pourra &ecirc;tre consid&eacute;r&eacute;e comme due</li>
+      <li>Un report peut &ecirc;tre envisag&eacute; d&rsquo;un commun accord</li>
+    </ul>
+
+    <h2>Article 7 &ndash; Confidentialit&eacute;</h2>
+    <p>Les parties s&rsquo;engagent &agrave; une stricte confidentialit&eacute; concernant l&rsquo;ensemble des informations &eacute;chang&eacute;es dans le cadre de la prestation. Cela inclut notamment&thinsp;:</p>
+    <ul>
+      <li>Les informations personnelles du client</li>
+      <li>Les donn&eacute;es li&eacute;es au projet</li>
+      <li>Les m&eacute;thodes, outils et documents du prestataire</li>
+    </ul>
+    <p>Aucune information ne pourra &ecirc;tre divulgu&eacute;e &agrave; un tiers sans accord pr&eacute;alable &eacute;crit. Cette obligation reste valable apr&egrave;s la fin de la prestation.</p>
+
+    <h2>Article 8 &ndash; Propri&eacute;t&eacute; intellectuelle</h2>
+    <p>Les supports, outils, m&eacute;thodes et documents transmis dans le cadre de l&rsquo;accompagnement restent la propri&eacute;t&eacute; exclusive du prestataire. Le client s&rsquo;engage &agrave; ne pas les diffuser, reproduire ou exploiter sans autorisation.</p>
+
+    <h2>Article 9 &ndash; Responsabilit&eacute;</h2>
+    <p>Le client reste seul responsable des d&eacute;cisions prises concernant son projet. Le prestataire ne pourra &ecirc;tre tenu responsable des r&eacute;sultats obtenus suite &agrave; la mise en &oelig;uvre des conseils.</p>
+
+    <h2>Article 10 &ndash; Acceptation</h2>
+    <p>Le pr&eacute;sent contrat prend effet &agrave; compter de sa signature par les deux parties.</p>
+    <p>Fait &agrave;&thinsp;: <span class="field">&nbsp;{{lieu_signature}}&nbsp;</span> &nbsp;&nbsp; Le&thinsp;: <span class="field">&nbsp;{{date_signature}}&nbsp;</span></p>`;
+
+  var MANDAT_BODY = `
+    <h2>Article 1 &ndash; Objet du contrat</h2>
+    <p>Le pr&eacute;sent contrat a pour objet la r&eacute;alisation de la prestation suivante&thinsp;:</p>
+    <div class="checkbox-row">
+      <p>&#9744; Business plan</p>
+      <p>&#9744; Pr&eacute;visionnel financier</p>
+      <p>&#9744; Dossier de financement</p>
+      <p>&#9744; Dossier de subvention</p>
+      <p>&#9744; Pack (pr&eacute;ciser) : <span class="field" style="min-width:140px">&nbsp;{{detail_pack}}&nbsp;</span></p>
+      <p>&#9744; Autre : <span class="field" style="min-width:140px">&nbsp;{{detail_autre}}&nbsp;</span></p>
+    </div>
+    <p>Le prestataire est mandat&eacute; pour accompagner le client dans la structuration, la pr&eacute;paration et/ou la r&eacute;alisation de son projet entrepreneurial.</p>
+
+    <h2>Article 2 &ndash; Nature de la mission</h2>
+    <p>Le prestataire pourra &ecirc;tre amen&eacute; &agrave;&thinsp;:</p>
+    <ul>
+      <li>Collecter et analyser les informations du client</li>
+      <li>R&eacute;diger des documents (business plan, dossiers de financement, etc.)</li>
+      <li>Effectuer des d&eacute;marches administratives</li>
+      <li>&Ecirc;tre en relation avec des organismes tiers (banques, partenaires, etc.)</li>
+    </ul>
+    <p>&#9744; Le prestataire agit en qualit&eacute; de conseil uniquement</p>
+    <p>&#9744; Le prestataire agit en qualit&eacute; de mandataire avec autorisation du client</p>
+
+    <h2>Article 3 &ndash; Dur&eacute;e de la mission</h2>
+    <p>La mission d&eacute;bute le&thinsp;: <span class="field">&nbsp;{{date_debut_mission}}&nbsp;</span></p>
+    <p>Dur&eacute;e estim&eacute;e&thinsp;: <span class="field">&nbsp;{{duree_estimee}}&nbsp;</span></p>
+    <p>Date pr&eacute;visionnelle de fin&thinsp;: <span class="field" style="min-width:140px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p>
+
+    <h2>Article 4 &ndash; Engagement du prestataire</h2>
+    <ul>
+      <li>R&eacute;aliser la prestation avec diligence et professionnalisme</li>
+      <li>Mettre en &oelig;uvre les moyens n&eacute;cessaires &agrave; la mission</li>
+      <li>Informer le client de l&rsquo;avancement</li>
+    </ul>
+    <p>Le prestataire est tenu &agrave; une obligation de moyens.</p>
+
+    <h2>Article 5 &ndash; Engagement du client</h2>
+    <ul>
+      <li>Fournir des informations exactes, compl&egrave;tes et &agrave; jour</li>
+      <li>Transmettre les documents n&eacute;cessaires</li>
+      <li>&Ecirc;tre disponible pour les &eacute;changes</li>
+      <li>Valider les &eacute;l&eacute;ments transmis</li>
+    </ul>
+    <p>Tout retard dans la transmission des &eacute;l&eacute;ments peut impacter la mission.</p>
+
+    <h2>Article 6 &ndash; Tarifs et modalit&eacute;s de paiement</h2>
+    <p>Montant de la prestation&thinsp;: <span class="field">&nbsp;{{montant_prestation}}&nbsp;</span> &euro;</p>
+    <p>Modalit&eacute;s&thinsp;:</p>
+    <p>&#9744; Paiement comptant &nbsp;&nbsp; &#9744; Paiement en <span class="field" style="min-width:30px">&nbsp;&nbsp;</span> fois &nbsp;&nbsp; &#9744; Acompte de <span class="field" style="min-width:40px">&nbsp;&nbsp;</span> % soit <span class="field" style="min-width:60px">&nbsp;&nbsp;</span> &euro;</p>
+    <p>Option&thinsp;: &#9744; Success fee&thinsp;: <span class="field" style="min-width:40px">&nbsp;&nbsp;</span> % du financement obtenu</p>
+
+    <h2>Article 7 &ndash; Confidentialit&eacute;</h2>
+    <p>Les parties s&rsquo;engagent &agrave; une stricte confidentialit&eacute; concernant les informations personnelles, les donn&eacute;es financi&egrave;res, les &eacute;l&eacute;ments du projet et les m&eacute;thodes du cabinet. Aucune information ne pourra &ecirc;tre divulgu&eacute;e sans accord &eacute;crit. Cette obligation reste valable apr&egrave;s la fin du contrat.</p>
+
+    <h2>Article 8 &ndash; Mandat <span style="color:#c0392b">(Tr&egrave;s important)</span></h2>
+    <p>Dans le cadre de certaines prestations, le client autorise le prestataire &agrave;&thinsp;: <em>(cocher si applicable)</em></p>
+    <p>&#9744; Repr&eacute;senter le client aupr&egrave;s d&rsquo;organismes</p>
+    <p>&#9744; Transmettre des documents en son nom</p>
+    <p>&#9744; &Eacute;changer avec des partenaires</p>
+    <p>Le prestataire agit uniquement dans le cadre d&eacute;fini par la mission.</p>
+
+    <h2>Article 9 &ndash; Propri&eacute;t&eacute; intellectuelle</h2>
+    <p>Les documents produits restent la propri&eacute;t&eacute; du prestataire jusqu&rsquo;au paiement int&eacute;gral. Le client peut les utiliser uniquement pour son projet.</p>
+
+    <h2>Article 10 &ndash; Responsabilit&eacute;</h2>
+    <p>Le client reste seul responsable des d&eacute;cisions prises, des informations transmises et des r&eacute;sultats du projet. Le prestataire ne garantit pas l&rsquo;obtention de financements.</p>
+
+    <h2>Article 11 &ndash; Annulation / R&eacute;siliation</h2>
+    <p>En cas d&rsquo;annulation, l&rsquo;acompte reste d&ucirc; et les prestations r&eacute;alis&eacute;es sont factur&eacute;es. Le contrat peut &ecirc;tre r&eacute;sili&eacute; en cas de manquement d&rsquo;une des parties.</p>
+
+    <h2>Article 12 &ndash; Acceptation</h2>
+    <p>Le pr&eacute;sent contrat prend effet &agrave; signature.</p>
+    <p><strong>Signatures</strong></p>
+    <p>Fait &agrave;&thinsp;: <span class="field">&nbsp;{{lieu_signature}}&nbsp;</span> &nbsp;&nbsp; Le&thinsp;: <span class="field">&nbsp;{{date_signature}}&nbsp;</span></p>`;
+
+  var SIG = `
+    <div class="sig-block">
+      <div class="sig-col">
+        <p><strong>Signature du client</strong></p>
+        <p class="sig-hint">(Pr&eacute;c&eacute;d&eacute;e de la mention &laquo; Lu et approuv&eacute; &raquo;)</p>
+        <div class="sig-line"></div>
+        <p style="margin-top:6px">Signature :</p>
+      </div>
+      <div class="sig-col">
+        <p><strong>Signature du prestataire</strong></p>
+        <p class="sig-hint">&nbsp;</p>
+        <div class="sig-line"></div>
+        <p style="margin-top:6px">Signature :</p>
+      </div>
+    </div>`;
+
+  var body = isMandat ? MANDAT_BODY : COACHING_BODY;
+  var fullHTML = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Contrat de prestation de services</title>' + STYLE + '</head><body><div class="page">' + HEADER + PARTIES + body + SIG + '</div></body></html>';
+
+  // Replace all {{variables}}
   Object.keys(vars).forEach(function(k) {
     var re = new RegExp('\\{\\{' + k + '\\}\\}', 'g');
-    template = template.replace(re, vars[k] || '');
+    fullHTML = fullHTML.replace(re, vars[k] || '');
   });
-  /* Nettoyer les variables non remplacées */
-  template = template.replace(/\{\{[^}]+\}\}/g, '');
-  return template;
+  // Clean remaining unfilled variables
+  fullHTML = fullHTML.replace(/\{\{[^}]+\}\}/g, '');
+  return fullHTML;
 };
 
-/* ── Aperçu du contrat dans une modale ── */
 window._aperçuContrat = function(type, clientId) {
   var vars = window._collecterDonneesContrat();
   var html = window._genererHTMLContrat(type || window._currentContratType, vars);

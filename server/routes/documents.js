@@ -28,7 +28,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: function(req, file, cb) {
-    const ok = ['.pdf','.doc','.docx','.xls','.xlsx','.jpg','.jpeg','.png','.gif','.txt','.zip'];
+    const ok = ['.pdf','.doc','.docx','.xls','.xlsx','.jpg','.jpeg','.png','.gif','.txt','.zip','.html','.htm'];
     const ext = path.extname(file.originalname).toLowerCase();
     ok.includes(ext) ? cb(null, true) : cb(new Error('Type non autorisé: ' + ext));
   }
