@@ -2364,3 +2364,152 @@ window._sauvegarderDevis = function() {
       } else { if(typeof showToast==='function') showToast('Erreur: '+(d.error||''), false); }
     }).catch(function(e){ if(typeof showToast==='function') showToast('Erreur réseau: '+e.message, false); });
 };
+
+/* ================================================================
+   PORTAIL CLIENT — Section notifications + documents dans le CRM
+   ================================================================ */
+
+/* ── Badge notifications sur le menu ── */
+window._chargerNotificationsCount = async function() {
+  var tok = localStorage.getItem('simele_token') || '';
+  try {
+    var r = await fetch('/api/portal/notifications-count', {headers:{'Authorization':'Bearer '+tok}});
+    var d = await r.json();
+    var badge = document.getElementById('notif-badge');
+    if (!badge) {
+      var ni = document.querySelector('[data-page="nouveaux-clients"]');
+      if (ni) {
+        badge = document.createElement('span');
+        badge.id = 'notif-badge';
+        badge.style.cssText = 'background:#e74c3c;color:white;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px';
+        ni.appendChild(badge);
+      }
+    }
+    if (badge) badge.textContent = d.count > 0 ? d.count : '';
+    if (badge) badge.style.display = d.count > 0 ? 'inline' : 'none';
+  } catch(e) {}
+};
+
+/* Auto-refresh every 30s */
+setInterval(window._chargerNotificationsCount, 30000);
+setTimeout(window._chargerNotificationsCount, 2000);
+
+/* ── Section portail dans le dossier client ── */
+window._renderPortailSection = async function(clientId) {
+  var container = document.getElementById('portail-client-section');
+  if (!container) return;
+  var tok = localStorage.getItem('simele_token') || '';
+  container.innerHTML = '<p style="color:#999;padding:10px;text-align:center">Chargement...</p>';
+
+  try {
+    // Check portal status
+    var sr = await fetch('/api/portal/statut-client/' + clientId, {headers:{'Authorization':'Bearer '+tok}});
+    var statut = await sr.json();
+
+    if (!statut.hasAccess) {
+      container.innerHTML = "<div style='text-align:center;padding:16px;color:#999'>"
+        + "<div style='font-size:32px;margin-bottom:8px'>🔒</div>"
+        + "<p style='font-size:13px;margin-bottom:10px'>Ce client n'a pas encore d'espace client.</p>"
+        + "<button onclick='envoyerAccesClient("+clientId+")' style='background:#1b2d5b;color:white;border:none;border-radius:7px;padding:8px 16px;cursor:pointer;font-size:12px;font-weight:600'>🔗 Créer l'espace client</button>"
+        + "</div>";
+      return;
+    }
+
+    // Load uploads + notifications
+    var [upR, notifR] = await Promise.all([
+      fetch('/api/portal/uploads-en-attente', {headers:{'Authorization':'Bearer '+tok}}),
+      fetch('/api/portal/notifications', {headers:{'Authorization':'Bearer '+tok}})
+    ]);
+    var upData = await upR.json();
+    var notifData = await notifR.json();
+
+    // Filter by this client
+    var insc = statut.inscription;
+    var uploads = (upData.uploads||[]).filter(function(u){ return u.client_id === clientId || u.inscription_id === (insc&&insc.id); });
+    var notifs = (notifData.notifications||[]).filter(function(n){ return n.client_id === clientId; }).slice(0,5);
+
+    var html = '';
+
+    /* Notifications */
+    if (notifs.length > 0) {
+      html += "<div style='margin-bottom:14px'>";
+      html += "<div style='font-size:12px;font-weight:700;color:#1b2d5b;margin-bottom:8px'>🔔 Dernières notifications</div>";
+      notifs.forEach(function(n) {
+        var bg = n.lu ? '#f8f9fa' : '#fff8e1';
+        var border = n.lu ? '#e0e0e0' : '#f39c12';
+        var date = n.created_at ? n.created_at.slice(0,16).replace('T',' ') : '';
+        html += "<div style='background:"+bg+";border:1px solid "+border+";border-radius:7px;padding:10px 12px;margin-bottom:6px;cursor:pointer' onclick='window._marquerNotifLue("+n.id+")'>"
+          + "<div style='font-size:12px;font-weight:600;color:#1b2d5b'>"+n.titre+"</div>"
+          + "<div style='font-size:11px;color:#666;margin-top:2px'>"+n.contenu.slice(0,80)+(n.contenu.length>80?'...':'')+"</div>"
+          + "<div style='font-size:10px;color:#999;margin-top:3px'>"+date+"</div>"
+          + "</div>";
+      });
+      html += "</div>";
+    }
+
+    /* Documents en attente de validation */
+    if (uploads.length > 0) {
+      html += "<div style='margin-bottom:14px'>";
+      html += "<div style='font-size:12px;font-weight:700;color:#1b2d5b;margin-bottom:8px'>📎 Documents envoyés par le client ("+uploads.length+" en attente)</div>";
+      uploads.forEach(function(u) {
+        html += "<div id='upload-row-"+u.id+"' style='background:#fff8e1;border:1px solid #f39c12;border-radius:7px;padding:10px 12px;margin-bottom:6px'>"
+          + "<div style='display:flex;align-items:center;gap:8px'>"
+          + "<span style='font-size:18px'>📄</span>"
+          + "<div style='flex:1'><div style='font-size:12px;font-weight:600'>"+u.nom_original+"</div>"
+          + "<div style='font-size:11px;color:#666'>"+(u.commentaire||'Aucun commentaire')+"</div></div>"
+          + "<div style='display:flex;gap:6px'>"
+          + "<a href='/api/portal/uploads/"+u.id+"/download' target='_blank' title='Voir' style='background:#e8f4fd;border:1px solid #3498db;border-radius:5px;padding:4px 8px;font-size:11px;color:#3498db;text-decoration:none'>👁 Voir</a>"
+          + "<button onclick='window._validerUpload("+u.id+")' style='background:#e8f5e9;border:1px solid #2ecc71;border-radius:5px;padding:4px 8px;font-size:11px;color:#27ae60;cursor:pointer'>✅ Valider</button>"
+          + "<button onclick='window._rejeterUpload("+u.id+")' style='background:#fdf0f0;border:1px solid #e74c3c;border-radius:5px;padding:4px 8px;font-size:11px;color:#e74c3c;cursor:pointer'>❌ Rejeter</button>"
+          + "</div></div></div>";
+      });
+      html += "</div>";
+    }
+
+    if (!html) {
+      html = "<div style='text-align:center;padding:16px;color:#999'><div style='font-size:32px;margin-bottom:8px'>✅</div><p style='font-size:12px'>Espace client actif. Aucune action en attente.</p></div>";
+    }
+
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = "<p style='color:red;font-size:12px;padding:10px'>Erreur: "+e.message+"</p>";
+  }
+};
+
+window._marquerNotifLue = async function(notifId) {
+  var tok = localStorage.getItem('simele_token') || '';
+  await fetch('/api/portal/notifications/'+notifId+'/lu', {method:'PUT', headers:{'Authorization':'Bearer '+tok}});
+  window._chargerNotificationsCount();
+};
+
+window._validerUpload = async function(uploadId) {
+  var nom = prompt("Nom du document dans le dossier :");
+  if (!nom) return;
+  var types = ["fiche","devis","contrat","identite","siege","activite","gestion","autre"];
+  var typeChoice = prompt("Type (1.Fiche 2.Devis 3.Contrat 4.Identité 5.Siège 6.Activité 7.Gestion 8.Autre) :", "1");
+  var type = types[(parseInt(typeChoice)||1)-1] || 'document';
+  var tok = localStorage.getItem('simele_token') || '';
+  var r = await fetch('/api/portal/uploads/'+uploadId+'/valider', {
+    method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    body: JSON.stringify({nom_final: nom, type: type, description: '', date_doc: new Date().toISOString().slice(0,10)})
+  });
+  var d = await r.json();
+  if (d.success) {
+    if(typeof showToast==='function') showToast('✅ Document ajouté au dossier !', true);
+    var row = document.getElementById('upload-row-'+uploadId);
+    if (row) row.style.background='#e8f5e9';
+    if (typeof window.chargerDocuments === 'function') window.chargerDocuments();
+  } else { if(typeof showToast==='function') showToast('Erreur: '+(d.error||''), false); }
+};
+
+window._rejeterUpload = async function(uploadId) {
+  if (!confirm('Rejeter ce document ?')) return;
+  var tok = localStorage.getItem('simele_token') || '';
+  var r = await fetch('/api/portal/uploads/'+uploadId+'/rejeter', {method:'POST', headers:{'Authorization':'Bearer '+tok}});
+  var d = await r.json();
+  if (d.success) {
+    if(typeof showToast==='function') showToast('Document rejeté.', true);
+    var row = document.getElementById('upload-row-'+uploadId);
+    if (row) { row.style.opacity='0.4'; row.style.pointerEvents='none'; }
+  }
+};

@@ -416,4 +416,222 @@ router.post('/changer-mot-de-passe', requirePortal, async (req, res) => {
   }
 });
 
+
+/* =====================================================================
+   PORTAIL CLIENT — Nouvelles routes
+   ===================================================================== */
+
+/* ─── GET /api/portal/services — Liste des services disponibles ─── */
+router.get('/services', (req, res) => {
+  const services = [
+    { id:'coaching3',  label:'Coaching Stratégique — 3 séances',      prix:210,  desc:'Accompagnement intensif en 3 séances pour structurer votre projet.' },
+    { id:'coaching5',  label:'Coaching Stratégique — 5 séances',      prix:320,  desc:'Accompagnement renforcé en 5 séances.' },
+    { id:'diag',       label:'Diagnostic de projet',                   prix:80,   desc:'Analyse approfondie de votre projet en 1h30.' },
+    { id:'bp',         label:'Business Plan complet',                  prix:450,  desc:'Rédaction complète de votre business plan.' },
+    { id:'prev',       label:'Prévisionnel financier 3 ans',           prix:350,  desc:'Élaboration de votre prévisionnel financier.' },
+    { id:'fin',        label:'Dossier de financement',                 prix:null, desc:'Montage de votre dossier de financement bancaire.' },
+    { id:'sub',        label:'Dossier de subvention',                  prix:null, desc:'Recherche et montage de vos dossiers de subvention.' },
+    { id:'mandat',     label:"Mandat d'accompagnement",                prix:null, desc:"Accompagnement global avec mandat." },
+    { id:'pack_ess',   label:'Pack Essentiel Création',                prix:590,  desc:'Pack complet pour créer votre entreprise.' },
+    { id:'pack_fin',   label:'Pack Financement',                       prix:890,  desc:'Pack dédié au financement de votre projet.' },
+    { id:'pack_glob',  label:'Pack Global',                            prix:1290, desc:'Accompagnement complet de A à Z.' }
+  ];
+  res.json({ services });
+});
+
+/* ─── POST /api/portal/choisir-prestation — Client choisit sa prestation ─── */
+router.post('/choisir-prestation', requirePortal, (req, res) => {
+  try {
+    const { service_id, service_label, prix, message } = req.body;
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.status(404).json({ error: 'Inscription introuvable' });
+
+    // Update prestation on inscription
+    db.prepare("UPDATE portal_inscriptions SET prestation_choisie=?, total_prestations=? WHERE id=?")
+      .run(service_label || '', prix || 0, insc.id);
+
+    // Also update client if linked
+    if (insc.client_id) {
+      db.prepare("UPDATE clients SET prestation=? WHERE id=?")
+        .run(service_label || '', insc.client_id);
+    }
+
+    // Create notification for admin
+    const notifTitre = '📋 Nouvelle demande de prestation : ' + (service_label || '');
+    const notifContenu = 'Le client ' + insc.prenom + ' ' + insc.nom
+      + ' a choisi : ' + (service_label || '')
+      + (prix ? ' (' + prix + ' €)' : ' (sur devis)')
+      + (message ? ' | Message : ' + message : '');
+    db.prepare("INSERT INTO notifications_client (inscription_id, client_id, type, titre, contenu) VALUES (?,?,?,?,?)")
+      .run(insc.id, insc.client_id || null, 'prestation', notifTitre, notifContenu);
+
+    res.json({ success: true, message: 'Demande envoyée ! Le cabinet reviendra vers vous rapidement.' });
+  } catch(e) {
+    console.error('choisir-prestation:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ─── GET /api/portal/mes-documents — Documents du dossier visibles par le client ─── */
+router.get('/mes-documents-dossier', requirePortal, (req, res) => {
+  try {
+    const insc = db.prepare('SELECT client_id FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc || !insc.client_id) return res.json({ documents: [] });
+    const docs = db.prepare(
+      "SELECT id, nom, type, description, taille, created_at FROM client_documents WHERE client_id=? AND visible_client=1 ORDER BY created_at DESC"
+    ).all(insc.client_id);
+    res.json({ documents: docs });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── POST /api/portal/envoyer-document — Client envoie un document ─── */
+const uploadPortal = multer({
+  storage: multer.diskStorage({
+    destination: function(req, file, cb) {
+      const dir = process.env.DB_PATH
+        ? require('path').join(require('path').dirname(process.env.DB_PATH), 'portal_uploads')
+        : '/app/data/portal_uploads';
+      if (!require('fs').existsSync(dir)) require('fs').mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: function(req, file, cb) {
+      const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      cb(null, Date.now() + '_' + safe);
+    }
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: function(req, file, cb) {
+    const ok = ['.pdf','.doc','.docx','.xls','.xlsx','.jpg','.jpeg','.png','.gif','.txt','.zip','.html'];
+    const ext = require('path').extname(file.originalname).toLowerCase();
+    ok.includes(ext) ? cb(null, true) : cb(new Error('Type non autorisé: ' + ext));
+  }
+});
+
+router.post('/envoyer-document', requirePortal, uploadPortal.single('fichier'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu' });
+    const { commentaire } = req.body;
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.status(404).json({ error: 'Inscription introuvable' });
+
+    const result = db.prepare(
+      "INSERT INTO portal_uploads (inscription_id, client_id, nom_original, chemin_stockage, taille, statut, commentaire) VALUES (?,?,?,?,?,'en_attente',?)"
+    ).run(insc.id, insc.client_id || null, req.file.originalname, req.file.path, req.file.size, commentaire || '');
+
+    // Notification pour admin
+    db.prepare("INSERT INTO notifications_client (inscription_id, client_id, type, titre, contenu) VALUES (?,?,?,?,?)")
+      .run(insc.id, insc.client_id || null, 'document',
+        '📎 Nouveau document reçu de ' + insc.prenom + ' ' + insc.nom,
+        'Fichier : ' + req.file.originalname + (commentaire ? ' | Commentaire : ' + commentaire : ''));
+
+    res.json({ success: true, upload_id: result.lastInsertRowid, message: 'Document envoyé ! Il sera examiné et ajouté à votre dossier.' });
+  } catch(e) {
+    console.error('envoyer-document:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ─── GET /api/portal/dashboard — Tableau de bord complet du client ─── */
+router.get('/dashboard', requirePortal, (req, res) => {
+  try {
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.status(404).json({ error: 'Introuvable' });
+    const client = insc.client_id
+      ? db.prepare('SELECT id,nom,prenom,email,tel,projet,prestation,score,profil,statut,notes FROM clients WHERE id=?').get(insc.client_id)
+      : null;
+    const docs = insc.client_id
+      ? db.prepare("SELECT id,nom,type,taille,created_at FROM client_documents WHERE client_id=? AND visible_client=1 ORDER BY created_at DESC").all(insc.client_id)
+      : [];
+    const myUploads = db.prepare("SELECT id,nom_original,nom_final,statut,commentaire,created_at FROM portal_uploads WHERE inscription_id=? ORDER BY created_at DESC").all(insc.id);
+    const notifs = db.prepare("SELECT * FROM notifications_client WHERE inscription_id=? ORDER BY created_at DESC LIMIT 10").all(insc.id);
+    const commandes = db.prepare("SELECT * FROM commandes WHERE inscription_id=? ORDER BY created_at DESC").all(insc.id);
+
+    res.json({
+      client: { nom:insc.nom, prenom:insc.prenom, email:insc.email, prestation: client?.prestation || insc.prestation_choisie || insc.prestation || '', score: client?.score || 0 },
+      documents: docs,
+      mes_uploads: myUploads,
+      notifications: notifs,
+      commandes,
+      total_prestations: insc.total_prestations || 0,
+      prestation_choisie: insc.prestation_choisie || ''
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── ADMIN: GET uploads en attente ─── */
+router.get('/uploads-en-attente', requireAdmin, (req, res) => {
+  try {
+    const uploads = db.prepare(
+      "SELECT pu.*, pi.nom, pi.prenom, pi.email FROM portal_uploads pu JOIN portal_inscriptions pi ON pu.inscription_id=pi.id WHERE pu.statut='en_attente' ORDER BY pu.created_at DESC"
+    ).all();
+    res.json({ uploads });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── ADMIN: GET toutes les notifications ─── */
+router.get('/notifications', requireAdmin, (req, res) => {
+  try {
+    const notifs = db.prepare(
+      "SELECT nc.*, pi.nom, pi.prenom, c.id as client_id FROM notifications_client nc LEFT JOIN portal_inscriptions pi ON nc.inscription_id=pi.id LEFT JOIN clients c ON nc.client_id=c.id ORDER BY nc.created_at DESC LIMIT 50"
+    ).all();
+    const unread = db.prepare("SELECT COUNT(*) as n FROM notifications_client WHERE lu=0").get();
+    res.json({ notifications: notifs, unread: unread.n });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── ADMIN: Marquer notification lue ─── */
+router.put('/notifications/:id/lu', requireAdmin, (req, res) => {
+  try {
+    db.prepare("UPDATE notifications_client SET lu=1 WHERE id=?").run(req.params.id);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── ADMIN: Valider un upload et l'ajouter au dossier ─── */
+router.post('/uploads/:id/valider', requireAdmin, (req, res) => {
+  try {
+    const { nom_final, type, description, date_doc } = req.body;
+    const upload = db.prepare('SELECT * FROM portal_uploads WHERE id=?').get(req.params.id);
+    if (!upload) return res.status(404).json({ error: 'Upload introuvable' });
+    if (!upload.client_id) return res.status(400).json({ error: 'Pas de client associé à cet upload' });
+
+    // Add to client_documents
+    const date = date_doc || new Date().toISOString().slice(0,10);
+    db.prepare(
+      "INSERT INTO client_documents (client_id, type, nom, description, chemin_stockage, taille, visible_client, created_at) VALUES (?,?,?,?,?,?,1,?)"
+    ).run(upload.client_id, type || 'document', nom_final || upload.nom_original, description || '', upload.chemin_stockage, upload.taille, date + 'T00:00:00');
+
+    // Mark upload as validated
+    db.prepare("UPDATE portal_uploads SET statut='valide', nom_final=?, validated_at=datetime('now') WHERE id=?")
+      .run(nom_final || upload.nom_original, upload.id);
+
+    res.json({ success: true, message: 'Document ajouté au dossier client.' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── ADMIN: Rejeter un upload ─── */
+router.post('/uploads/:id/rejeter', requireAdmin, (req, res) => {
+  try {
+    db.prepare("UPDATE portal_uploads SET statut='rejete' WHERE id=?").run(req.params.id);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── ADMIN: Télécharger un upload ─── */
+router.get('/uploads/:id/download', requireAdmin, (req, res) => {
+  try {
+    const upload = db.prepare('SELECT * FROM portal_uploads WHERE id=?').get(req.params.id);
+    if (!upload || !upload.chemin_stockage) return res.status(404).json({ error: 'Fichier introuvable' });
+    res.download(upload.chemin_stockage, upload.nom_original || 'document');
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ─── ADMIN: Notifications non lues count ─── */
+router.get('/notifications-count', requireAdmin, (req, res) => {
+  try {
+    const r = db.prepare("SELECT COUNT(*) as n FROM notifications_client WHERE lu=0").get();
+    res.json({ count: r.n });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

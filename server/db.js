@@ -203,4 +203,38 @@ try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN mdp_envoi_at TEXT"); }
 try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN acces_actif INTEGER DEFAULT 0"); } catch(e) {}
 
 
+
+  /* Table: documents transmis par le client (en attente de validation) */
+  try { db.exec(`CREATE TABLE IF NOT EXISTS portal_uploads (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    inscription_id  INTEGER NOT NULL REFERENCES portal_inscriptions(id) ON DELETE CASCADE,
+    client_id       INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+    nom_original    TEXT NOT NULL,
+    nom_final       TEXT DEFAULT '',
+    type            TEXT DEFAULT 'autre',
+    chemin_stockage TEXT DEFAULT '',
+    taille          INTEGER DEFAULT 0,
+    statut          TEXT NOT NULL DEFAULT 'en_attente',
+    commentaire     TEXT DEFAULT '',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    validated_at    TEXT DEFAULT NULL
+  )`); } catch(e) { console.log('portal_uploads:', e.message); }
+
+  /* Table: notifications / demandes clients */
+  try { db.exec(`CREATE TABLE IF NOT EXISTS notifications_client (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    inscription_id  INTEGER REFERENCES portal_inscriptions(id) ON DELETE CASCADE,
+    client_id       INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    type            TEXT NOT NULL DEFAULT 'demande',
+    titre           TEXT NOT NULL,
+    contenu         TEXT DEFAULT '',
+    lu              INTEGER DEFAULT 0,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  )`); } catch(e) { console.log('notifications_client:', e.message); }
+
+  /* Colonnes supplémentaires portal_inscriptions */
+  try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN prestation_choisie TEXT DEFAULT ''"); } catch(e) {}
+  try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN programme_choisi TEXT DEFAULT ''"); } catch(e) {}
+  try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN total_prestations REAL DEFAULT 0"); } catch(e) {}
+
 module.exports = { db, initDB };

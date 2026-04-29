@@ -1566,6 +1566,15 @@ function renderDossier(clientId) {
         <div class="card">
           <div class="card-title">Documents du dossier <button class="btn btn-sm" onclick="window.ouvrirDocs(${c.id})" style="background:#1b2d5b;color:white;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer">Voir les documents</button></div>
         <div id="docs-preview-${c.id}" style="font-size:11px;color:var(--gray400);padding:8px 0">Cliquez sur "Voir les documents" pour accéder à l'onglet Documents de ce client.</div>
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:15px;font-weight:600">🔗 Portail client</div>
+          <button onclick="window._renderPortailSection(${c.id})" style="background:#f0f4f8;border:1px solid #e0e0e0;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:#1b2d5b">🔄 Actualiser</button>
+        </div>
+        <div id="portail-client-section" style="min-height:50px">
+          <div style="text-align:center;padding:10px;color:#999;font-size:12px">Cliquez sur Actualiser pour charger les notifications portail.</div>
+        </div>
+      </div>
       </div>
     </div>
   `;
