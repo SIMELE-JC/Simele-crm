@@ -8,6 +8,7 @@ const fs      = require('fs');
 const { db } = require('../db');
 
 const nodemailer = require('nodemailer');
+const multer = require('multer');
 const JWT_SECRET = process.env.JWT_SECRET || 'simele_secret_dev_changeme';
 
 async function sendEmailClient(destinataire, prenom, email, tempPassword) {
