@@ -358,130 +358,113 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
 
 @media (max-width: 768px) {
 
-  /* ── Body / overflow ── */
-  body { overflow: hidden; }
+  /* ══ LAYOUT : sidebar hors-écran, main pleine largeur ══ */
+  #app-shell {
+    display: block !important; /* override le display:flex inline du JS */
+    position: relative;
+  }
 
-  /* ── Bouton hamburger visible sur mobile ── */
+  /* Bouton hamburger doré */
   #mob-toggle-crm { display: flex; }
 
-  /* ── Sidebar : hors écran par défaut, slide depuis la gauche ── */
-  #app-shell { position: relative; }
+  /* Sidebar : slide depuis la gauche */
   .sb {
     position: fixed !important;
     top: 0;
-    left: -240px;
+    left: -260px;
     z-index: 1500;
-    width: 240px !important;
+    width: 250px !important;
     height: 100vh !important;
-    transition: left 0.28s ease;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.25);
+    transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 6px 0 32px rgba(0,0,0,0.3);
   }
   .sb.mob-open { left: 0 !important; }
+
+  /* Overlay sombre */
   #mob-sidebar-overlay.active { display: block; }
 
-  /* ── Main : pleine largeur ── */
+  /* Main : prend tout l'écran */
   .main {
     width: 100% !important;
-    max-width: 100vw;
+    max-width: 100vw !important;
+    min-width: 0 !important;
     height: 100vh;
     overflow: hidden;
+    margin-left: 0 !important;
   }
 
-  /* ── Topbar : compact ── */
+  /* Topbar avec espace pour le hamburger à gauche */
   .topbar {
-    padding: 10px 14px 10px 60px; /* laisse place au hamburger */
+    padding: 10px 14px 10px 58px !important;
     min-height: 52px;
   }
-  .topbar .btn { font-size: 12px; padding: 7px 12px; }
-  .topbar .btn span { display: none; } /* cache le texte, garde l'icône */
+  .topbar-left .page-sub { display: none; }
+  .topbar .btn span { display: none; }
+  .topbar .btn { font-size: 12px; padding: 7px 10px; }
 
-  /* ── Contenu scrollable ── */
+  /* Contenu principal scrollable */
   #main-content {
-    padding: 14px !important;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* ── Dashboard cards ── */
-  .stats-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-  }
-  .dash-cards {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  /* ── Table clients : mode card sur mobile ── */
-  .clients-table { display: none !important; }
-  .clients-cards-mobile { display: flex !important; flex-direction: column; gap: 10px; }
-
-  /* ── Cards clients (déjà générées dynamiquement) ── */
-  .client-row {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 6px 8px;
     padding: 12px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    height: calc(100vh - 52px);
   }
-  .client-row > * { font-size: 12px !important; }
 
-  /* ── Dossier client : onglets scrollables ── */
+  /* Dashboard cards 2 colonnes */
+  .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .dash-cards { grid-template-columns: 1fr !important; gap: 10px !important; }
+
+  /* Liste clients : masquer tableau, afficher cards */
+  .clients-table { display: none !important; }
+  .clients-cards-mobile { display: flex !important; flex-direction: column; gap: 8px; }
+
+  /* Dossier : onglets scrollables */
   .tabs {
-    overflow-x: auto;
+    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
     flex-wrap: nowrap !important;
     scrollbar-width: none;
     padding-bottom: 2px;
   }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab { font-size: 11px !important; padding: 6px 10px !important; white-space: nowrap; }
+  .tab { font-size: 11px !important; padding: 6px 9px !important; white-space: nowrap; }
 
-  /* ── Cards dans les dossiers ── */
-  .card { border-radius: var(--radius) !important; padding: 14px !important; }
+  /* Cards */
+  .card { padding: 12px !important; border-radius: 10px !important; }
 
-  /* ── Grilles info client : 1 colonne ── */
+  /* Grilles info 1 colonne */
   .info-grid-2 { grid-template-columns: 1fr !important; }
 
-  /* ── Formulaires ── */
-  .form-row { flex-direction: column !important; gap: 10px !important; }
+  /* Formulaires : empêche le zoom iOS */
+  input, select, textarea { font-size: 16px !important; }
+  .form-row { flex-direction: column !important; gap: 8px !important; }
   .form-group { min-width: unset !important; }
-  input, select, textarea { font-size: 16px !important; } /* empêche zoom iOS */
 
-  /* ── Modals : plein écran ── */
+  /* Modals plein écran */
   .modal-overlay { padding: 0 !important; align-items: flex-end !important; }
   .modal-box {
     width: 100% !important;
     max-width: 100% !important;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-    max-height: 90vh !important;
+    border-radius: 14px 14px 0 0 !important;
+    max-height: 92vh !important;
     overflow-y: auto;
   }
 
-  /* ── Topbar "Nouveau client" : compact ── */
+  /* Chat */
+  #crm-chat-messages { height: 280px !important; }
+
+  /* Bouton nouveau client */
   #btn-nouveau-client { font-size: 12px !important; padding: 7px 10px !important; }
 
-  /* ── Page docs : grille ── */
+  /* Docs grid */
   .docs-grid { grid-template-columns: 1fr !important; }
 
-  /* ── Chat CRM ── */
-  #crm-chat-messages { height: 300px !important; }
-
-  /* ── Boutons côte à côte → empilés ── */
+  /* PIJ form */
   .pij-nav { flex-wrap: wrap !important; gap: 8px; }
   .pij-btn-next, .pij-btn-prev { flex: 1; text-align: center; }
-
-  /* ── Services grid ── */
+  .pij-invest-row { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
   .services-grid { grid-template-columns: 1fr !important; }
-
-  /* ── Scoring slider ── */
-  .scoring-wrap { padding: 10px !important; }
-
-  /* ── Investissements PIJ ── */
-  .pij-invest-row {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 6px !important;
-  }
 }
 
 @media (max-width: 480px) {
@@ -2600,7 +2583,7 @@ function showLoginScreen() {
 
 function showAppShell() {
   var _ls=document.getElementById('login-screen');if(_ls)_ls.style.display='none';
-  var _as=document.getElementById('app-shell');if(_as)_as.style.display='flex';
+  var _as=document.getElementById('app-shell');if(_as)_as.style.display=window.innerWidth<=768?'block':'flex';
 }
 
 async function handleLogin(e) {
@@ -2777,7 +2760,7 @@ async function init() {
   }
 }
 
-init(); setTimeout(function(){ var l=document.getElementById('login-screen'); var a=document.getElementById('app-shell'); if(l)l.style.display='flex'; if(a)a.style.display='none'; }, 200);
+init(); setTimeout(function(){ var l=document.getElementById('login-screen'); var a=document.getElementById('app-shell'); if(l)l.style.display=window.innerWidth<=768?'block':'flex'; if(a)a.style.display='none'; }, 200);
 
 // ===========================
 // PORTAIL CLIENT — NOUVEAUX CLIENTS
@@ -3649,6 +3632,19 @@ window.crmCloseSidebar = function() {
     });
   });
 })();
+
+
+/* ── Responsive: recalcule layout si rotation téléphone ── */
+window.addEventListener('resize', function() {
+  var shell = document.getElementById('app-shell');
+  if (!shell || shell.style.display === 'none') return;
+  if (window.innerWidth <= 768) {
+    shell.style.display = 'block';
+    crmCloseSidebar();
+  } else {
+    shell.style.display = 'flex';
+  }
+});
 
 </script>
 </body>
