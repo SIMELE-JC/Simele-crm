@@ -1525,6 +1525,7 @@ function renderDossier(clientId) {
           <div class="tab" onclick="showPage('coaching')">&#127919; Coaching</div>
           <div class="tab" onclick="window.ouvrirContratTab(currentClientId)">&#128196; Contrat</div>
           <div class="tab" onclick="window.ouvrirDevisTab(currentClientId)">&#128202; Devis</div>
+          <div class="tab" onclick="window.ouvrirChatClient(currentClientId)" style="color:#2ecc71;font-weight:700">&#128172; Chat</div>
         </div>
 
         ${c.score!==null?`
@@ -1570,6 +1571,7 @@ function renderDossier(clientId) {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div style="font-size:15px;font-weight:600">🔗 Portail client</div>
           <button onclick="window._renderPortailSection(${c.id})" style="background:#f0f4f8;border:1px solid #e0e0e0;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:#1b2d5b">🔄 Actualiser</button>
+          <button onclick="window.ouvrirChatClient(${c.id})" style="background:#1b2d5b;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;color:white;font-weight:600">💬 Ouvrir le chat</button>
         </div>
         <div id="portail-client-section" style="min-height:50px">
           <div style="text-align:center;padding:10px;color:#999;font-size:12px">Cliquez sur Actualiser pour charger les notifications portail.</div>

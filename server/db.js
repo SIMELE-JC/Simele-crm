@@ -237,4 +237,28 @@ try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN acces_actif INTEGER DE
   try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN programme_choisi TEXT DEFAULT ''"); } catch(e) {}
   try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN total_prestations REAL DEFAULT 0"); } catch(e) {}
 
+
+  /* Table: messages de chat entre client et cabinet */
+  try { db.exec(`CREATE TABLE IF NOT EXISTS chat_messages (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    inscription_id  INTEGER NOT NULL REFERENCES portal_inscriptions(id) ON DELETE CASCADE,
+    client_id       INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+    expediteur      TEXT NOT NULL DEFAULT 'client',
+    message         TEXT NOT NULL,
+    lu              INTEGER DEFAULT 0,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  )`); } catch(e) { console.log('chat_messages:', e.message); }
+
+  /* Table: demandes de devis personnalisées */
+  try { db.exec(`CREATE TABLE IF NOT EXISTS demandes_devis (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    inscription_id  INTEGER REFERENCES portal_inscriptions(id) ON DELETE CASCADE,
+    client_id       INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+    service_id      TEXT NOT NULL,
+    service_label   TEXT NOT NULL,
+    description     TEXT DEFAULT '',
+    statut          TEXT DEFAULT 'en_attente',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  )`); } catch(e) { console.log('demandes_devis:', e.message); }
+
 module.exports = { db, initDB };

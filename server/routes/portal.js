@@ -635,4 +635,125 @@ router.get('/notifications-count', requireAdmin, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+/* ================================================================
+   CHAT EN DIRECT — Messages client ↔ cabinet
+   ================================================================ */
+
+/* POST /api/portal/chat — Client envoie un message */
+router.post('/chat', requirePortal, (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) return res.status(400).json({ error: 'Message vide' });
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.status(404).json({ error: 'Inscription introuvable' });
+    const result = db.prepare(
+      "INSERT INTO chat_messages (inscription_id, client_id, expediteur, message) VALUES (?,?,'client',?)"
+    ).run(insc.id, insc.client_id || null, message.trim());
+    // Notification admin
+    db.prepare("INSERT INTO notifications_client (inscription_id, client_id, type, titre, contenu) VALUES (?,?,?,?,?)")
+      .run(insc.id, insc.client_id || null, 'chat',
+        '💬 Nouveau message de ' + insc.prenom + ' ' + insc.nom,
+        message.trim().slice(0, 120));
+    res.json({ success: true, id: result.lastInsertRowid });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* GET /api/portal/chat — Client récupère l'historique */
+router.get('/chat', requirePortal, (req, res) => {
+  try {
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.json({ messages: [] });
+    // Mark admin messages as read by client
+    db.prepare("UPDATE chat_messages SET lu=1 WHERE inscription_id=? AND expediteur='cabinet'")
+      .run(insc.id);
+    const messages = db.prepare(
+      "SELECT * FROM chat_messages WHERE inscription_id=? ORDER BY created_at ASC LIMIT 200"
+    ).all(insc.id);
+    res.json({ messages });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* GET /api/portal/chat/unread — Nb messages non lus par le client */
+router.get('/chat/unread', requirePortal, (req, res) => {
+  try {
+    const insc = db.prepare('SELECT id FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.json({ count: 0 });
+    const r = db.prepare("SELECT COUNT(*) as n FROM chat_messages WHERE inscription_id=? AND expediteur='cabinet' AND lu=0").get(insc.id);
+    res.json({ count: r.n });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── ADMIN: lire tous les chats d'un client ── */
+router.get('/chat/client/:clientId', requireAdmin, (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const insc = db.prepare('SELECT id FROM portal_inscriptions WHERE client_id=?').get(clientId);
+    if (!insc) return res.json({ messages: [], hasPortal: false });
+    const messages = db.prepare(
+      "SELECT * FROM chat_messages WHERE inscription_id=? ORDER BY created_at ASC LIMIT 200"
+    ).all(insc.id);
+    // Mark client messages as read
+    db.prepare("UPDATE chat_messages SET lu=1 WHERE inscription_id=? AND expediteur='client' AND lu=0")
+      .run(insc.id);
+    res.json({ messages, hasPortal: true, inscription_id: insc.id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── ADMIN: répondre à un client ── */
+router.post('/chat/reply/:inscriptionId', requireAdmin, (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || !message.trim()) return res.status(400).json({ error: 'Message vide' });
+    const inscId = parseInt(req.params.inscriptionId);
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(inscId);
+    if (!insc) return res.status(404).json({ error: 'Inscription introuvable' });
+    db.prepare("INSERT INTO chat_messages (inscription_id, client_id, expediteur, message) VALUES (?,?,'cabinet',?)")
+      .run(inscId, insc.client_id || null, message.trim());
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── ADMIN: messages non lus (toutes conversations) ── */
+router.get('/chat/unread-admin', requireAdmin, (req, res) => {
+  try {
+    const r = db.prepare("SELECT COUNT(*) as n FROM chat_messages WHERE expediteur='client' AND lu=0").get();
+    res.json({ count: r.n });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ================================================================
+   DEMANDES DE DEVIS depuis l'espace client
+   ================================================================ */
+
+/* POST /api/portal/demande-devis */
+router.post('/demande-devis', requirePortal, (req, res) => {
+  try {
+    const { service_id, service_label, description } = req.body;
+    if (!service_id) return res.status(400).json({ error: 'Service manquant' });
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.status(404).json({ error: 'Inscription introuvable' });
+    const result = db.prepare(
+      "INSERT INTO demandes_devis (inscription_id, client_id, service_id, service_label, description) VALUES (?,?,?,?,?)"
+    ).run(insc.id, insc.client_id || null, service_id, service_label, description || '');
+    // Notification
+    db.prepare("INSERT INTO notifications_client (inscription_id, client_id, type, titre, contenu) VALUES (?,?,?,?,?)")
+      .run(insc.id, insc.client_id || null, 'devis',
+        '📋 Demande de devis : ' + service_label,
+        (description || '').slice(0, 200));
+    // Also update prestation if has price
+    res.json({ success: true, id: result.lastInsertRowid });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* GET /api/portal/demandes-devis — admin: liste des demandes */
+router.get('/demandes-devis', requireAdmin, (req, res) => {
+  try {
+    const demandes = db.prepare(
+      "SELECT dd.*, pi.nom, pi.prenom, pi.email FROM demandes_devis dd JOIN portal_inscriptions pi ON dd.inscription_id=pi.id ORDER BY dd.created_at DESC LIMIT 50"
+    ).all();
+    res.json({ demandes });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

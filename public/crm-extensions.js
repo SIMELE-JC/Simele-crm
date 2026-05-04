@@ -2513,3 +2513,133 @@ window._rejeterUpload = async function(uploadId) {
     if (row) { row.style.opacity='0.4'; row.style.pointerEvents='none'; }
   }
 };
+
+/* ================================================================
+   CHAT CRM — Messagerie directe avec le client
+   ================================================================ */
+window._chatPolling = null;
+window._chatInscriptionId = null;
+
+/* Ouvrir le chat depuis le dossier client */
+window.ouvrirChatClient = async function(clientId) {
+  if (!clientId) { alert("Veuillez d'abord ouvrir un dossier client."); return; }
+  var tok = localStorage.getItem('simele_token') || '';
+
+  // Get inscription_id for this client
+  var r = await fetch('/api/portal/chat/client/' + clientId, {headers:{'Authorization':'Bearer '+tok}});
+  var d = await r.json();
+
+  if (!d.hasPortal) {
+    // Show a prompt to create portal first
+    var el = document.getElementById('coaching-content');
+    if (!el) return;
+    document.querySelectorAll('[id^="page-"]').forEach(function(p){ p.style.display='none'; });
+    document.getElementById('page-coaching').style.display = 'block';
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
+    el.innerHTML = "<div style='max-width:600px;margin:40px auto;text-align:center;padding:40px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)'>"
+      + "<div style='font-size:48px;margin-bottom:16px'>💬</div>"
+      + "<div style='font-size:16px;font-weight:700;color:#1b2d5b;margin-bottom:8px'>Ce client n'a pas encore d'espace client</div>"
+      + "<p style='font-size:13px;color:#666;margin-bottom:20px'>Créez d'abord un espace client pour activer la messagerie.</p>"
+      + "<button onclick='envoyerAccesClient("+clientId+")' style='background:#1b2d5b;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600'>🔗 Créer l'espace client</button>"
+      + "</div>";
+    return;
+  }
+
+  window._chatInscriptionId = d.inscription_id;
+  window._chatClientId = clientId;
+
+  // Navigate to coaching page to render chat
+  document.querySelectorAll('[id^="page-"]').forEach(function(p){ p.style.display='none'; });
+  document.getElementById('page-coaching').style.display = 'block';
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
+
+  window._renderChatCRM(d.messages, clientId, d.inscription_id);
+
+  // Start polling
+  if (window._chatPolling) clearInterval(window._chatPolling);
+  window._chatPolling = setInterval(function() { window._refreshChat(); }, 4000);
+};
+
+window._renderChatCRM = function(messages, clientId, inscId) {
+  var client = typeof getClientById === 'function' ? getClientById(clientId) : {prenom:'', nom:''};
+  var el = document.getElementById('coaching-content');
+  if (!el) return;
+
+  el.innerHTML = "<div style='max-width:860px;margin:0 auto;padding:0 0 20px;display:flex;flex-direction:column;height:calc(100vh - 140px)'>"
+
+    // Header
+    + "<div style='background:#1b2d5b;color:white;padding:14px 20px;border-radius:10px 10px 0 0;display:flex;align-items:center;gap:12px;flex-shrink:0'>"
+    + "<div style='width:36px;height:36px;background:#c9a96e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px'>"+(client.prenom||'?')[0]+"</div>"
+    + "<div><div style='font-size:14px;font-weight:700'>💬 Chat avec "+(client.prenom||'')+' '+(client.nom||'')+"</div>"
+    + "<div style='font-size:11px;opacity:0.7'>Messages échangés via l'espace client</div></div>"
+    + "<button onclick='if(window._chatPolling)clearInterval(window._chatPolling);renderCoachingPage()' style='margin-left:auto;background:rgba(255,255,255,0.15);border:none;color:white;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px'>← Retour</button>"
+    + "</div>"
+
+    // Messages area
+    + "<div id='crm-chat-messages' style='flex:1;overflow-y:auto;background:#f4f6f9;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px'>"
+    + window._renderChatMessages(messages)
+    + "</div>"
+
+    // Input area
+    + "<div style='background:white;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 10px 10px;padding:14px;flex-shrink:0'>"
+    + "<div style='display:flex;gap:10px;align-items:flex-end'>"
+    + "<textarea id='crm-chat-input' rows='2' placeholder='Votre réponse à "+(client.prenom||'ce client')+"...' style='flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5' onkeydown='if(event.key===\"Enter\"&&!event.shiftKey){event.preventDefault();window._envoyerReponseChat()}'></textarea>"
+    + "<button onclick='window._envoyerReponseChat()' style='background:#1b2d5b;color:white;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap'>📨 Envoyer</button>"
+    + "</div>"
+    + "<div style='font-size:11px;color:#999;margin-top:6px'>Entrée pour envoyer • Maj+Entrée pour retour à la ligne • Actualisation automatique toutes les 4s</div>"
+    + "</div>"
+    + "</div>";
+
+  // Scroll to bottom
+  var msgs = document.getElementById('crm-chat-messages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+};
+
+window._renderChatMessages = function(messages) {
+  if (!messages || !messages.length) {
+    return "<div style='text-align:center;padding:40px;color:#999'><div style='font-size:40px;margin-bottom:12px'>💬</div><p>Aucun message pour le moment.<br>Le client n'a pas encore envoyé de message.</p></div>";
+  }
+  return messages.map(function(m) {
+    var isClient = m.expediteur === 'client';
+    var date = (m.created_at||'').slice(0,16).replace('T',' ');
+    return "<div style='display:flex;flex-direction:column;align-items:"+(isClient?'flex-start':'flex-end')+"'>"
+      + "<div style='max-width:75%;background:"+(isClient?'white':'#1b2d5b')+";color:"+(isClient?'#333':'white')+";border-radius:"+(isClient?'4px 12px 12px 12px':'12px 4px 12px 12px')+";padding:10px 14px;font-size:13px;line-height:1.5;box-shadow:0 1px 3px rgba(0,0,0,0.08)'>"
+      + m.message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
+      + "</div>"
+      + "<div style='font-size:10px;color:#999;margin-top:3px;padding:0 4px'>"+(isClient?'👤 Client':'🏢 Cabinet SIMELE')+' • '+date+"</div>"
+      + "</div>";
+  }).join('');
+};
+
+window._refreshChat = async function() {
+  if (!window._chatInscriptionId || !window._chatClientId) return;
+  var tok = localStorage.getItem('simele_token') || '';
+  try {
+    var r = await fetch('/api/portal/chat/client/' + window._chatClientId, {headers:{'Authorization':'Bearer '+tok}});
+    var d = await r.json();
+    var msgs = document.getElementById('crm-chat-messages');
+    if (msgs && d.messages) {
+      var wasAtBottom = msgs.scrollTop + msgs.clientHeight >= msgs.scrollHeight - 20;
+      msgs.innerHTML = window._renderChatMessages(d.messages);
+      if (wasAtBottom) msgs.scrollTop = msgs.scrollHeight;
+    }
+  } catch(e) {}
+};
+
+window._envoyerReponseChat = async function() {
+  var input = document.getElementById('crm-chat-input');
+  if (!input || !input.value.trim()) return;
+  var msg = input.value.trim();
+  input.value = '';
+  var tok = localStorage.getItem('simele_token') || '';
+  try {
+    await fetch('/api/portal/chat/reply/' + window._chatInscriptionId, {
+      method: 'POST',
+      headers: {'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg})
+    });
+    await window._refreshChat();
+  } catch(e) {
+    if(typeof showToast==='function') showToast('Erreur envoi: '+e.message, false);
+  }
+};
