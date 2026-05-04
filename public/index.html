@@ -293,6 +293,7 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
    ============================================================ */
 
 /* ── Bouton hamburger mobile (caché sur desktop) ── */
+/* ── Hamburger button HTML element ── */
 #mob-toggle-crm {
   display: none;
   position: fixed;
@@ -311,6 +312,29 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
   gap: 5px;
   box-shadow: var(--shadow);
 }
+#mob-toggle-crm span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.25s ease;
+  pointer-events: none;
+}
+#mob-toggle-crm.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+#mob-toggle-crm.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+#mob-toggle-crm.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+#mob-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1499;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+#mob-sidebar-overlay.active { display: block; }
+
 #mob-toggle-crm span {
   display: block;
   width: 20px;
@@ -502,6 +526,14 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
   </div>
 </div>
 <div id="app-shell" style="display:none;">
+
+<!-- HAMBURGER MOBILE -->
+<button id="mob-toggle-crm" onclick="crmToggleSidebar()" aria-label="Menu" title="Menu">
+  <span></span><span></span><span></span>
+</button>
+
+<!-- OVERLAY mobile (ferme le menu au clic) -->
+<div id="mob-sidebar-overlay" onclick="crmCloseSidebar()"></div>
 
 <!-- SIDEBAR -->
 <div class="sb" id="sidebar">
@@ -1435,6 +1467,7 @@ const pageTitles = {
 };
 
 function showPage(id, clientId=null) {
+  if (window.innerWidth <= 768 && typeof crmCloseSidebar === 'function') crmCloseSidebar();
   document.querySelectorAll('[id^="page-"]').forEach(el=>el.style.display='none');
   const p = document.getElementById('page-'+id);
   if(p) p.style.display='block';
@@ -3570,6 +3603,53 @@ async function updateChecklist(clientId, key, idx, checked) {
   } catch(e) {}
 }
 
-</script><script src="/crm-extensions.js"></script>
+</script><script src="/crm-extensions.js">
+/* ================================================================
+   CRM MOBILE — Sidebar toggle (hamburger)
+   ================================================================ */
+window.crmToggleSidebar = function() {
+  var sb = document.getElementById('sidebar');
+  var overlay = document.getElementById('mob-sidebar-overlay');
+  var btn = document.getElementById('mob-toggle-crm');
+  if (!sb) return;
+  var isOpen = sb.classList.contains('mob-open');
+  if (isOpen) {
+    sb.classList.remove('mob-open');
+    if (overlay) overlay.classList.remove('active');
+    if (btn) btn.classList.remove('open');
+    document.body.style.overflow = '';
+  } else {
+    sb.classList.add('mob-open');
+    if (overlay) overlay.classList.add('active');
+    if (btn) btn.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+};
+
+window.crmCloseSidebar = function() {
+  var sb = document.getElementById('sidebar');
+  var overlay = document.getElementById('mob-sidebar-overlay');
+  var btn = document.getElementById('mob-toggle-crm');
+  if (sb) sb.classList.remove('mob-open');
+  if (overlay) overlay.classList.remove('active');
+  if (btn) btn.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+/* Auto-close sidebar when a nav item is clicked on mobile */
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    var sbNav = document.querySelectorAll('.sb-item, .sb-nav a, #sidebar [onclick]');
+    sbNav.forEach(function(el) {
+      el.addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+          setTimeout(window.crmCloseSidebar, 150);
+        }
+      });
+    });
+  });
+})();
+
+</script>
 </body>
 </html>
