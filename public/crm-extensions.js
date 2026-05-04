@@ -2643,3 +2643,57 @@ window._envoyerReponseChat = async function() {
     if(typeof showToast==='function') showToast('Erreur envoi: '+e.message, false);
   }
 };
+
+/* ================================================================
+   CRM MOBILE — Navigation responsive
+   ================================================================ */
+
+/* Ouvre/ferme la sidebar sur mobile */
+window.crmMobToggle = function() {
+  var sb = document.getElementById('sidebar');
+  var btn = document.getElementById('mob-toggle-crm');
+  var overlay = document.getElementById('mob-sidebar-overlay');
+  if (!sb) return;
+  var isOpen = sb.classList.contains('mob-open');
+  if (isOpen) {
+    crmMobClose();
+  } else {
+    sb.classList.add('mob-open');
+    if (btn) btn.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+};
+
+window.crmMobClose = function() {
+  var sb = document.getElementById('sidebar');
+  var btn = document.getElementById('mob-toggle-crm');
+  var overlay = document.getElementById('mob-sidebar-overlay');
+  if (sb) sb.classList.remove('mob-open');
+  if (btn) btn.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
+};
+
+/* Ferme la sidebar auto quand on navigue */
+(function() {
+  var origShowPage = window.showPage;
+  if (origShowPage) {
+    window.showPage = function(page, id) {
+      origShowPage(page, id);
+      if (window.innerWidth <= 768) crmMobClose();
+    };
+  }
+})();
+
+/* Ferme au swipe vers la gauche sur la sidebar */
+(function() {
+  var sb = document.getElementById('sidebar');
+  if (!sb) return;
+  var startX = 0;
+  sb.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive: true});
+  sb.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
+    if (dx < -40 && window.innerWidth <= 768) crmMobClose();
+  }, {passive: true});
+})();
