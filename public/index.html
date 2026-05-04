@@ -511,12 +511,12 @@ body{font-family:var(--font);font-size:13px;color:var(--gray800);background:var(
 <div id="app-shell" style="display:none;">
 
 <!-- HAMBURGER MOBILE -->
-<button id="mob-toggle-crm" onclick="crmToggleSidebar()" aria-label="Menu" title="Menu">
+<button id="mob-toggle-crm" onclick="crmMobToggle()" aria-label="Menu" title="Menu">
   <span></span><span></span><span></span>
 </button>
 
 <!-- OVERLAY mobile (ferme le menu au clic) -->
-<div id="mob-sidebar-overlay" onclick="crmCloseSidebar()"></div>
+<div id="mob-sidebar-overlay" onclick="crmMobClose()"></div>
 
 <!-- SIDEBAR -->
 <div class="sb" id="sidebar">
