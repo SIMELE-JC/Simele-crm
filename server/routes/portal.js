@@ -756,4 +756,61 @@ router.get('/demandes-devis', requireAdmin, (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+/* ─── POST /api/portal/soumettre-pij — Client soumet son dossier PIJ directement ─── */
+router.post('/soumettre-pij', requirePortal, (req, res) => {
+  try {
+    const insc = db.prepare('SELECT * FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.status(404).json({ error: 'Inscription introuvable' });
+
+    const { donnees } = req.body;
+    if (!donnees) return res.status(400).json({ error: 'Données PIJ manquantes' });
+
+    // Vérifier si un PIJ existe déjà pour ce client (mise à jour ou création)
+    const existing = db.prepare('SELECT id FROM pij_dossiers WHERE inscription_id=?').get(insc.id);
+    
+    if (existing) {
+      db.prepare('UPDATE pij_dossiers SET donnees_json=?, statut='recu', updated_at=datetime('now') WHERE id=?')
+        .run(JSON.stringify(donnees), existing.id);
+    } else {
+      db.prepare('INSERT INTO pij_dossiers (inscription_id, client_id, donnees_json, statut) VALUES (?,?,?,'recu')')
+        .run(insc.id, insc.client_id || null, JSON.stringify(donnees));
+    }
+
+    // Notification admin
+    db.prepare("INSERT INTO notifications_client (inscription_id, client_id, type, titre, contenu) VALUES (?,?,?,?,?)")
+      .run(insc.id, insc.client_id || null, 'pij',
+        'Dossier PIJ reçu — ' + insc.prenom + ' ' + insc.nom,
+        (donnees.raison_sociale || 'Projet') + ' · PIJ demandé : ' + (donnees.montant_pij_demande || '?') + ' EUR');
+
+    res.json({ success: true, message: 'Dossier PIJ enregistré dans votre dossier.' });
+  } catch(e) {
+    console.error('soumettre-pij error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ─── GET /api/portal/mon-pij — Client consulte son dossier PIJ ─── */
+router.get('/mon-pij', requirePortal, (req, res) => {
+  try {
+    const insc = db.prepare('SELECT id FROM portal_inscriptions WHERE id=?').get(req.portalUser.id);
+    if (!insc) return res.status(404).json({ error: 'Introuvable' });
+    const pij = db.prepare('SELECT * FROM pij_dossiers WHERE inscription_id=? ORDER BY updated_at DESC LIMIT 1').get(insc.id);
+    if (!pij) return res.json({ pij: null });
+    res.json({ pij: { ...pij, donnees: JSON.parse(pij.donnees_json) } });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ─── GET /api/portal/pij-client/:inscriptionId — Admin consulte le PIJ d'un client ─── */
+router.get('/pij-client/:inscriptionId', (req, res) => {
+  try {
+    const pij = db.prepare('SELECT * FROM pij_dossiers WHERE inscription_id=? ORDER BY updated_at DESC LIMIT 1').get(req.params.inscriptionId);
+    if (!pij) return res.json({ pij: null });
+    res.json({ pij: { ...pij, donnees: JSON.parse(pij.donnees_json) } });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

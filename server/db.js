@@ -250,7 +250,17 @@ try { db.exec("ALTER TABLE portal_inscriptions ADD COLUMN acces_actif INTEGER DE
   )`); } catch(e) { console.log('chat_messages:', e.message); }
 
   /* Table: demandes de devis personnalisées */
-  try { db.exec(`CREATE TABLE IF NOT EXISTS demandes_devis (
+  try { db.exec(`CREATE TABLE IF NOT EXISTS pij_dossiers (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      inscription_id  INTEGER REFERENCES portal_inscriptions(id) ON DELETE CASCADE,
+      client_id       INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+      donnees_json    TEXT NOT NULL,
+      statut          TEXT NOT NULL DEFAULT 'recu',
+      notes_admin     TEXT DEFAULT '',
+      created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS demandes_devis (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     inscription_id  INTEGER REFERENCES portal_inscriptions(id) ON DELETE CASCADE,
     client_id       INTEGER REFERENCES clients(id) ON DELETE SET NULL,

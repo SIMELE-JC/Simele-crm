@@ -2697,3 +2697,165 @@ window.crmMobClose = function() {
     if (dx < -40 && window.innerWidth <= 768) crmMobClose();
   }, {passive: true});
 })();
+
+/* ================================================================
+   DOSSIER PIJ — Affichage dans le CRM
+   ================================================================ */
+
+window.afficherPIJ = async function(clientId) {
+  // Trouver l'inscription liée à ce client
+  const insc = await fetch(_CRM + '/api/portal/inscriptions')
+    .then(r => r.json())
+    .catch(() => []);
+  const inscList = Array.isArray(insc) ? insc : (insc.inscriptions || []);
+  const clientInsc = inscList.find(i => i.client_id == clientId);
+
+  if (!clientInsc) {
+    showToast('Aucune inscription portail liée à ce client.', false);
+    return;
+  }
+
+  // Charger le dossier PIJ
+  const res = await fetch(_CRM + '/api/portal/pij-client/' + clientInsc.id)
+    .then(r => r.json())
+    .catch(() => ({ pij: null }));
+
+  const main = document.getElementById('main-content');
+
+  if (!res.pij) {
+    main.innerHTML = `
+      <div style="max-width:700px;margin:2rem auto;padding:2rem;background:#fff;border-radius:16px;border:1px solid var(--gray200);box-shadow:var(--shadow)">
+        <div style="text-align:center;padding:2rem 0;color:var(--gray500)">
+          <div style="font-size:2.5rem;margin-bottom:1rem">📋</div>
+          <div style="font-size:1rem;font-weight:600;color:var(--gray700);margin-bottom:.4rem">Aucun dossier PIJ soumis</div>
+          <div style="font-size:.85rem">Ce client n'a pas encore rempli le formulaire PIJ depuis son espace client.</div>
+        </div>
+        <div style="text-align:center;margin-top:1rem">
+          <button class="btn btn-secondary" onclick="showPage('dossier',${clientId})">← Retour au dossier</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const d = res.pij.donnees;
+  const date = new Date(res.pij.updated_at).toLocaleDateString('fr-FR');
+
+  const section = (titre, html) => `
+    <div style="margin-bottom:1.5rem">
+      <div style="font-size:.7rem;font-weight:700;color:var(--gray500);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.8rem;padding-bottom:.4rem;border-bottom:1px solid var(--gray100)">${titre}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;font-size:.85rem">${html}</div>
+    </div>`;
+
+  const field = (label, val) => val ? `
+    <div><span style="color:var(--gray500);font-size:.75rem">${label}</span><div style="font-weight:500;color:var(--gray900);margin-top:.1rem">${val}</div></div>` : '';
+
+  const fullField = (label, val) => val ? `
+    <div style="grid-column:1/-1"><span style="color:var(--gray500);font-size:.75rem">${label}</span><div style="font-weight:500;color:var(--gray900);margin-top:.1rem;line-height:1.4">${val}</div></div>` : '';
+
+  // Construire les investissements
+  let investHtml = '';
+  if (d.investissements && d.investissements.length > 0) {
+    const total = d.investissements.reduce((s, i) => s + (parseFloat(i.montant)||0), 0);
+    investHtml = '<table style="width:100%;font-size:.83rem;border-collapse:collapse">'
+      + '<thead><tr style="background:var(--gray50)">'
+      + '<th style="text-align:left;padding:.4rem .6rem;font-weight:600;color:var(--gray600)">Poste</th>'
+      + '<th style="text-align:right;padding:.4rem .6rem;font-weight:600;color:var(--gray600)">Montant (€)</th>'
+      + '</tr></thead><tbody>'
+      + d.investissements.map(i => `<tr style="border-top:1px solid var(--gray100)"><td style="padding:.4rem .6rem">${i.libelle||'—'}</td><td style="text-align:right;padding:.4rem .6rem;font-weight:600">${parseFloat(i.montant||0).toLocaleString('fr-FR')} €</td></tr>`).join('')
+      + `<tr style="border-top:2px solid var(--gray200);background:#f8f9fa"><td style="padding:.5rem .6rem;font-weight:700">Total</td><td style="text-align:right;padding:.5rem .6rem;font-weight:700;color:var(--navy)">${total.toLocaleString('fr-FR')} €</td></tr>`
+      + '</tbody></table>';
+  }
+
+  main.innerHTML = `
+    <div style="max-width:800px;margin:1.5rem auto;padding:0 1rem 3rem">
+      
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.8rem">
+        <div>
+          <button class="btn btn-secondary" style="margin-bottom:.5rem" onclick="showPage('dossier',${clientId})">← Dossier</button>
+          <h2 style="font-size:1.2rem;font-weight:700;color:var(--gray900)">Dossier PIJ — ${d.prenom||''} ${d.nom||''}</h2>
+          <div style="font-size:.8rem;color:var(--gray500)">Soumis le ${date} · Statut : <span style="font-weight:600;color:${res.pij.statut==='recu'?'#2563eb':res.pij.statut==='valide'?'#16a34a':'#dc2626'}">${res.pij.statut}</span></div>
+        </div>
+        <button onclick="imprimerPIJ()" class="btn btn-primary" style="font-size:.82rem">Imprimer / PDF</button>
+      </div>
+
+      <div id="pij-print-zone" style="background:#fff;border-radius:16px;border:1px solid var(--gray200);box-shadow:var(--shadow);padding:2rem">
+
+        ${section('1. Identité du porteur de projet',
+          field('Nom', d.nom) + field('Prénom', d.prenom) +
+          field('Date de naissance', d.date_naissance) + field('Lieu de naissance', d.lieu_naissance) +
+          field('Nationalité', d.nationalite) + field('Téléphone', d.telephone) +
+          fullField('Adresse', d.adresse + (d.cp?' · '+d.cp:'') + (d.commune?' '+d.commune:'')) +
+          field('Email', d.email) + field('Situation avant création', d.situation_avant) +
+          field('Niveau d\'études', d.diplome) + field('Formation création', d.formation) +
+          fullField('Détail formation', d.formation_detail)
+        )}
+
+        ${section('2. Présentation du projet',
+          field('Raison sociale', d.raison_sociale) + field('Forme juridique', d.forme_juridique) +
+          field('Type d\'activité', d.type_activite) + field('Code APE/NAF', d.ape) +
+          field('Date de création', d.date_creation) + field('Lieu d\'exercice', d.lieu_exercice) +
+          fullField('Description de l\'activité', d.activite_desc) +
+          fullField('Adresse de l\'entreprise', d.adresse_entreprise) +
+          fullField('Clients ciblés', d.clients_cibles) +
+          fullField('Concurrents identifiés', d.concurrents) +
+          fullField('Avantages concurrentiels', d.avantages)
+        )}
+
+        ${d.investissements && d.investissements.length > 0 ? `
+        <div style="margin-bottom:1.5rem">
+          <div style="font-size:.7rem;font-weight:700;color:var(--gray500);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.8rem;padding-bottom:.4rem;border-bottom:1px solid var(--gray100)">3. Plan de financement</div>
+          ${investHtml}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;font-size:.85rem;margin-top:1rem">
+            ${field('Apport personnel', d.apport_perso ? d.apport_perso+' €' : null)}
+            ${field('Prêt bancaire', d.pret_bancaire ? d.pret_bancaire+' €' : null)}
+            ${field('Autres aides', d.autres_aides ? d.autres_aides+' €' : null)}
+            ${field('PIJ demandé', d.montant_pij_demande ? '<strong>'+d.montant_pij_demande+' €</strong>' : null)}
+          </div>
+        </div>` : ''}
+
+        ${section('4. Prévisions financières',
+          field('CA An 1', d.ca_an1 ? d.ca_an1+' €' : null) +
+          field('CA An 2', d.ca_an2 ? d.ca_an2+' €' : null) +
+          field('CA An 3', d.ca_an3 ? d.ca_an3+' €' : null) +
+          field('Loyer', d.loyer ? d.loyer+' €/mois' : null) +
+          field('Rémunération', d.remuneration ? d.remuneration+' €/mois' : null) +
+          field('Charges sociales', d.charges_sociales ? d.charges_sociales+' €/mois' : null) +
+          field('Achats/stocks', d.achats ? d.achats+' €/mois' : null) +
+          field('Télécom', d.telecom ? d.telecom+' €/mois' : null) +
+          field('Transport', d.transport ? d.transport+' €/mois' : null) +
+          field('Emplois prévus', d.emplois_prevus)
+        )}
+
+        ${section('5. Situation personnelle',
+          field('Situation familiale', d.situation_familiale) +
+          field('Enfants à charge', d.nb_enfants) +
+          field('Logement', d.logement) +
+          field('Compte pro', d.compte_pro) +
+          fullField('Aides sociales', d.aides_sociales)
+        )}
+
+        ${section('6. Motivation & projet',
+          fullField('Motivation', d.motivation) +
+          field('Clients potentiels identifiés', d.clients_potentiels) +
+          fullField('Premiers clients envisagés', d.premiers_clients) +
+          fullField('Partenaires potentiels', d.partenaires) +
+          fullField('Risques identifiés', d.risques) +
+          fullField('Informations complémentaires', d.infos_supp)
+        )}
+
+      </div><!-- /pij-print-zone -->
+    </div>`;
+};
+
+window.imprimerPIJ = function() {
+  var zone = document.getElementById('pij-print-zone');
+  if (!zone) return;
+  var w = window.open('', '_blank');
+  w.document.write('<html><head><title>Dossier PIJ</title><style>body{font-family:system-ui,sans-serif;font-size:13px;color:#1a1a2e;padding:2rem}h2{color:#1a365d}table{width:100%;border-collapse:collapse}th,td{padding:.4rem .6rem;border:1px solid #ddd}th{background:#f5f5f5}@media print{body{padding:.5cm}}</style></head><body>');
+  w.document.write('<h2>Dossier PIJ — Cabinet SIMELE</h2>');
+  w.document.write(zone.innerHTML);
+  w.document.write('</body></html>');
+  w.document.close();
+  w.print();
+};
