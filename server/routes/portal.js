@@ -769,10 +769,10 @@ router.post('/soumettre-pij', requirePortal, (req, res) => {
     const existing = db.prepare('SELECT id FROM pij_dossiers WHERE inscription_id=?').get(insc.id);
     
     if (existing) {
-      db.prepare('UPDATE pij_dossiers SET donnees_json=?, statut='recu', updated_at=datetime('now') WHERE id=?')
+      db.prepare("UPDATE pij_dossiers SET donnees_json=?, statut='recu', updated_at=datetime('now') WHERE id=?")
         .run(JSON.stringify(donnees), existing.id);
     } else {
-      db.prepare('INSERT INTO pij_dossiers (inscription_id, client_id, donnees_json, statut) VALUES (?,?,?,'recu')')
+      db.prepare("INSERT INTO pij_dossiers (inscription_id, client_id, donnees_json, statut) VALUES (?,?,?,'recu')")
         .run(insc.id, insc.client_id || null, JSON.stringify(donnees));
     }
 
